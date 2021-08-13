@@ -1,2 +1,3 @@
-# extreme_verification_latency
-Extreme Verification Latency Algorithms.
+# Extreme Verification Latency
+
+Python libaray for implementing extreme verification latency algorithms. 
