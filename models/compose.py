@@ -35,8 +35,6 @@ College of Engineering
 # SOFTWARE.
 
 
-
-
 class ComposeV1(): 
     def __init__(self, 
                  classifier, 
@@ -50,6 +48,9 @@ class ComposeV1():
         _verbose = 1                    #    0  : No Information Displayed
                                         #   {1} : Command line progress updates
                                         #    2  : Plots when possible and Command line progress updates
+        _data = []                      # [CELL] cell array of timesteps each containing a matrix N instances x D features
+        _lables = []                    # [CELL] cell array of timesteps each containing a vector N instances x 1 - Correct label
+        _hypothesis =[]                 # [CELL] cell array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.classifier = classifier
 
     def validateComposeAttributes(self, dataset, verbose, *args):
@@ -63,6 +64,16 @@ class ComposeV1():
             len(*args) <= max_args
         except ValueError:
             print("Number of input parameters must be a min of two. Input valid dataset and valid option to display information")
+
+        # set object displayed info setting
+        if self._verbose >= 0 and self._verbose <=2:
+           self._verbose = verbose 
+           return verbose
+        else:
+            print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
+        
+
+
 
 
     def run(self, Xt, Yt, Ut): 
