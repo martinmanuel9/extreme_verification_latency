@@ -99,7 +99,7 @@ class ComposeV1():
         else:
             self._dataset = dataset
 
-        return dataset, verbose
+        
     
 
     def run(self, Xt, Yt, Ut): 
