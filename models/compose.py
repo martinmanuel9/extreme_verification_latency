@@ -34,6 +34,7 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import numpy as np
 
 class ComposeV1(): 
     def __init__(self, 
@@ -48,25 +49,28 @@ class ComposeV1():
         _verbose = 1                    #    0  : No Information Displayed
                                         #   {1} : Command line progress updates
                                         #    2  : Plots when possible and Command line progress updates
-        _data = []                      # [CELL] cell array of timesteps each containing a matrix N instances x D features
-        _lables = []                    # [CELL] cell array of timesteps each containing a vector N instances x 1 - Correct label
-        _hypothesis =[]                 # [CELL] cell array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        _core_support = []              # [CELL] cell array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        _classifier_func = []           # [STRING] string corresponding to classifier in ssl class
-        _classifier_opts = []           # [STRUCT] struct of options for the selected classifer in ssl class
+        _data = []                      # [LIST] list array of timesteps each containing a matrix N instances x D features
+        _lables = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
+        _hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
+        _core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        _classifier_func = []           # [Tuple] Tuple of string corresponding to classifier in ssl class
+        _classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
 
         _cse_func = []                  # [STRING] string corresponding to function in cse class
-        _cse_opts = []                  # [STRUCT] struct of options for the selected cse function in cse class
+        _cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
 
-        _performance = []               # [VECTOR] column vector of classifier performances at each timestep
+        _performance = []               # [list] column vector of classifier performances at each timestep
         _comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
         _dataset = []
-
         self.classifier = classifier
+        self.method = method
 
-    def getCompose(self, dataset, verbose):
+    def checkComposeDataset(self, dataset, verbose, *args):
         """
+        Sets COMPOSE dataset and information processing options
+        Check if the input parameters are not empty for compose
+        This checks if the dataset is empty and checks what option of feedback you want
         Gets dataset and verbose (the command to display options as COMPOSE processes)
         Verbose: 0 : no info is displayed
                  1 : Command Line progress updates
@@ -75,12 +79,6 @@ class ComposeV1():
         self._dataset = dataset
         self._verbose = verbose
 
-    def setCompose(self, dataset, verbose, *args):
-        """
-        Sets COMPOSE dataset and information processing options
-        Check if the input parameters are not empty for compose
-        This checks if the dataset is empty and checks what option of feedback you want
-        """
         # need to limit arguements to 2 for dataset and verbose 
         max_args = 2
         try:
@@ -99,9 +97,17 @@ class ComposeV1():
         else:
             self._dataset = dataset
 
-        
-    
+        return dataset, verbose
 
+    def determineDrift(self, data, dataset) :
+        self._data = data
+        self._data = dataset
+
+        # find window where data will drift
+        all_data = np.full_like(data, dataset)
+        self.figure_xlim = [min(all_data[:1]) , max(all_data[:1])]
+        self.figure_ylim = [min(all_data[:2]), max(all_data[:2])]
+        
     def run(self, Xt, Yt, Ut): 
         """
         """
