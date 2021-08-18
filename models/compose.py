@@ -130,7 +130,9 @@ class ComposeV1():
         process_features = Parallel(n_jobs=num_cores)(delayed(dataset)(i) for i in dataset)
 
         return process_features
-    
+
+    def set_classifier(self, user_selection, user_opt):
+        
 
     def run(self, Xt, Yt, Ut): 
         """
