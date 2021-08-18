@@ -35,6 +35,8 @@ College of Engineering
 # SOFTWARE.
 
 import numpy as np
+from joblib import Parallel, delayed
+import multiprocessing
 
 class ComposeV1(): 
     def __init__(self, 
@@ -63,10 +65,12 @@ class ComposeV1():
         _comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
         _dataset = []
+        _figure_xlim = []
+        _figure_ylim = []
         self.classifier = classifier
         self.method = method
 
-    def checkComposeDataset(self, dataset, verbose, *args):
+    def check_compose_dataset(self, dataset, verbose, *args):
         """
         Sets COMPOSE dataset and information processing options
         Check if the input parameters are not empty for compose
@@ -99,15 +103,35 @@ class ComposeV1():
 
         return dataset, verbose
 
-    def determineDrift(self, data, dataset) :
+    def determine_drift(self, data, dataset):
+        """
+        Finds the lower and higher limits to determine drift
+        """
         self._data = data
         self._data = dataset
-
         # find window where data will drift
         all_data = np.full_like(data, dataset)
-        self.figure_xlim = [min(all_data[:1]) , max(all_data[:1])]
-        self.figure_ylim = [min(all_data[:2]), max(all_data[:2])]
+        self._figure_xlim = [min(all_data[:1]) , max(all_data[:1])]
+        self._figure_ylim = [min(all_data[:2]), max(all_data[:2])]
+
+    def set_cores(self, cores, dataset):
+        """
+        Establishes number of cores to conduct parallel processing
+        """
+        self._dataset = dataset
+        self._n_cores = cores
+        num_cores = multiprocessing.cpu_count()         # determines number of cores
+        if self._n_cores > num_cores:
+            print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
+            self._n_cores = num_cores                   # sets number of cores to available 
+        else:
+            self._n_cores = num_cores                   # original number of cores to 1
         
+        process_features = Parallel(n_jobs=num_cores)(delayed(dataset)(i) for i in dataset)
+
+        return process_features
+    
+
     def run(self, Xt, Yt, Ut): 
         """
         """
