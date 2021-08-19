@@ -37,6 +37,7 @@ College of Engineering
 import numpy as np
 from joblib import Parallel, delayed
 import multiprocessing
+import models.ssl as ssl
 
 class ComposeV1(): 
     def __init__(self, 
@@ -67,6 +68,7 @@ class ComposeV1():
         _dataset = []
         _figure_xlim = []
         _figure_ylim = []
+
         self.classifier = classifier
         self.method = method
 
@@ -131,8 +133,16 @@ class ComposeV1():
 
         return process_features
 
-    def set_classifier(self, user_selection, user_opt):
-        
+    def set_classifier(self, learner, user_selection, user_opt):
+        """
+        Sets classifier by getting the classifier object from ssl module
+        loads classifier based on user input
+        """
+        if not learner:         # if we do not get the learner object from ssl 
+            self.learner = ssl(0)
+            self.learner.set_data()
+
+
 
     def run(self, Xt, Yt, Ut): 
         """
