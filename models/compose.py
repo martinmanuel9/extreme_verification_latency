@@ -133,16 +133,25 @@ class ComposeV1():
 
         return process_features
 
-    def set_classifier(self, learner, user_selection, user_opt):
+    def set_classifier(self, user_selction, user_options, *args):
         """
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
         """
-        if not learner:         # if we do not get the learner object from ssl 
-            self.learner = ssl(0)
-            self.learner.set_data()
+        max_args = 4
+        # first check if user input a learner else create learner - ssl(0)
+        if not self._learner:                                       # if we do not get the learner object from ssl 
+            self._learner = ssl(0)
+            # need to get call ssl class and set the data to load it to the learner
+            set_data = ssl.set_data(self._data, self._timestep)     # create ssl(0) as learner 
+            self._learner                                            # load first batch of data into learner object
+        
+        if len(*args) < max_args:
+            self._learner = self.learner 
+        else:
+            self.set_classifier = self.set_classifier(learner, labels, timestep, data)
 
-
+        self._classifer_func = self.set_classifier(learner, labels, timestep, data)
 
     def run(self, Xt, Yt, Ut): 
         """
