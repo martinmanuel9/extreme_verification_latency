@@ -1,5 +1,15 @@
 #!/usr/bin/env python 
+"""
+Application:        COMPOSE Framework 
+File name:          compose.py
+Author:             Martin Manuel Lopez
+Creation:           08/05/2021
+COMPOSE Origin:     Muhammad Umer and Robi Polikar
 
+The University of Arizona
+Department of Electrical and Computer Engineering
+College of Engineering
+"""
 # MIT License
 #
 # Copyright (c) 2021
