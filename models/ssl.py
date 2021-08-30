@@ -57,7 +57,7 @@ class ssl():
     n_classes=[]                # Number of classes different class labels
     n_instances=[]              # Number of instances in data
     n_labeled=[]                # Number of labeled instances in data
-    n_unlabeled  =[]            # Number of unlabeled instances in data
+    n_unlabeled=[]              # Number of unlabeled instances in data
         
     input_label_format=[]       # Format of labels passed by user - 'integer' OR 'vector'
     input_label_ids=[]          # Records the class identifiers of the labels passed by user
@@ -108,12 +108,11 @@ class ssl():
             self._labels = labels
 
             # Obtain size information of data
-            getsizeof(data)
-            [self.n_instances, self.n_features] = getsizeof(data)       # Obtain size information from data -- need to fix this to py 
+            sizeData = getsizeof(data)                                  # Obtain size info from data
             df_unlabeled = pd.DataFrame.sum(self.n_unlabeled, axis=1)   # sum across each row  
-            df_unlabeled['0'].valuecounts()                             # count the instances that have zero which are the unlabeled
+            unlabeled = df_unlabeled['0'].valuecounts()                 # count the instances that have zero which are the unlabeled
             
-            self.n_labeled = self.n_instances - self.n_unlabeled        # The remaining instances must be labele
+            self.n_labeled = self.n_instances - self.n_unlabeled        # The remaining instances must be labeled
 
 
 

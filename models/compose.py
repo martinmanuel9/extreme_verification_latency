@@ -144,7 +144,7 @@ class ComposeV1():
             self._learner = ssl(0)
             # need to get call ssl class and set the data to load it to the learner
             set_data = ssl.set_data(self._data, self._timestep)     # create ssl(0) as learner 
-            self._learner                                            # load first batch of data into learner object
+            self._learner                                           # load first batch of data into learner object
         
         if len(*args) < max_args:
             self._learner = self.learner 
