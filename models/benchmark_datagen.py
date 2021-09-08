@@ -55,5 +55,8 @@ class datagen():
             self._dataset = dataset
             for i in zip(range(limit), len(UG_2C_2D)): # for loops in 1000s for clustering
                 for j in (limit-1):
-                    dataset.data[l:1][m:2] = UG_2C_2D[j:2] # get first 2 columns of data
-                    dataset.labels[l:2][m,1] = UG_2C_2D[j: 3]   # get last column for labels
+                    dataset.data[l:,0][m:, 1] = UG_2C_2D[j: 1]      # get first 2 columns of data
+                    dataset.labels[l:,0][m:,1] = UG_2C_2D[j:, 2]    # get last column for labels
+                    n_pt = 1000
+                    # get dataset column first column and use zeroes for the n_pt 
+                    
