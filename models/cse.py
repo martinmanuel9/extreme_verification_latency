@@ -35,3 +35,19 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+class cse():
+    def __init__(self):
+        _synthetic_data = 0
+        _verbose = 1
+        _data = []
+        _nCores = 1 
+        _boundary = []
+        _boundary_opts = []
+        _boundary_data = []
+        _n_Instances = []
+        _n_features = []
+        valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
+
+    def cse()
+
