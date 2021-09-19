@@ -34,7 +34,7 @@ College of Engineering
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+import benchmark_datagen as bm_gen_data
 
 class CSE():
     def __init__(self):
@@ -49,5 +49,45 @@ class CSE():
         _n_features = []
         valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
 
-    def cse()
+    # check to see if cse gets right inputs 
+    def check_input(self, verbose, synthetic_data):
+        self._verbose = verbose
+        # set object displayed info setting
+        if verbose < 0 or verbose > 2:
+            print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
+            return False
+        
+        self._synthetic_data = synthetic_data
 
+        if synthetic_data.empty:
+            print("Dataset is empty!")
+            return False
+
+        return True
+
+    # set data by getting inputs from benchmark_datagen
+    def set_data(self, data): 
+        self._data = data
+        return data
+    
+    # set boundary 
+    def set_boundary(boundary_selection, opts):
+
+    # # extract core 
+    # def extract():
+
+    # # set defualt options
+    # def set_default_opts(opts):
+
+    # # set user options
+    # def set_user_opts():
+    
+
+if __name__ == '__main__' :
+    gen_data = bm_gen_data.Datagen.dataset("UnitTest")
+    test_cse = CSE()
+    # check input
+    checkInputCse = test_cse.check_input(3, gen_data)
+    print(checkInputCse)
+
+    
