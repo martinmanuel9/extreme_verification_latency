@@ -4,6 +4,7 @@
 Application:        COMPOSE Framework 
 File name:          compose.py
 Author:             Martin Manuel Lopez
+Advisor:            Dr. Gregory Ditzler
 Creation:           08/05/2021
 COMPOSE Origin:     Muhammad Umer and Robi Polikar
 

@@ -1,4 +1,17 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
+
+"""
+Application:        COMPOSE Framework 
+File name:          __init__.py
+Author:             Martin Manuel Lopez
+Advisor:            Dr. Gregory Ditzler
+Creation:           09/18/2021
+COMPOSE Origin:     Muhammad Umer and Robi Polikar
+
+The University of Arizona
+Department of Electrical and Computer Engineering
+College of Engineering
+""" 
 
 # MIT License
 #
