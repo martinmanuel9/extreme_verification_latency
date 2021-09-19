@@ -41,7 +41,7 @@ import numpy as np
 import os
 import math
 
-class datagen():
+class Datagen():
     def __init__(self, data, dataset):
         _data = []                              # Unimodal, Multimodal, 1cdt, 2cdt, Unimodal3D,  1cht, 2cht, 4cr, 4crev1,4crev2
                                                 # 5cvt, 1csurr, 4ce1cf, fg2c2d, gears2c2d, keystroke, Unimodal5D, noaa, custom
@@ -388,15 +388,38 @@ class datagen():
                     dataset["label"] = 1
                 l += 1
 
+        if datatype == 'UnitTest':           
+            unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
+            l = 0                                                             
+            step = 10
+            data = pd.DataFrame() 
+            df = pd.DataFrame(unitTestData)
+            zero = pd.DataFrame()
+            for i in range(0, len(df), step):                           
+                for j in range(0, step):                                
+                    data[l] = df.iloc[j,:2]                             
+                    zero[l] = np.zeros_like(df.iloc[j,:2])
+                    a = np.random.permutation(step)
+                    aT = a.T
+                    if l == 0:
+                        data[l] = aT[j]
+                    dataset = data.T
+                    dataset["label"] = 1
+                l += 1
         return dataset
 
-# if __name__ == '__main__':
-#     # 'Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr',
-#     testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
-#                 '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D']
-#     for i in testArray:
-#         test_data = datagen.dataset(i)
-#         if test_data.empty:
-#             print(i + "is empty")
-#         else: 
-#             print(i + " dataset created")
+if __name__ == '__main__':
+    # testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
+    #             '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D']
+    # for i in testArray:
+    #     test_data = Datagen.dataset(i)
+    #     if test_data.empty:
+    #         print(i + "is empty")
+    #     else: 
+    #         print(i + " dataset created")
+    
+    test_data = Datagen.dataset('UnitTest')
+    if test_data.empty:
+        print("Unit Test dataset is empty")
+    else:
+        print("Unit Test dataset created")
