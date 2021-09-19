@@ -389,23 +389,14 @@ class Datagen():
                 l += 1
 
         if datatype == 'UnitTest':           
-            unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
-            l = 0                                                             
-            step = 10
+            unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['column1', 'column2', 'column3'])                                                                                  
             data = pd.DataFrame() 
             df = pd.DataFrame(unitTestData)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(step)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            zero = pd.DataFrame()                               
+            data = df.iloc[:,:2]                             
+            dataset = data
+            dataset["label"] = 1
+
         return dataset
 
 if __name__ == '__main__':

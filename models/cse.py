@@ -2,7 +2,7 @@
 
 """
 Application:        COMPOSE Framework 
-File name:          cse.py
+File name:          cse.py - core support extraction (CSE)
 Author:             Martin Manuel Lopez
 Advisor:            Dr. Gregory Ditzler
 Creation:           09/18/2021
@@ -34,6 +34,7 @@ College of Engineering
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
 
 class CSE():
@@ -45,6 +46,7 @@ class CSE():
         _boundary = []
         _boundary_opts = []
         _boundary_data = []
+        _opts = []
         _n_Instances = []
         _n_features = []
         valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
@@ -71,23 +73,44 @@ class CSE():
         return data
     
     # set boundary 
-    def set_boundary(boundary_selection, opts):
+    def set_boundary(self, boundary_selection, opts):
+        self._opts = opts
+        self._boundary_opts = boundary_selection
+        valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
 
-    # # extract core 
-    # def extract():
-
-    # # set defualt options
-    # def set_default_opts(opts):
-
-    # # set user options
-    # def set_user_opts():
+        if boundary_selection not in valid_boundary:
+            print(boundary_selection, " not in valid boundary.", boundary_selection,
+                "is an invalid boundary construction method - choose from:  ", valid_boundary)
+            
+        return boundary_selection
     
+    # Extract Core Supports using the boundary selected
+    def extract(self):  
+        if self._data.empty: 
+            print("You must load data before extracting core supports")
 
+        if self._boundary_opts.empty:
+            print('Boundary construction type not set - default classifier and options loaded') 
+            # sett gmm as defualt boundary
+            self.set_boundary('gmm')  
+
+        # set verbose                               
+
+ ## unit tests        
 if __name__ == '__main__' :
     gen_data = bm_gen_data.Datagen.dataset("UnitTest")
-    test_cse = CSE()
-    # check input
-    checkInputCse = test_cse.check_input(3, gen_data)
-    print(checkInputCse)
+    
+    # # check input
+    # test_cse = CSE()
+    # checkInputCse = test_cse.check_input(3, gen_data)
+
+    # # test set_data 
+    # test_set_data = CSE()
+    # check_set_data = test_set_data.set_data(gen_data)
+    # print(check_set_data)
+
+    # # test set_boundary
+    # test_set_boundary = CSE()
+    # check_set_boundary = test_set_boundary.set_boundary('fake_boundary',[])
 
     
