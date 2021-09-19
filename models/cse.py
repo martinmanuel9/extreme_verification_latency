@@ -36,7 +36,7 @@ College of Engineering
 # SOFTWARE.
 
 
-class cse():
+class CSE():
     def __init__(self):
         _synthetic_data = 0
         _verbose = 1
