@@ -298,7 +298,7 @@ class datagen():
             df = pd.DataFrame(X4CE1CF)
             zero = pd.DataFrame()
             for i in range(0, len(df), drift_no):                           
-                for j in range(0, step):                                
+                for j in range(0, drift_no):                                
                     data[l] = df.iloc[j,:2]                             
                     zero[l] = np.zeros_like(df.iloc[j,:2])
                     a = np.random.permutation(drift_no)
@@ -349,7 +349,8 @@ class datagen():
 
 
         if datatype == 'keystroke':           
-            keystroke = pd.read_csv("keystroke.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
+            keystroke = pd.read_csv("keystroke.txt", delimiter=",", names=['column1', 'column2', 'column3','column4', 
+                                    'column5', 'column6', 'column7', 'column8', 'column9', 'column10'])                         
             l = 0                                                             
             step = 200
             data = pd.DataFrame() 
@@ -368,7 +369,8 @@ class datagen():
                 l += 1 
     
         if datatype == 'Unimodal5D':           
-            UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
+            UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['column1', 'column2', 'column3',
+                                    'column4', 'column5'])                         
             l = 0                                                             
             step = 2000
             data = pd.DataFrame() 
@@ -387,5 +389,14 @@ class datagen():
                 l += 1
 
         return dataset
+
 # if __name__ == '__main__':
-#     testImport = print(datagen.dataset('1csurr'))
+#     # 'Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr',
+#     testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
+#                 '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D']
+#     for i in testArray:
+#         test_data = datagen.dataset(i)
+#         if test_data.empty:
+#             print(i + "is empty")
+#         else: 
+#             print(i + " dataset created")
