@@ -36,6 +36,8 @@ College of Engineering
 # SOFTWARE.
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
+import numpy as np
+import pandas as pd
 
 class CSE():
     def __init__(self):
@@ -85,16 +87,79 @@ class CSE():
         return boundary_selection
     
     # Extract Core Supports using the boundary selected
-    def extract(self):  
-        if self._data.empty: 
+    def extract(self, data, boundary, verbose):
+        self._data = data  
+        self._boundary = boundary
+        self._verbose = verbose
+        if data.empty: 
             print("You must load data before extracting core supports")
 
-        if self._boundary_opts.empty:
+        if boundary == "":
             print('Boundary construction type not set - default classifier and options loaded') 
             # sett gmm as defualt boundary
-            self.set_boundary('gmm')  
+            boundary = self.set_boundary('gmm', [data, verbose])
+              
+        
+        inds = boundary           # set indices based on the boundary
+        # set verbose 
+        if verbose == 2: 
+            self.plot_cse(inds)
+        
+    def set_defualt_opts(self, boundary, data): 
+        self._boundary = boundary
+        self._boundary_opts = []
+        self._data = data 
 
-        # set verbose                               
+        # get n features
+        df = pd.DataFrame(data)
+        n_features = df.shape[1] - 1
+        
+        if boundary == "a_shape":
+            alpha = 2
+            p = 2
+            self._boundary_opts.append(alpha)
+            self._boundary_opts.append(p)
+        if boundary == "gmm":
+            kl = 10
+            kh = 10
+            p = 0.4
+            self._boundary_opts.append(kl)
+            self._boundary_opts.append(kh)
+            self._boundary_opts.append(p)
+        if boundary == "knn":
+            k = 10
+            p = 0.4
+            self._boundary_opts.append(k)
+            self._boundary_opts.append(p)
+        if boundary == "parzen":
+            win = np.ones((1, n_features))
+            print(win)
+            p = 0.4
+            noise_thr = 0
+            self._boundary_opts.append(win)
+            self._boundary_opts.append(p)
+            self._boundary_opts.append(noise_thr)
+        
+        return self._boundary_opts[:]
+
+    def set_user_opts(self, opts):
+        # must be an array input 
+        if isinstance(opts, list):
+            valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
+            self._opts = opts
+            # need to determine if user inputs is the actual correct boundary 
+            if any(i in valid_boundary for i in opts):
+                self._boundary_opts = opts
+            else:
+                print("Warning: Option", opts[0] , "is not a valid option for boundary construction method.")
+        else:
+            print("Options must be entered as list: [options]")
+    
+        
+
+
+
+    
 
  ## unit tests        
 if __name__ == '__main__' :
@@ -112,5 +177,18 @@ if __name__ == '__main__' :
     # # test set_boundary
     # test_set_boundary = CSE()
     # check_set_boundary = test_set_boundary.set_boundary('fake_boundary',[])
+
+    # # test extract 
+    # test_extract = CSE()
+    # check_test_extract = test_extract.extract(gen_data,"",1)
+
+    # # test default options
+    # test_defualt_opts = CSE()
+    # check_default = test_defualt_opts.set_defualt_opts("knn", gen_data)
+    # print(check_default)
+
+    # # test set user opts
+    # test_set_user_opts = CSE()
+    # check_set_usr_opts = test_set_user_opts.set_user_opts(["fake"])  ## ["fake", 1, [gen_data]] , ["gmm", 1, [gen_data]] 
 
     
