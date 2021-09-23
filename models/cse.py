@@ -38,20 +38,23 @@ from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import math
 
 class CSE():
     def __init__(self):
-        _synthetic_data = 0
-        _verbose = 1
-        _data = []
-        _nCores = 1 
-        _boundary = []
-        _boundary_opts = []
-        _boundary_data = []
-        _opts = []
-        _n_Instances = []
-        _n_features = []
-        valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
+        self._synthetic_data = 0
+        self._verbose = 1
+        self._data = []
+        self._nCores = 1 
+        self._boundary = []
+        self._boundary_opts = []
+        self._boundary_data = []
+        self._opts = []
+        self._n_Instances = []
+        self._n_features = []
+        self._indices = []
+        self._valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
 
     # check to see if cse gets right inputs 
     def check_input(self, verbose, synthetic_data):
@@ -69,97 +72,135 @@ class CSE():
 
         return True
 
+    def set_verbose(self, verbose):
+
+        if verbose > 2:
+            verbose = 2
+        if verbose < 0:
+            verbose = 0
+        self._verbose = math.floor(verbose)
+        
+
     # set data by getting inputs from benchmark_datagen
     def set_data(self, data): 
         self._data = data
-        return data
     
-    # set boundary 
+    # Set Boundary Construction Type and Options 
     def set_boundary(self, boundary_selection, opts):
-        self._opts = opts
-        self._boundary_opts = boundary_selection
-        valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
+        if not opts:
+            self._boundary_opts= []
 
-        if boundary_selection not in valid_boundary:
-            print(boundary_selection, " not in valid boundary.", boundary_selection,
-                "is an invalid boundary construction method - choose from:  ", valid_boundary)
-            
-        return boundary_selection
-    
+        self._boundary_opts = []                # clears any past boundary options
+
+        # if boundary_selection not in valid_boundary:
+        #     print(boundary_selection, " not in valid boundary.", boundary_selection,
+        #         "is an invalid boundary construction method - choose from:  ", valid_boundary)
+        
+        if boundary_selection in self._valid_boundary:
+            self._boundary = boundary_selection
+            self.set_defualt_opts()
+            if opts:                                            # if user passes in options
+                self.set_user_opts(opts)                        # sets user options
+        else:
+           print(boundary_selection, " not in valid boundary.", boundary_selection,
+                "is an invalid boundary construction method - choose from:  ", self._valid_boundary) 
+
     # Extract Core Supports using the boundary selected
-    def extract(self, data, boundary, verbose):
-        self._data = data  
-        self._boundary = boundary
-        self._verbose = verbose
-        if data.empty: 
+    def indices(self):
+        if self._data.empty: 
             print("You must load data before extracting core supports")
+            return
 
-        if boundary == "":
+        if not self._boundary:
             print('Boundary construction type not set - default classifier and options loaded') 
             # sett gmm as defualt boundary
-            boundary = self.set_boundary('gmm', [data, verbose])
-              
+            self.set_boundary('gmm', ['gmm'])
+
+        # plot labeled and unlabeled data 
+        if self._verbose == 2:
+            self.plot_cse([])
         
-        inds = boundary           # set indices based on the boundary
-        # set verbose 
-        if verbose == 2: 
-            self.plot_cse(inds)
+        # run boundary constructor and extract indices of core supporting instances 
+        # inds = obj.boundary(obj);
         
-    def set_defualt_opts(self, boundary, data): 
-        self._boundary = boundary
-        self._boundary_opts = []
-        self._data = data 
+
+        if self._verbose == 2:
+            self.plot_cse(self._indices)
+        
+    def set_defualt_opts(self): 
 
         # get n features
-        df = pd.DataFrame(data)
-        n_features = df.shape[1] - 1
+        df = pd.DataFrame(self._data)
+        self._n_features = df.shape[1] - 1
         
-        if boundary == "a_shape":
+        if self._boundary == "a_shape":
             alpha = 2
             p = 2
             self._boundary_opts.append(alpha)
             self._boundary_opts.append(p)
-        if boundary == "gmm":
+        if self._boundary == "gmm":
             kl = 10
             kh = 10
             p = 0.4
             self._boundary_opts.append(kl)
             self._boundary_opts.append(kh)
             self._boundary_opts.append(p)
-        if boundary == "knn":
+        if self._boundary == "knn":
             k = 10
             p = 0.4
             self._boundary_opts.append(k)
             self._boundary_opts.append(p)
-        if boundary == "parzen":
-            win = np.ones((1, n_features))
-            print(win)
+        if self._boundary == "parzen":
+            win = np.ones((1, self._n_features))
             p = 0.4
             noise_thr = 0
             self._boundary_opts.append(win)
             self._boundary_opts.append(p)
             self._boundary_opts.append(noise_thr)
-        
-        return self._boundary_opts[:]
 
     def set_user_opts(self, opts):
         # must be an array input 
         if isinstance(opts, list):
-            valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
-            self._opts = opts
+            # self._valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
             # need to determine if user inputs is the actual correct boundary 
-            if any(i in valid_boundary for i in opts):
+            if any(i in self._valid_boundary for i in opts):
                 self._boundary_opts = opts
             else:
-                print("Warning: Option", opts[0] , "is not a valid option for boundary construction method.")
+                print("Warning: Option", self._boundary, "is not a valid option for boundary construction method.")
         else:
             print("Options must be entered as list: [options]")
-    
+
+    def plot_cse(self, indices):
+        if not indices:                 # if no indices are specified
+            indices = self._data
+            color = 'r.'                # red dot marker
+        else:
+            color = 'k.'                # black dot marker
         
+        df = pd.DataFrame(self._data)
+        self._n_features = df.shape[1] - 1
+        print(self._n_features)
+        if self._n_features == 2: 
+            print(self._data)              # command line progress
+            plt.plot(self._data["column1"], self._data["column2"], color)
+            plt.xlabel("Feature 1")
+            plt.ylabel("Feature 2")
+            plt.title("Boundary Constructor:" + self._boundary)
+            plt.show()
+        if self._n_features == 3:
+            print(self._data)
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            xs = self._data["column1"]
+            ys = self._data["column2"]
+            zs = self._data["column2"]
+            ax.scatter(xs, ys, zs, marker = '.')
+            ax.set_xlabel('Feature 1')
+            ax.set_ylabel('Feature 2')
+            ax.set_zlabel('Feature 3')
+            ax.set_title('Boundary Constructor: ' , self._boundary)
+            plt.show()
 
-
-
-    
 
  ## unit tests        
 if __name__ == '__main__' :
@@ -174,13 +215,13 @@ if __name__ == '__main__' :
     # check_set_data = test_set_data.set_data(gen_data)
     # print(check_set_data)
 
-    # # test set_boundary
+    # test set_boundary
     # test_set_boundary = CSE()
-    # check_set_boundary = test_set_boundary.set_boundary('fake_boundary',[])
+    # check_set_boundary = test_set_boundary.set_boundary('knn', ["knn", 1, [1, 1, 1]])
 
     # # test extract 
-    # test_extract = CSE()
-    # check_test_extract = test_extract.extract(gen_data,"",1)
+    # test_inds = CSE()
+    # check_test_inds = test_inds.inds(gen_data,"",1)
 
     # # test default options
     # test_defualt_opts = CSE()
@@ -191,4 +232,9 @@ if __name__ == '__main__' :
     # test_set_user_opts = CSE()
     # check_set_usr_opts = test_set_user_opts.set_user_opts(["fake"])  ## ["fake", 1, [gen_data]] , ["gmm", 1, [gen_data]] 
 
-    
+    # test plot and indices
+    test_plot_ind = CSE()
+    test_plot_ind.set_verbose(2)
+    test_plot_ind.set_data(gen_data)
+    test_plot_ind.set_boundary("a_shape", ["a_shape"])
+    test_plot_ind.indices()
