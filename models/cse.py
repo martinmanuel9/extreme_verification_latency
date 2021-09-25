@@ -201,6 +201,21 @@ class CSE():
             ax.set_title('Boundary Constructor: ' , self._boundary)
             plt.show()
 
+    ## Alpha shape and Dependencies 
+    def a_shape(self):
+        ashape = self.a_shape
+        if not ashape:
+            print('No Alpha Shape could be constructed try different alpha or check data')
+            return 
+        
+
+
+
+
+
+
+
+
 
  ## unit tests        
 if __name__ == '__main__' :
@@ -233,8 +248,8 @@ if __name__ == '__main__' :
     # check_set_usr_opts = test_set_user_opts.set_user_opts(["fake"])  ## ["fake", 1, [gen_data]] , ["gmm", 1, [gen_data]] 
 
     # test plot and indices
-    test_plot_ind = CSE()
-    test_plot_ind.set_verbose(2)
-    test_plot_ind.set_data(gen_data)
-    test_plot_ind.set_boundary("a_shape", ["a_shape"])
-    test_plot_ind.indices()
+    # test_plot_ind = CSE()
+    # test_plot_ind.set_verbose(2)
+    # test_plot_ind.set_data(gen_data)
+    # test_plot_ind.set_boundary("a_shape", ["a_shape"])
+    # test_plot_ind.indices()
