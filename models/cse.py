@@ -34,9 +34,11 @@ College of Engineering
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from numpy.core.numeric import ones
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
 import numpy as np
+import numpy.matlib as npm
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
@@ -207,6 +209,31 @@ class CSE():
         if not ashape:
             print('No Alpha Shape could be constructed try different alpha or check data')
             return 
+        
+        ## Compaction - shrinking of alpha shapes
+        ashape.N_instances = pd.DataFrame.size(self._data)
+        ashape.N_core_supports = math.ciel(pd.DataFrame.size(self._data)*self._boundary_opts[1]) # self._boundary_opts[1] is 
+                                                                                                  # p value when ashape is selected
+        
+        ashape.core_support = ones(self._data[0])           # binary vector indicating instance of core support is or not
+        too_many_core_supports = True                       # Flag denoting if the target number of coresupports has been obtained
+
+
+        # begin compaction and remove one layer of simplex at a time
+        while sum(ashape.core_support) >= ashape.N_core_supports and too_many_core_supports == True:
+            # find d-1 simplexes 
+            Tip = npm.repmat(np.nonzero(ashape.include==1), pd.DataFrame.size(ashape.simplexes[:2]))
+
+            edges = []
+            nums = ashape.simplexes[:2]
+            for ic in pd.DataFrame.size(ashape.simplexes[:2]):
+                edges = [edges, ashape.simplexes(ashape.include==1, nums(pd.DataFrame.size(ashape.simplexes[:2])-1))]
+                nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right 
+            
+            edges = edges[:2].sort()                                # sort the d-1 simplexes so small node is on left in each row
+            
+
+
         
 
 
