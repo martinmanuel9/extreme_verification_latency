@@ -34,7 +34,7 @@ College of Engineering
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from numpy.core.numeric import ones
+from numpy.core.numeric import ones, zeros_like
 from numpy.lib.function_base import diff
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
@@ -141,26 +141,36 @@ class CSE():
             alpha = 2
             p = 2
             self._boundary_opts.append(alpha)
+            setattr(self._boundary_opts, alpha, 2)
             self._boundary_opts.append(p)
+            setattr(self._boundary_opts, p, 2)
         if self._boundary == "gmm":
             kl = 10
             kh = 10
             p = 0.4
             self._boundary_opts.append(kl)
+            setattr(self._boundary_opts, kl, 10)
             self._boundary_opts.append(kh)
+            setattr(self._boundary_opts, kh, 10)
             self._boundary_opts.append(p)
+            setattr(self._boundary_opts, p, 0.4)
         if self._boundary == "knn":
             k = 10
             p = 0.4
             self._boundary_opts.append(k)
+            setattr(self._boundary_opts, k, 10)
             self._boundary_opts.append(p)
+            setattr(self._boundary_opts, p, 0.4)
         if self._boundary == "parzen":
             win = np.ones((1, self._n_features))
             p = 0.4
             noise_thr = 0
             self._boundary_opts.append(win)
+            setattr(self._boundary_opts, win, np.ones((1,self._n_features)))
             self._boundary_opts.append(p)
+            setattr(self._boundary_opts, p, 0.4)
             self._boundary_opts.append(noise_thr)
+            setattr(self._boundary_opts, noise_thr, 0)
 
     def set_user_opts(self, opts):
         # must be an array input 
@@ -214,6 +224,19 @@ class CSE():
             "Alpha shape was not constructed for this data.\n ")
             ashape = []
             return
+        else:
+            ashape_simplexes = Delaunay(self._data, qhull_options="Qbb Qc Qz Qx Q12")        # set the output simplexes to the Delaunay Triangulation 
+                                                                                             # ”Qbb Qc Qz Qx Q12” for ndim > 4 gor qhull options
+            ashape_include = np.zeros((pd.DataFrame.shape(ashape_simplexes)))
+            for sID in pd.DataFrame.shape(ashape_simplexes):
+                # if self._boundary_opts.alpha > calc_radius(obj.data(ashape.simplexes(sID, :), :)) 
+                ashape_include[sID] = 1
+
+    def calc_radius(self, points):
+        nD = pd.DataFrame.shape(points, 2)
+        
+
+
         
 
 
