@@ -35,6 +35,7 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from numpy.core.numeric import ones
+from numpy.lib.function_base import diff
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
 import numpy as np
@@ -42,6 +43,7 @@ import numpy.matlib as npm
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
+from scipy.spatial import Delaunay
 
 class CSE():
     def __init__(self):
@@ -203,46 +205,62 @@ class CSE():
             ax.set_title('Boundary Constructor: ' , self._boundary)
             plt.show()
 
+    
+    ## Alpha Shape Construction 
+    def ashape(self): 
+        if self._n_Instances < self._n_features + 1:            # If a class does not have enought points to construct a tesselation 
+            print("Warning::Alpha_Shape::Tesselation_Construction" +
+            "Data of dimension", self._n_features, "requires a minimum of", (self._n_features + 1)," unique points.\n" +
+            "Alpha shape was not constructed for this data.\n ")
+            ashape = []
+            return
+        
+
+
+
+
+
+
+
     ## Alpha shape and Dependencies 
-    def a_shape(self):
-        ashape = self.a_shape
-        if not ashape:
-            print('No Alpha Shape could be constructed try different alpha or check data')
-            return 
+    # def a_shape_contraction(self):
+    #     ashape = self.a_shape
+    #     if not ashape:
+    #         print('No Alpha Shape could be constructed try different alpha or check data')
+    #         return 
         
-        ## Compaction - shrinking of alpha shapes
-        ashape.N_instances = pd.DataFrame.size(self._data)
-        ashape.N_core_supports = math.ciel(pd.DataFrame.size(self._data)*self._boundary_opts[1]) # self._boundary_opts[1] is 
-                                                                                                  # p value when ashape is selected
+    #     ## Compaction - shrinking of alpha shapes
+    #     ashape_N_instances = pd.DataFrame.size(self._data)
+    #     ashape_N_core_supports = math.ciel(pd.DataFrame.size(self._data)*self._boundary_opts[1]) # self._boundary_opts[1] is 
+    #                                                                                               # p value when ashape is selected
         
-        ashape.core_support = ones(self._data[0])           # binary vector indicating instance of core support is or not
-        too_many_core_supports = True                       # Flag denoting if the target number of coresupports has been obtained
+    #     ashape_core_support = ones(self._data[0])           # binary vector indicating instance of core support is or not
+    #     too_many_core_supports = True                       # Flag denoting if the target number of coresupports has been obtained
+        
 
+    #     # begin compaction and remove one layer of simplex at a time
+    #     while sum(ashape_core_support) >= ashape_N_core_supports and too_many_core_supports == True:
+    #         # find d-1 simplexes 
+    #         Tip = npm.repmat(np.nonzero(ashape_include == 1), pd.DataFrame.size(ashape_simplexes[1])) # need to understand .include here
 
-        # begin compaction and remove one layer of simplex at a time
-        while sum(ashape.core_support) >= ashape.N_core_supports and too_many_core_supports == True:
-            # find d-1 simplexes 
-            Tip = npm.repmat(np.nonzero(ashape.include==1), pd.DataFrame.size(ashape.simplexes[:2]))
-
-            edges = []
-            nums = ashape.simplexes[:2]
-            for ic in pd.DataFrame.size(ashape.simplexes[:2]):
-                edges = [edges, ashape.simplexes(ashape.include==1, nums(pd.DataFrame.size(ashape.simplexes[:2])-1))]
-                nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right 
+    #         edges = []
+    #         nums = ashape.simplexes[1]
+    #         for ic in pd.DataFrame.size(ashape.simplexes[1]):
+    #             edges = [edges, ashape.simplexes(ashape.include==1, nums(pd.DataFrame.size(ashape.simplexes[1])-1))]
+    #             nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right 
             
-            edges = edges[:2].sort()                                # sort the d-1 simplexes so small node is on left in each row
-            
+    #         edges = pd.sort(edges)                          # sort the d-1 simplexes so small node is on left in each row
+    #         Sid = edges.ravel().argsort()                   # sort by rows placing copies of d-1 simplexes in adjacent row
+    #         Tid = Tid(Sid)                                  # sort the simplex identifiers to match
+
+    #         consec_edges = pd.sum(diff(edges), axis=1)      # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
+    #         consec_edges.ravel().nonzero() + 1 = 0          # throw a zero mark on the subsequent row (N+1) as well
+    #         ashape.include(Tid(consec_edges~=0)) = 0
 
 
+
+                                          
         
-
-
-
-
-
-
-
-
 
  ## unit tests        
 if __name__ == '__main__' :
