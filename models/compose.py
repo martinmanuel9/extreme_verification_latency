@@ -47,28 +47,28 @@ class ComposeV1():
         """
         Initialization of COMPOSEV1
         """
-        _timestep = 1                   # [INTEGER] The current timestep of the datase
-        _synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
-        _n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
-        _verbose = 1                    #    0  : No Information Displayed
+        timestep = 1                   # [INTEGER] The current timestep of the datase
+        synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
+        n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
+        verbose = 1                    #    0  : No Information Displayed
                                         #   {1} : Command line progress updates
                                         #    2  : Plots when possible and Command line progress updates
-        _data = []                      # [LIST] list array of timesteps each containing a matrix N instances x D features
-        _lables = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
-        _hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        _core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        _classifier_func = []           # [Tuple] Tuple of string corresponding to classifier in ssl class
-        _classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
+        data = []                      # [LIST] list array of timesteps each containing a matrix N instances x D features
+        lables = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
+        hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
+        core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        classifier_func = []           # [Tuple] Tuple of string corresponding to classifier in ssl class
+        classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
 
-        _cse_func = []                  # [STRING] string corresponding to function in cse class
-        _cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
+        cse_func = []                  # [STRING] string corresponding to function in cse class
+        cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
 
-        _performance = []               # [list] column vector of classifier performances at each timestep
-        _comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
+        performance = []               # [list] column vector of classifier performances at each timestep
+        comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
-        _dataset = []
-        _figure_xlim = []
-        _figure_ylim = []
+        dataset = []
+        figure_xlim = []
+        figure_ylim = []
 
         self.classifier = classifier
         self.method = method
@@ -83,8 +83,8 @@ class ComposeV1():
                  1 : Command Line progress updates
                  2 : Plots when possible and Command Line progress updates
         """
-        self._dataset = dataset
-        self._verbose = verbose
+        self.dataset = dataset
+        self.verbose = verbose
 
         # need to limit arguements to 2 for dataset and verbose 
         max_args = 2
@@ -94,15 +94,15 @@ class ComposeV1():
             print("Number of input parameters must be a min of two. Input valid dataset and valid option to display information")
 
         # set object displayed info setting
-        if self._verbose >= 0 and self._verbose <=2:
-           self._verbose = verbose 
+        if self.verbose >= 0 and self.verbose <=2:
+           self.verbose = verbose 
         else:
             print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
 
-        if not self._dataset:
+        if not self.dataset:
             print("Dataset is empty!")
         else:
-            self._dataset = dataset
+            self.dataset = dataset
 
         return dataset, verbose
 
@@ -110,25 +110,25 @@ class ComposeV1():
         """
         Finds the lower and higher limits to determine drift
         """
-        self._data = data
-        self._data = dataset
+        self.data = data
+        self.data = dataset
         # find window where data will drift
         all_data = np.full_like(data, dataset)
-        self._figure_xlim = [min(all_data[:1]) , max(all_data[:1])]
-        self._figure_ylim = [min(all_data[:2]), max(all_data[:2])]
+        self.figure_xlim = [min(all_data[:1]) , max(all_data[:1])]
+        self.figure_ylim = [min(all_data[:2]), max(all_data[:2])]
 
     def set_cores(self, cores, dataset):
         """
         Establishes number of cores to conduct parallel processing
         """
-        self._dataset = dataset
-        self._n_cores = cores
+        self.dataset = dataset
+        self.n_cores = cores
         num_cores = multiprocessing.cpu_count()         # determines number of cores
-        if self._n_cores > num_cores:
+        if self.n_cores > num_cores:
             print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
-            self._n_cores = num_cores                   # sets number of cores to available 
+            self.n_cores = num_cores                   # sets number of cores to available 
         else:
-            self._n_cores = num_cores                   # original number of cores to 1
+            self.n_cores = num_cores                   # original number of cores to 1
         
         process_features = Parallel(n_jobs=num_cores)(delayed(dataset)(i) for i in dataset)
 
@@ -142,17 +142,17 @@ class ComposeV1():
         max_args = 4
         # first check if user input a learner else create learner - ssl(0)
         if not self._learner:                                       # if we do not get the learner object from ssl 
-            self._learner = ssl(0)
+            self.learner = ssl(0)
             # need to get call ssl class and set the data to load it to the learner
-            set_data = ssl.set_data(self._data, self._timestep)     # create ssl(0) as learner 
-            self._learner                                           # load first batch of data into learner object
+            set_data = ssl.set_data(self.data, self.timestep)     # create ssl(0) as learner 
+            self.learner                                           # load first batch of data into learner object
         
         if len(*args) < max_args:
             self._learner = self.learner 
         else:
             self.set_classifier = self.set_classifier(learner, labels, timestep, data)
 
-        self._classifer_func = self.set_classifier(learner, labels, timestep, data)
+        self.classifer_func = self.set_classifier(learner, labels, timestep, data)
 
     def run(self, Xt, Yt, Ut): 
         """
