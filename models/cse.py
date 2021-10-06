@@ -233,17 +233,36 @@ class CSE():
                 ashape_include[sID] = 1
 
     def calc_radius(self, points):
-        nD = pd.DataFrame.shape(points, 2)
+        points_Df = pd.DataFrame(points)                # should probably 2D to get points
+        nC = np.shape(points_Df)[1]                     # gets dimension - number of columns
+        nR = np.shape(points_Df)[0]                     # gets dimension - number of rows
+
+        # need to create a check to get an [nD+ 1 x nD ] matrix as points 
+        if nR < nC:
+            print("The dimension of the input points are not square the number of dimension of rows must be 1 more than the dimension of columns")
         
+        rM = ((pd.DataFrame(points_Df))**2).sum(axis=1) # first column vector of M which is taking the points raising it by 2 and summing each row for a column vector
+        oneColumn = np.array([1]*nR)
+        M = np.column_stack((rM.values, points_Df.values, oneColumn))      # create matrix based on teh column of each array 
+                                                                   # transpose gives correct Matrix to calculate minors & determinant
 
+        # calculate minors
+        m = np.zeros(np.shape(M)[0])
+        colm_iter = len(m)
+        for mID in range(len(m)):                        
+            temp = M
+            find_Det = np.delete(temp,colm_iter,1)              # deletes columns as it 
+            m[mID] = np.linalg.det(find_Det)                    # iterates across the columns to find determinant
+            colm_iter -= 1
 
         
+        # calculate center of each dimension
+        c = np.zeros(nC)            
+        for j in range(len(c)):
+            c[j]= (((-1)^(j+1))*0.5*m[j+1]/m[1]) 
 
-
-
-
-
-
+        # determine radius 
+        radius = math.sqrt(((c-(points_Df[:1].values))**2).sum(axis=1))
 
     ## Alpha shape and Dependencies 
     # def a_shape_contraction(self):
