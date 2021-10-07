@@ -34,7 +34,7 @@ College of Engineering
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from numpy.core.numeric import ones, zeros_like
+
 from numpy.lib.function_base import diff
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
@@ -44,6 +44,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 from scipy.spatial import Delaunay
+import trimesh
+
 
 class CSE():
     def __init__(self):
@@ -52,7 +54,7 @@ class CSE():
         self.data = []
         self.nCores = 1 
         self.boundary = []
-        self.boundary_opts = []
+        self.boundary_opts = {}             # creates dictionary 
         self.boundary_data = []
         self.opts = []
         self.N_Instances = []
@@ -138,39 +140,29 @@ class CSE():
         self.N_features = df.shape[1] - 1
         
         if self.boundary == "a_shape":
-            alpha = 2
-            p = 2
-            self.boundary_opts.append(alpha)
-            setattr(self.boundary_opts, alpha, 2)
-            self.boundary_opts.append(p)
-            setattr(self.boundary_opts, p, 2)
+            # alpha = 2
+            # p = 2
+            self.boundary_opts['alpha'] = 2
+            self.boundary_opts['p'] = 2
         if self._boundary == "gmm":
-            kl = 10
-            kh = 10
-            p = 0.4
-            self.boundary_opts.append(kl)
-            setattr(self.boundary_opts, kl, 10)
-            self.boundary_opts.append(kh)
-            setattr(self._boundary_opts, kh, 10)
-            self.boundary_opts.append(p)
-            setattr(self.boundary_opts, p, 0.4)
+            # kl = 10
+            # kh = 10
+            # p = 0.4
+            self.boundary_opts['kl'] = 10
+            self.boundary_opts['kh'] = 10
+            self.boundary_opts['p'] = 0.4
         if self.boundary == "knn":
-            k = 10
-            p = 0.4
-            self._boundary_opts.append(k)
-            setattr(self._boundary_opts, k, 10)
-            self._boundary_opts.append(p)
-            setattr(self._boundary_opts, p, 0.4)
+            # k = 10
+            # p = 0.4
+            self.boundary_opts['k'] = 10
+            self.boundary_opts['p'] = 0.4
         if self.boundary == "parzen":
-            win = np.ones((1, self.N_features))
-            p = 0.4
-            noise_thr = 0
-            self.boundary_opts.append(win)
-            setattr(self.boundary_opts, win, np.ones((1,self.N_features)))
-            self.boundary_opts.append(p)
-            setattr(self.boundary_opts, p, 0.4)
-            self.boundary_opts.append(noise_thr)
-            setattr(self.boundary_opts, noise_thr, 0)
+            # win = np.ones((np.shape(self.N_features)))
+            # p = 0.4
+            # noise_thr = 0
+            self.boundary_opts['win'] = np.ones((np.shape(self.N_features)[0]))
+            self.boundary_opts['p'] = 0.4
+            self.boundary_opts['noise_thr'] = 0
 
     def set_user_opts(self, opts):
         # must be an array input 
@@ -214,9 +206,8 @@ class CSE():
             ax.set_zlabel('Feature 3')
             ax.set_title('Boundary Constructor: ' , self.boundary)
             plt.show()
-
     
-    ## Alpha Shape Construction 
+    ## Alpha shape and Dependencies Onion method
     def ashape(self): 
         # remove duplicates 
         set = np.array(self.data)
@@ -231,13 +222,22 @@ class CSE():
             return
         else:
             ashape_simplexes = Delaunay(self.data, qhull_options="Qbb Qc Qz Qx Q12")        # set the output simplexes to the Delaunay Triangulation 
-                                                                                             # ”Qbb Qc Qz Qx Q12” for ndim > 4 gor qhull options
-            ashape_include = np.zeros((np.shape(ashape_simplexes)))
+                                                                                            # ”Qbb Qc Qz Qx Q12” for ndim > 4 gor qhull options
+            ashape_include = np.zeros((np.shape(ashape_simplexes)[0]))
             for sID in range(len(ashape_simplexes)):
-                if self._boundary_opts.alpha > calc_radius(ashape_simplexes[sID:,]):
+                if self.boundary_opts['alpha'] > self.calc_radius(ashape_simplexes[sID,:]):
                     ashape_include[sID] = 1
-                
+        
+        # plot options for a-shape
+        if self.verbose == 2:
+            
+            if self.N_features == 2:
+                trimesh()
+            elif self.N_features == 2:
+                trimesh()
 
+    
+    # calculate the radius 
     def calc_radius(self, points):
         points_Df = pd.DataFrame(points)                # should probably 2D to get points 
         nC = np.shape(points_Df)[1]                     # gets dimension - number of columns
@@ -267,9 +267,9 @@ class CSE():
 
         # determine radius 
         radius = math.sqrt(((c-(points_Df[:1].values))**2).sum(axis=1))     #  sqrt(sum(c-first row of points)^2))) 
-
-    ## Alpha shape and Dependencies 
-    def a_shape_contraction(self):
+    
+    ## alpha shape compaction
+    def a_shape_compaction(self):
         ashape = self.a_shape
         if not ashape:
             print('No Alpha Shape could be constructed try different alpha or check data')
@@ -290,9 +290,9 @@ class CSE():
             Tip = npm.repmat(np.nonzero(ashape_include == 1), pd.DataFrame.size(ashape_simplexes[1])) # need to understand .include here
 
             edges = []
-            nums = ashape.simplexes[1]
-            for ic in pd.DataFrame.size(ashape.simplexes[1]):
-                edges = [edges, ashape.simplexes(ashape.include==1, nums(pd.DataFrame.size(ashape.simplexes[1])-1))]
+            nums = ashape_simplexes[1]
+            for ic in pd.DataFrame.size(ashape_simplexes[1]):
+                edges = [edges, ashape.simplexes(ashape_include==1, nums(pd.DataFrame.size(ashape_simplexes[1])-1))]
                 nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right 
             
             edges = pd.sort(edges)                          # sort the d-1 simplexes so small node is on left in each row
@@ -302,8 +302,6 @@ class CSE():
             consec_edges = pd.sum(diff(edges), axis=1)      # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
             consec_edges.ravel().nonzero() + 1 = 0          # throw a zero mark on the subsequent row (N+1) as well
             ashape_include(Tid(consec_edges~=0)) = 0
-
-
 
                                           
         
