@@ -39,7 +39,6 @@ from numpy.lib.function_base import diff
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
 import numpy as np
-import numpy.matlib as npm
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
@@ -61,6 +60,7 @@ class CSE():
         self.N_features = []
         self.Indices = []
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
+        self.ashape = {}                    # dictionary for ashape
 
     # check to see if cse gets right inputs 
     def check_input(self, verbose, synthetic_data):
@@ -208,7 +208,7 @@ class CSE():
             plt.show()
     
     ## Alpha shape and Dependencies Onion method
-    def ashape(self): 
+    def alpha_shape(self): 
         # remove duplicates 
         set = np.array(self.data)
         set_data = [tuple(row) for row in set]
@@ -218,23 +218,26 @@ class CSE():
             print("Warning::Alpha_Shape::Tesselation_Construction" +
             "Data of dimension", self.N_features, "requires a minimum of", (self.N_features + 1)," unique points.\n" +
             "Alpha shape was not constructed for this data.\n ")
-            ashape = []
-            return
+            self.ashape = {}                                  # set output to empty dict
+            return                                            # returns to calling function
         else:
-            ashape_simplexes = Delaunay(self.data, qhull_options="Qbb Qc Qz Qx Q12")        # set the output simplexes to the Delaunay Triangulation 
-                                                                                            # ”Qbb Qc Qz Qx Q12” for ndim > 4 gor qhull options
-            ashape_include = np.zeros((np.shape(ashape_simplexes)[0]))
-            for sID in range(len(ashape_simplexes)):
-                if self.boundary_opts['alpha'] > self.calc_radius(ashape_simplexes[sID,:]):
-                    ashape_include[sID] = 1
+            simplexes = Delaunay(self.data, qhull_options="Qbb Qc Qz Qx Q12")        # set the output simplexes to the Delaunay Triangulation 
+                                                                                     # ”Qbb Qc Qz Qx Q12” for ndim > 4 gor qhull options
+            includes = np.zeros((np.shape(simplexes)[0]))
+            for sID in range(len(simplexes)):
+                if self.boundary_opts['alpha'] > self.calc_radius(simplexes[sID,:]):
+                    includes[sID] = 1
+            
+        self.ashape['simplexes'] = simplexes       # adds tuple to simplexes and includes after Tesselation
+        self.ashape['includes'] = includes
         
         # plot options for a-shape
-        if self.verbose == 2:
+        # if self.verbose == 2:
             
-            if self.N_features == 2:
-                trimesh()
-            elif self.N_features == 2:
-                trimesh()
+        #     if self.N_features == 2:
+        #         trimesh()
+        #     elif self.N_features == 2:
+        #         trimesh()
 
     
     # calculate the radius 
@@ -270,30 +273,35 @@ class CSE():
     
     ## alpha shape compaction
     def a_shape_compaction(self):
-        ashape = self.a_shape
+        self.alpha_shape()      # construct alpha shape
+        ashape = self.ashape
+
         if not ashape:
             print('No Alpha Shape could be constructed try different alpha or check data')
             return 
         
-        ## Compaction - shrinking of alpha shapes
-        ashape_N_instances = pd.DataFrame.size(self.data)
-        ashape_N_core_supports = math.ciel(pd.DataFrame.size(self.data)*self.boundary_opts[1]) # self._boundary_opts[1] is 
-                                                                                                  # p value when ashape is selected
-        
-        ashape_core_support = ones(self._data[0])           # binary vector indicating instance of core support is or not
-        too_many_core_supports = True                       # Flag denoting if the target number of coresupports has been obtained
+        ## missing plot methods 
+
+        ## Compaction - shrinking of alpha shapes -- referred to as ONION Method -- peels layers
+        self.ashape['N_start_instances'] = pd.shape(self.data)[0] 
+        self.ashape['N_core_supports'] = math.ciel((pd.shape(self.data)[0])*self.boundary_opts['p'])        
+        self.ashape['core_support'] = np.ones(np.shape(self.data)[0])  # binary vector indicating instance of core support is or not
+        too_many_core_supports = True                                  # Flag denoting if the target number of coresupports has been obtained
         
 
-        # begin compaction and remove one layer of simplex at a time
-        while sum(ashape_core_support) >= ashape_N_core_supports and too_many_core_supports == True:
+        # Remove layers and compactions
+        while sum(self.ashape['core_support']) >= self.ashape['N_core_supports'] and too_many_core_supports == True:
             # find d-1 simplexes 
-            Tip = npm.repmat(np.nonzero(ashape_include == 1), pd.DataFrame.size(ashape_simplexes[1])) # need to understand .include here
+            Tip = np.tile(np.argwhere(self.ashape['includes'] == 1), (np.shape(self.ashape['simplexes'])[0],1))
 
             edges = []
-            nums = ashape_simplexes[1]
-            for ic in pd.DataFrame.size(ashape_simplexes[1]):
-                edges = [edges, ashape.simplexes(ashape_include==1, nums(pd.DataFrame.size(ashape_simplexes[1])-1))]
-                nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right 
+            nums = []
+            for i in range(np.shape(self.ashape['simplexes'])[1]):
+                nums.append(i)
+
+            for ic in range(pd.shape(self.ashape['simplexes'][1])):  
+                edges = [edges, self.ashape['simplexes'][self.ashape['includes'] ==1, (np.shape(self.ashape['simplexes'])[1]-1)]] # need to test this
+                nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right MATLAB is circshift
             
             edges = pd.sort(edges)                          # sort the d-1 simplexes so small node is on left in each row
             Sid = edges.ravel().argsort()                   # sort by rows placing copies of d-1 simplexes in adjacent row
