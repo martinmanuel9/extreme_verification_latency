@@ -47,18 +47,15 @@ import trimesh
 
 
 class CSE():
-    def __init__(self):
-        self.synthetic_data = 0
+    def __init__(self,data):
+        df = pd.DataFrame(data)
+        self.synthetic_data = []
         self.verbose = 1
-        self.data = []
-        self.nCores = 1 
+        self.data = np.array(data)
         self.boundary = []
         self.boundary_opts = {}             # creates dictionary 
-        self.boundary_data = []
-        self.opts = []
-        self.N_Instances = []
-        self.N_features = []
-        self.Indices = []
+        self.N_Instances = np.shape(df)[0]
+        self.N_features = np.shape(df)[1]
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
         self.ashape = {}                    # dictionary for ashape
 
@@ -208,12 +205,16 @@ class CSE():
             plt.show()
     
     ## Alpha shape and Dependencies Onion method
-    def alpha_shape(self): 
-        # remove duplicates 
+    def alpha_shape(self):  
         set = np.array(self.data)
-        set_data = [tuple(row) for row in set]
-        self.data = pd.unique(set_data)
+        df = pd.DataFrame(self.data)
+        self.N_Instances = np.shape(df)[0]
+        self.N_features = np.shape(df)[1]
 
+        set_data = [tuple(row) for row in set]
+        uniques = np.unique(set_data, axis=0)
+        self.data = np.array(uniques)
+        
         if self.N_Instances < self.N_features + 1:            # If a class does not have enought points to construct a tesselation 
             print("Warning::Alpha_Shape::Tesselation_Construction" +
             "Data of dimension", self.N_features, "requires a minimum of", (self.N_features + 1)," unique points.\n" +
@@ -222,7 +223,7 @@ class CSE():
             return                                            # returns to calling function
         else:
             simplexes = Delaunay(self.data, qhull_options="Qbb Qc Qz Qx Q12")        # set the output simplexes to the Delaunay Triangulation 
-                                                                                     # ”Qbb Qc Qz Qx Q12” for ndim > 4 gor qhull options
+                                                                                     # ”Qbb Qc Qz Qx Q12” for ndim > 4 for qhull options
             includes = np.zeros((np.shape(simplexes)[0]))
             for sID in range(len(simplexes)):
                 if self.boundary_opts['alpha'] > self.calc_radius(simplexes[sID,:]):
@@ -300,23 +301,27 @@ class CSE():
                 nums.append(i)
 
             for ic in range(pd.shape(self.ashape['simplexes'][1])):  
-                edges = [edges, self.ashape['simplexes'][self.ashape['includes'] ==1, (np.shape(self.ashape['simplexes'])[1]-1)]] # need to test this
+                edges = [edges, self.ashape['simplexes'][self.ashape['includes'] == 1, (np.shape(self.ashape['simplexes'])[1]-1)]] # need to test this
                 nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right MATLAB is circshift
             
-            edges = pd.sort(edges)                          # sort the d-1 simplexes so small node is on left in each row
-            Sid = edges.ravel().argsort()                   # sort by rows placing copies of d-1 simplexes in adjacent row
-            Tid = Tid(Sid)                                  # sort the simplex identifiers to match
+            edges = pd.sort(edges)                              # sort the d-1 simplexes so small node is on left in each row
+            Sid = edges.ravel().argsort()                       # sort by rows placing copies of d-1 simplexes in adjacent row
+            Tid = Tid(Sid)                                      # sort the simplex identifiers to match
 
-            consec_edges = pd.sum(diff(edges), axis=1)      # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
-            consec_edges.ravel().nonzero() + 1 = 0          # throw a zero mark on the subsequent row (N+1) as well
-            ashape_include(Tid(consec_edges~=0)) = 0
-
-                                          
-        
+            consec_edges = pd.sum(diff(edges), axis=1)          # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
+            consec_edges.ravel().nonzero() + 1 = 0              # throw a zero mark on the subsequent row (N+1) as well
+            self.ashape['includes'][Tid[consec_edges!=0]] = 0   
+            points_remaining = np.unique(self.ashape['simplexes'][self.ashape['includes']==1])
+            if len(points_remaining) >= self.ashape['N_core_supports']:
+                set_diff = self.ashape['N_start_instances'].difference(points_remaining)
+                for i in range(set_diff):
+                    self.ashape['core_support'] = 0
+            else:
+                too_many_core_supports = False
 
  ## unit tests        
-# if __name__ == '__main__' :
-    # gen_data = bm_gen_data.Datagen.dataset("UnitTest")
+if __name__ == '__main__' :
+    gen_data = bm_gen_data.Datagen.dataset("UnitTest")
     
     # # check input
     # test_cse = CSE()
@@ -350,3 +355,4 @@ class CSE():
     # test_plot_ind.set_data(gen_data)
     # test_plot_ind.set_boundary("a_shape", ["a_shape"])
     # test_plot_ind.indices()
+
