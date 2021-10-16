@@ -42,29 +42,31 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
-from scipy.spatial import Delaunay
-import trimesh
+from scipy.spatial import Delaunay, distance
+# import trimesh
+from sklearn.mixture import GaussianMixture as GMM
 
 
-class CSE():
-    def __init__(self,data):
-        df = pd.DataFrame(data)
+class CSE:
+    def __init__(self, data) -> None:
         self.synthetic_data = []
         self.verbose = 1
-        self.data = np.array(data)
+        self.data = data
         self.boundary = []
-        self.boundary_opts = {}             # creates dictionary 
-        self.N_Instances = np.shape(df)[0]
-        self.N_features = np.shape(df)[1]
+        self.boundary_data = {}
+        self.boundary_opts = {}                                             # creates dictionary 
+        self.N_Instances = np.shape(self.data)[0]
+        self.N_features = np.shape(self.data)[1]
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
-        self.ashape = {}                    # dictionary for ashape
+        self.ashape = {}                                                    # dictionary for ashape
 
     # check to see if cse gets right inputs 
     def check_input(self, verbose, synthetic_data):
         self.verbose = verbose
         # set object displayed info setting
         if verbose < 0 or verbose > 2:
-            print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
+            print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates;" 
+                    + "2 - Plots when possilbe and Command Line Progress")
             return False
         
         self.synthetic_data = synthetic_data
@@ -219,8 +221,8 @@ class CSE():
             print("Warning::Alpha_Shape::Tesselation_Construction" +
             "Data of dimension", self.N_features, "requires a minimum of", (self.N_features + 1)," unique points.\n" +
             "Alpha shape was not constructed for this data.\n ")
-            self.ashape = {}                                  # set output to empty dict
-            return                                            # returns to calling function
+            self.ashape = {}                                                         # set output to empty dict
+            return                                                                   # returns to calling function
         else:
             simplexes = Delaunay(self.data, qhull_options="Qbb Qc Qz Qx Q12")        # set the output simplexes to the Delaunay Triangulation 
                                                                                      # ”Qbb Qc Qz Qx Q12” for ndim > 4 for qhull options
@@ -229,7 +231,7 @@ class CSE():
                 if self.boundary_opts['alpha'] > self.calc_radius(simplexes[sID,:]):
                     includes[sID] = 1
             
-        self.ashape['simplexes'] = simplexes       # adds tuple to simplexes and includes after Tesselation
+        self.ashape['simplexes'] = simplexes                                    # adds tuple to simplexes and includes after Tesselation
         self.ashape['includes'] = includes
         
         # plot options for a-shape
@@ -304,12 +306,14 @@ class CSE():
                 edges = [edges, self.ashape['simplexes'][self.ashape['includes'] == 1, (np.shape(self.ashape['simplexes'])[1]-1)]] # need to test this
                 nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right MATLAB is circshift
             
-            edges = pd.sort(edges)                              # sort the d-1 simplexes so small node is on left in each row
-            Sid = edges.ravel().argsort()                       # sort by rows placing copies of d-1 simplexes in adjacent row
-            Tid = Tid(Sid)                                      # sort the simplex identifiers to match
+            edges = np.sort(edges)                                  # sort the d-1 simplexes so small node is on left in each row
+            Sid = edges.ravel().argsort()                           # sort by rows placing copies of d-1 simplexes in adjacent row
+            Tid = Tid(Sid)                                          # sort the simplex identifiers to match
 
-            consec_edges = pd.sum(diff(edges), axis=1)          # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
-            consec_edges.ravel().nonzero() + 1 = 0              # throw a zero mark on the subsequent row (N+1) as well
+            consec_edges = np.sum(diff(edges), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
+            edge_single_vector = np.ravel(consec_edges)
+            non_zero_edge = np.nonzero(edge_single_vector)
+            consec_edges[non_zero_edge] = 0                         # throw a zero mark on the subsequent row (N+1) as well
             self.ashape['includes'][Tid[consec_edges!=0]] = 0   
             points_remaining = np.unique(self.ashape['simplexes'][self.ashape['includes']==1])
             if len(points_remaining) >= self.ashape['N_core_supports']:
@@ -319,8 +323,48 @@ class CSE():
             else:
                 too_many_core_supports = False
 
+
+    ## GMM dependencies 
+    def gmm(self):
+        x_ul = self.data
+        core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
+        BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)         # Bayesian Info Criterion
+        GM ={}
+        if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
+            print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
+        
+        if self.boundary_opts['kl'] == self.boundary_opts['kh']:
+            gmm_range = self.boundary_opts['kl'] + 1
+            for i in range(1,gmm_range):
+                GM[i] = GMM(n_components = i).fit(x_ul)
+                BIC.append(GM.bic(x_ul))
+        else:
+            upper_range = self.boundary_opts['kh'] + 1
+            for i in range(self.boundary_opts['kl'], upper_range):
+                GM[i] = GMM(n_components=i).fit(x_ul)
+                BIC.append(GM[i].bic(x_ul))
+        
+        temp = self.boundary_opts['kl'] - 1
+        minBIC = np.amin(BIC)                                         # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
+        numComponents = BIC.count(minBIC)                
+        
+        # need to calculate the Mahalanobis Distance for GMM
+        D = distance.cdist(GM[temp+numComponents], x_ul, 'mahalanobis', VI=None)    # calculates Mahalanobis Distance - outlier detection
+
+        minMahal = D.min(axis=1)
+        I = np.where(D.min(axis=1))
+        sortMahal = minMahal.sort()
+        # [SortMahal,IX]=sort(MinMahal)
+            
+        # support_inds = IX(1:CoreSupportCutOff)
+        self.boundary_data['BIC']= BIC
+        self.boundary_data['num_components'] = numComponents + temp
+        self.boundary_data['gmm'].gmm{obj.parent.timestep} = GM{numComponents+temp}
+
+
+    
  ## unit tests        
-if __name__ == '__main__' :
+if __name__ == '__main__':
     gen_data = bm_gen_data.Datagen.dataset("UnitTest")
     
     # # check input
@@ -349,10 +393,16 @@ if __name__ == '__main__' :
     # test_set_user_opts = CSE()
     # check_set_usr_opts = test_set_user_opts.set_user_opts(["fake"])  ## ["fake", 1, [gen_data]] , ["gmm", 1, [gen_data]] 
 
-    # test plot and indices
+    # # test plot and indices
     # test_plot_ind = CSE()
     # test_plot_ind.set_verbose(2)
     # test_plot_ind.set_data(gen_data)
     # test_plot_ind.set_boundary("a_shape", ["a_shape"])
     # test_plot_ind.indices()
+    
+    ## test the compaction and alpha shape
+    test_alpha = CSE(gen_data)
+    test_alpha.set_data(gen_data)
+    test_alpha.alpha_shape()
+    test_alpha.a_shape_compaction()
 
