@@ -45,6 +45,7 @@ import math
 from scipy.spatial import Delaunay, distance
 # import trimesh
 from sklearn.mixture import GaussianMixture as GMM
+import util
 
 
 class CSE:
@@ -345,11 +346,11 @@ class CSE:
                 BIC.append(GM[i].bic(x_ul))
         
         temp = self.boundary_opts['kl'] - 1
-        minBIC = np.amin(BIC)                                         # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
+        minBIC = np.amin(BIC)                       # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
         numComponents = BIC.count(minBIC)                
         
         # need to calculate the Mahalanobis Distance for GMM
-        D = distance.cdist(GM[temp+numComponents], x_ul, 'mahalanobis', VI=None)    # calculates Mahalanobis Distance - outlier detection
+        D = util.MahalanobisDistance(x_ul)   # calculates Mahalanobis Distance - outlier detection
 
         minMahal = D.min(axis=1)
         I = np.where(D.min(axis=1))

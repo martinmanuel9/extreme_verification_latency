@@ -35,6 +35,7 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from scipy.spatial.distance import mahalanobis
 import benchmark_datagen as bm_gen_dat
 import pandas as pd 
 import numpy as np
@@ -45,25 +46,35 @@ from sklearn.covariance import EmpiricalCovariance, MinCovDet
 class Util:
     def __init__(self, data) -> None:
         self.data = pd.DataFrame(data)
-        self.N_features = np.shape(data)[1]     # number of dimensions
 
-    def MahalanobisDistance(self, x=None, cov=None):
+    def MahalanobisDistance(self, cov=None, data=None):
         """Compute the Mahalanobis Distance between each row of x and the data  
         x    : vector or matrix of data with, say, p columns.
         data : ndarray of the distribution from which Mahalanobis distance of each observation of x is to be computed.
         cov  : covariance matrix (p x p) of the distribution. If None, will be computed from data.
         """
-        df = self.data
-        x = df.head()
-        x_minus_mu = x - np.mean(df)
+
+        data = self.data
+
+        colmn_mean = data.mean()
+        x_mu = []
+        for i in range(np.shape(data)[0]):
+            x_mu.append(data.iloc[i] - colmn_mean)
+
+        x_minus_mean = np.array(x_mu)
         if not cov:
-            cov = np.cov(df.values.T)
+            cov = np.cov(data.values.T)
         
-        inv_covmat = sp.linalg.inv(cov)
-        left_term = np.dot(x_minus_mu, inv_covmat)
-        mahalDist = np.dot(left_term,x_minus_mu.T)
+        # print(cov)
+        
+        inv_cov = sp.linalg.pinv(cov)
+        # print(inv_covmat)
+        left_term = np.dot(x_minus_mean, inv_cov)
+        mahalDist = np.dot(left_term,x_minus_mean.T)
         return mahalDist.diagonal()
 
 if __name__ == '__main__':
-    gen_data = bm_gen_data.Datagen.dataset("UnitTest")
-    
+    gen_data = bm_gen_dat.Datagen.dataset("UnitTest")
+    util = Util(gen_data)
+    gen_data['mahalanobis'] = util.MahalanobisDistance()
+    print(gen_data.head())
