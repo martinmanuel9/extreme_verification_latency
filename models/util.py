@@ -35,11 +35,35 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import benchmark_datagen as bm_gen_dat
 import pandas as pd 
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt 
 from sklearn.covariance import EmpiricalCovariance, MinCovDet
 
-# class Util:
-#     def __init__(self) -> None:
+class Util:
+    def __init__(self, data) -> None:
+        self.data = pd.DataFrame(data)
+        self.N_features = np.shape(data)[1]     # number of dimensions
+
+    def MahalanobisDistance(self, x=None, cov=None):
+        """Compute the Mahalanobis Distance between each row of x and the data  
+        x    : vector or matrix of data with, say, p columns.
+        data : ndarray of the distribution from which Mahalanobis distance of each observation of x is to be computed.
+        cov  : covariance matrix (p x p) of the distribution. If None, will be computed from data.
+        """
+        df = self.data
+        x = df.head()
+        x_minus_mu = x - np.mean(df)
+        if not cov:
+            cov = np.cov(df.values.T)
         
+        inv_covmat = sp.linalg.inv(cov)
+        left_term = np.dot(x_minus_mu, inv_covmat)
+        mahalDist = np.dot(left_term,x_minus_mu.T)
+        return mahalDist.diagonal()
+
+if __name__ == '__main__':
+    gen_data = bm_gen_data.Datagen.dataset("UnitTest")
+    
