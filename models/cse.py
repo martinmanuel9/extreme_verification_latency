@@ -45,7 +45,9 @@ import math
 from scipy.spatial import Delaunay, distance
 # import trimesh
 from sklearn.mixture import GaussianMixture as GMM
-import util
+import evl_util
+
+
 
 
 class CSE:
@@ -54,12 +56,12 @@ class CSE:
         self.verbose = 1
         self.data = data
         self.boundary = []
-        self.boundary_data = {}
-        self.boundary_opts = {}                                             # creates dictionary 
+        self.boundary_data = dict()
+        self.boundary_opts = dict()                                            # creates dictionary 
         self.N_Instances = np.shape(self.data)[0]
         self.N_features = np.shape(self.data)[1]
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
-        self.ashape = {}                                                    # dictionary for ashape
+        self.ashape = dict()                                                    # dictionary for ashape
 
     # check to see if cse gets right inputs 
     def check_input(self, verbose, synthetic_data):
@@ -92,16 +94,12 @@ class CSE:
         self.data = data
     
     # Set Boundary Construction Type and Options 
-    def set_boundary(self, boundary_selection, opts):
+    def set_boundary(self, boundary_selection, opts=None):
         if not opts:
-            self.boundary_opts= []
+            self.boundary_opts.clear()
 
-        self.boundary_opts = []                # clears any past boundary options
+        self.boundary_opts.clear()                # clears any past boundary options
 
-        # if boundary_selection not in valid_boundary:
-        #     print(boundary_selection, " not in valid boundary.", boundary_selection,
-        #         "is an invalid boundary construction method - choose from:  ", valid_boundary)
-        
         if boundary_selection in self.valid_boundary:
             self.boundary = boundary_selection
             self.set_defualt_opts()
@@ -120,7 +118,7 @@ class CSE:
         if not self.boundary:
             print('Boundary construction type not set - default classifier and options loaded') 
             # sett gmm as defualt boundary
-            self.set_boundary('gmm', ['gmm'])
+            self.set_boundary('gmm', opts='gmm')
 
         # plot labeled and unlabeled data 
         if self.verbose == 2:
@@ -130,27 +128,27 @@ class CSE:
         # inds = obj.boundary(obj);
         
 
-        if self._verbose == 2:
+        if self.verbose == 2:
             self.plot_cse(self.Indices)
         
     def set_defualt_opts(self): 
-
         # get n features
         df = pd.DataFrame(self.data)
         self.N_features = df.shape[1] - 1
-        
+    
         if self.boundary == "a_shape":
             # alpha = 2
             # p = 2
-            self.boundary_opts['alpha'] = 2
-            self.boundary_opts['p'] = 2
-        if self._boundary == "gmm":
+            self.boundary_opts["alpha"] = 2
+            self.boundary_opts["p"] = 2
+        if self.boundary == "gmm":
             # kl = 10
             # kh = 10
             # p = 0.4
             self.boundary_opts['kl'] = 10
             self.boundary_opts['kh'] = 10
             self.boundary_opts['p'] = 0.4
+            self.boundary_opts.update
         if self.boundary == "knn":
             # k = 10
             # p = 0.4
@@ -171,6 +169,7 @@ class CSE:
             # need to determine if user inputs is the actual correct boundary 
             if any(i in self.valid_boundary for i in opts):
                 self.boundary_opts = opts
+                self.set_defualt_opts() 
             else:
                 print("Warning: Option", self.boundary, "is not a valid option for boundary construction method.")
         else:
@@ -193,7 +192,7 @@ class CSE:
             plt.ylabel("Feature 2")
             plt.title("Boundary Constructor:" + self.boundary)
             plt.show()
-        if self._n_features == 3:
+        if self.N_features == 3:
             print(self.data)
             fig = plt.figure()
             ax = fig.add_subplot(projection='3d')
@@ -329,8 +328,8 @@ class CSE:
     def gmm(self):
         x_ul = self.data
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
-        BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)         # Bayesian Info Criterion
-        GM ={}
+        BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)   # Bayesian Info Criterion
+        GM = dict()
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
         
@@ -338,7 +337,7 @@ class CSE:
             gmm_range = self.boundary_opts['kl'] + 1
             for i in range(1,gmm_range):
                 GM[i] = GMM(n_components = i).fit(x_ul)
-                BIC.append(GM.bic(x_ul))
+                BIC.append(GM[i].bic(x_ul))
         else:
             upper_range = self.boundary_opts['kh'] + 1
             for i in range(self.boundary_opts['kl'], upper_range):
@@ -350,17 +349,17 @@ class CSE:
         numComponents = BIC.count(minBIC)                
         
         # need to calculate the Mahalanobis Distance for GMM
-        D = util.MahalanobisDistance(x_ul)   # calculates Mahalanobis Distance - outlier detection
+        util = evl_util.Util(x_ul)
+        D = util.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
+        mahalDistance = np.array(D)
+        minMahal = np.amin(mahalDistance)
 
-        minMahal = D.min(axis=1)
-        I = np.where(D.min(axis=1))
-        sortMahal = minMahal.sort()
-        # [SortMahal,IX]=sort(MinMahal)
-            
-        # support_inds = IX(1:CoreSupportCutOff)
+        # I = np.where(minMahal)[0]
+        sortMahal = np.sort(mahalDistance)
+
         self.boundary_data['BIC']= BIC
         self.boundary_data['num_components'] = numComponents + temp
-        self.boundary_data['gmm'].gmm{obj.parent.timestep} = GM{numComponents+temp}
+        # self.boundary_data['gmm'].gmm{obj.parent.timestep} = GM{numComponents+temp}
 
 
     
@@ -379,7 +378,7 @@ if __name__ == '__main__':
 
     # test set_boundary
     # test_set_boundary = CSE()
-    # check_set_boundary = test_set_boundary.set_boundary('knn', ["knn", 1, [1, 1, 1]])
+    # check_set_boundary = test_set_boundary.set_boundary('gmm', ["gmm", 1, [1, 1, 1]])
 
     # # test extract 
     # test_inds = CSE()
@@ -402,8 +401,15 @@ if __name__ == '__main__':
     # test_plot_ind.indices()
     
     ## test the compaction and alpha shape
-    test_alpha = CSE(gen_data)
-    test_alpha.set_data(gen_data)
-    test_alpha.alpha_shape()
-    test_alpha.a_shape_compaction()
+    # test_alpha = CSE(gen_data)
+    # test_alpha.set_data(gen_data)
+    # test_alpha.alpha_shape()
+    # test_alpha.a_shape_compaction()
+
+    ## test GMM 
+    testGMM = CSE(gen_data)
+    testGMM.set_data(gen_data)
+    testGMM.set_boundary('gmm')
+
+    testGMM.gmm()
 
