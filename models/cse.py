@@ -158,7 +158,7 @@ class CSE:
             # win = np.ones((np.shape(self.N_features)))
             # p = 0.4
             # noise_thr = 0
-            self.boundary_opts['win'] = np.ones((np.shape(self.N_features)[0]))
+            self.boundary_opts['win'] = np.ones(self.N_features)
             self.boundary_opts['p'] = 0.4
             self.boundary_opts['noise_thr'] = 0
 
@@ -324,7 +324,7 @@ class CSE:
                 too_many_core_supports = False
 
 
-    ## GMM dependencies 
+    ## GMM Clustering
     def gmm(self):
         x_ul = self.data
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
@@ -353,16 +353,35 @@ class CSE:
         D = util.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
         mahalDistance = np.array(D)
         minMahal = np.amin(mahalDistance)
-
-        # I = np.where(minMahal)[0]
+        I = np.where(minMahal)[0]
+        
         sortMahal = np.sort(mahalDistance)
+        IX = np.where(sortMahal)
+
+        support_indices = IX[:core_support_cutoff]
 
         self.boundary_data['BIC']= BIC
         self.boundary_data['num_components'] = numComponents + temp
-        # self.boundary_data['gmm'].gmm{obj.parent.timestep} = GM{numComponents+temp}
-
-
+        self.boundary_data['gmm']= GM[numComponents+temp]
+        self.boundary_data['gmm_timestep'] = GM[numComponents+temp] 
     
+    # Parzen Window Clustering
+    def parzen(self):
+        core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
+        r = np.shape(self.data)
+        ur = np.shape(self.data)[0]
+        uc = np.shape(self.data)[1]
+
+        scores = np.zeros(r[0])
+        
+        for i in range(r):
+            x_center = self.data[i]
+
+            # box windows
+            box_min 
+            
+
+
  ## unit tests        
 if __name__ == '__main__':
     gen_data = bm_gen_data.Datagen.dataset("UnitTest")
@@ -407,9 +426,14 @@ if __name__ == '__main__':
     # test_alpha.a_shape_compaction()
 
     ## test GMM 
-    testGMM = CSE(gen_data)
-    testGMM.set_data(gen_data)
-    testGMM.set_boundary('gmm')
+    # testGMM = CSE(gen_data)
+    # testGMM.set_data(gen_data)
+    # testGMM.set_boundary('gmm')
+    # testGMM.gmm()
 
-    testGMM.gmm()
+    ## test Parzen 
+    testParzen = CSE(gen_data)
+    testParzen.set_data(gen_data)
+    testParzen.set_boundary('parzen')
+    testParzen.parzen()
 
