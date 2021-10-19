@@ -47,9 +47,6 @@ from scipy.spatial import Delaunay, distance
 from sklearn.mixture import GaussianMixture as GMM
 import evl_util
 
-
-
-
 class CSE:
     def __init__(self, data) -> None:
         self.synthetic_data = []
@@ -374,12 +371,28 @@ class CSE:
 
         scores = np.zeros(r[0])
         
-        for i in range(r):
-            x_center = self.data[i]
-
-            # box windows
-            box_min 
+        for i in range(len(r)):
+            x_center = self.data[i:]
             
+            # box windows
+            box_min = np.tile((x_center - ((self.boundary_opts['win'])/2)), (ur, (np.ones(np.shape(ur)))))
+            box_max = np.tile((x_center + ((self.boundary_opts['win'])/2)), (ur, (np.ones(np.shape(ur)))))
+        
+            # find unlabeled
+            x_in = self.data[sum(np.logical_and((self.data >= box_min), (self.data <= box_max)))[1]/ uc == 1 :]
+            n_in = np.shape(x_in)[0]
+            util = evl_util.Util(x_in)
+            if n_in > (self.boundary_opts['noise_thr'] * ur):
+                norm_euc = util.MahalanobisDistance()
+                ul_dist_sum = np.mean(math.exp(-4*norm_euc))
+            else:
+                ul_dist_sum = 0
+
+            scores[i] = ul_dist_sum
+
+        sortMahal = np.sort(scores)[::-1]
+        IX = np.where(sortMahal)
+        support_indices = IX[:core_support_cutoff]
 
 
  ## unit tests        
