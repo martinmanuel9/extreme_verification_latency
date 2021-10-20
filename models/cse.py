@@ -36,6 +36,7 @@ College of Engineering
 # SOFTWARE.
 
 from numpy.lib.function_base import diff
+from numpy.lib.twodim_base import diag
 from pandas.core.frame import DataFrame
 import benchmark_datagen as bm_gen_data
 import numpy as np
@@ -47,14 +48,15 @@ from scipy.spatial import Delaunay, distance
 from sklearn.mixture import GaussianMixture as GMM
 import evl_util
 
+
 class CSE:
     def __init__(self, data) -> None:
         self.synthetic_data = []
         self.verbose = 1
-        self.data = data
+        self.data = pd.DataFrame(data)
         self.boundary = []
         self.boundary_data = dict()
-        self.boundary_opts = dict()                                            # creates dictionary 
+        self.boundary_opts = dict()                                             # creates dictionary 
         self.N_Instances = np.shape(self.data)[0]
         self.N_features = np.shape(self.data)[1]
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
@@ -77,6 +79,10 @@ class CSE:
 
         return True
 
+        # set data by getting inputs from benchmark_datagen
+    def set_data(self, data): 
+        self.data = data
+
     def set_verbose(self, verbose):
 
         if verbose > 2:
@@ -85,10 +91,6 @@ class CSE:
             verbose = 0
         self.verbose = math.floor(verbose)
         
-
-    # set data by getting inputs from benchmark_datagen
-    def set_data(self, data): 
-        self.data = data
     
     # Set Boundary Construction Type and Options 
     def set_boundary(self, boundary_selection, opts=None):
@@ -131,7 +133,7 @@ class CSE:
     def set_defualt_opts(self): 
         # get n features
         df = pd.DataFrame(self.data)
-        self.N_features = df.shape[1] - 1
+        # self.N_features = df.shape[1]    # used to have -1  here removed for parzen windows 
     
         if self.boundary == "a_shape":
             # alpha = 2
@@ -356,6 +358,7 @@ class CSE:
         IX = np.where(sortMahal)
 
         support_indices = IX[:core_support_cutoff]
+        print("GMM MD: " , sortMahal)
 
         self.boundary_data['BIC']= BIC
         self.boundary_data['num_components'] = numComponents + temp
@@ -364,31 +367,42 @@ class CSE:
     
     # Parzen Window Clustering
     def parzen(self):
-        core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
-        r = np.shape(self.data)
-        ur = np.shape(self.data)[0]
-        uc = np.shape(self.data)[1]
-
-        scores = np.zeros(r[0])
         
-        for i in range(len(r)):
-            x_center = self.data[i:]
-            
+        core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
+        data = pd.DataFrame(self.data)
+        r = data.shape[0]
+        ur = data.shape[0]
+        uc = data.shape[1]
+
+        scores = []
+        
+        for i in range(r):
+            x_center = np.array(data.iloc[i])  # each row
+           
             # box windows
-            box_min = np.tile((x_center - ((self.boundary_opts['win'])/2)), (ur, (np.ones(np.shape(ur)))))
-            box_max = np.tile((x_center + ((self.boundary_opts['win'])/2)), (ur, (np.ones(np.shape(ur)))))
+            box_min = np.tile(x_center - self.boundary_opts['win']/2, (ur,1))
+            box_max = np.tile(x_center + self.boundary_opts['win']/2, (ur,1))
         
             # find unlabeled
-            x_in = self.data[sum(np.logical_and((self.data >= box_min), (self.data <= box_max)))[1]/ uc == 1 :]
+            # logicalAnd = np.logical_and((data >= box_min), (data <= box_max))
+            
+            # summation = np.sum(logicalAnd, axis=1)
+            
+            x_in = np.array(data[np.sum((np.logical_and((data >= box_min), (data <= box_max))), axis=1) / uc == 1])
             n_in = np.shape(x_in)[0]
-            util = evl_util.Util(x_in)
+            print(x_in) 
+        
             if n_in > (self.boundary_opts['noise_thr'] * ur):
-                norm_euc = util.MahalanobisDistance()
+                sig = diag(self.boundary_opts['win']/2 ** 2)
+                util = evl_util.Util(x_in)
+                norm_euc = util.quickMahal(x_in, x_center, sig)
+                # print(norm_euc)
+                # norm_euc = util.quickMahal(x_in, x_center, sig)
                 ul_dist_sum = np.mean(math.exp(-4*norm_euc))
             else:
                 ul_dist_sum = 0
 
-            scores[i] = ul_dist_sum
+            scores.append(ul_dist_sum)
 
         sortMahal = np.sort(scores)[::-1]
         IX = np.where(sortMahal)
@@ -449,4 +463,3 @@ if __name__ == '__main__':
     testParzen.set_data(gen_data)
     testParzen.set_boundary('parzen')
     testParzen.parzen()
-
