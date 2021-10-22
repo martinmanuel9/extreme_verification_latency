@@ -4,9 +4,7 @@
 Application:        COMPOSE Framework 
 File name:          cse.py - core support extraction (CSE)
 Author:             Martin Manuel Lopez
-Advisor:            Dr. Gregory Ditzler
 Creation:           09/18/2021
-COMPOSE Origin:     Muhammad Umer and Robi Polikar
 
 The University of Arizona
 Department of Electrical and Computer Engineering
@@ -47,6 +45,7 @@ from scipy.spatial import Delaunay, distance
 # import trimesh
 from sklearn.mixture import GaussianMixture as GMM
 import evl_util
+import knn
 
 
 class CSE:
@@ -369,7 +368,7 @@ class CSE:
     def parzen(self):
         
         core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
-        data = pd.DataFrame(self.data)
+        data = self.data
         r = data.shape[0]
         ur = data.shape[0]
         uc = data.shape[1]
@@ -377,36 +376,48 @@ class CSE:
         scores = []
         
         for i in range(r):
-            x_center = np.array(data.iloc[i])  # each row
-           
+            x_center = np.array(data.iloc[i]) 
             # box windows
             box_min = np.tile(x_center - self.boundary_opts['win']/2, (ur,1))
             box_max = np.tile(x_center + self.boundary_opts['win']/2, (ur,1))
         
             # find unlabeled
-            # logicalAnd = np.logical_and((data >= box_min), (data <= box_max))
-            
-            # summation = np.sum(logicalAnd, axis=1)
-            
-            x_in = np.array(data[np.sum((np.logical_and((data >= box_min), (data <= box_max))), axis=1) / uc == 1])
+            x_in = np.array(data[np.sum((np.logical_and((data >= box_min), (data <= box_max))), axis=1)/uc==1])  
             n_in = np.shape(x_in)[0]
-            print(x_in) 
-        
+            
             if n_in > (self.boundary_opts['noise_thr'] * ur):
                 sig = diag(self.boundary_opts['win']/2 ** 2)
                 util = evl_util.Util(x_in)
                 norm_euc = util.quickMahal(x_in, x_center, sig)
-                # print(norm_euc)
-                # norm_euc = util.quickMahal(x_in, x_center, sig)
                 ul_dist_sum = np.mean(math.exp(-4*norm_euc))
             else:
                 ul_dist_sum = 0
 
             scores.append(ul_dist_sum)
+            
 
-        sortMahal = np.sort(scores)[::-1]
+        sortMahal = np.sort(scores)[::-1]       # sort in descending order
         IX = np.where(sortMahal)
         support_indices = IX[:core_support_cutoff]
+
+    ## KNN clustering
+    def k_nn(self):
+        
+        core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
+        
+        max_dat = np.min(self.data)
+        min_dat = np.max(self.data)
+
+        NormData = (self.data - min_dat) / (max_dat - min_dat) 
+        NormData['label'] = 1
+        kn = knn.KNN(NormData)
+        # print(np.array(self.data.iloc[0]))
+        neighbors = []
+        for i in range(np.shape(NormData)[0]):
+            neighbors.append(kn.k_nearest_neighbors(np.array(NormData), np.array(NormData.iloc[i]), self.N_features))
+        
+        print(neighbors)
+        
 
 
  ## unit tests        
@@ -459,7 +470,13 @@ if __name__ == '__main__':
     # testGMM.gmm()
 
     ## test Parzen 
-    testParzen = CSE(gen_data)
-    testParzen.set_data(gen_data)
-    testParzen.set_boundary('parzen')
-    testParzen.parzen()
+    # testParzen = CSE(gen_data)
+    # testParzen.set_data(gen_data)
+    # testParzen.set_boundary('parzen')
+    # testParzen.parzen()
+
+    ## test KNN
+    testKNN = CSE(gen_data)
+    testKNN.set_data(gen_data)
+    testKNN.set_boundary('knn')
+    testKNN.k_nn()
