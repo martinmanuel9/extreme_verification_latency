@@ -395,7 +395,6 @@ class CSE:
 
             scores.append(ul_dist_sum)
             
-
         sortMahal = np.sort(scores)[::-1]       # sort in descending order
         IX = np.where(sortMahal)
         support_indices = IX[:core_support_cutoff]
@@ -405,19 +404,11 @@ class CSE:
         
         core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
         
-        max_dat = np.min(self.data)
-        min_dat = np.max(self.data)
+        kn = knn.KNN(self.data, 5)
+        neighbors_dist = kn.knn_run('knn_dist')
 
-        NormData = (self.data - min_dat) / (max_dat - min_dat) 
-        NormData['label'] = 1
-        kn = knn.KNN(NormData)
-        # print(np.array(self.data.iloc[0]))
-        neighbors = []
-        for i in range(np.shape(NormData)[0]):
-            neighbors.append(kn.k_nearest_neighbors(np.array(NormData), np.array(NormData.iloc[i]), self.N_features))
-        
-        print(neighbors)
-        
+        neighbors_dist = np.array(neighbors_dist)
+        sort_neighbors = np.sort(neighbors_dist)
 
 
  ## unit tests        
