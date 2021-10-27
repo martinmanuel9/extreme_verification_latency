@@ -34,9 +34,12 @@ College of Engineering
 # SOFTWARE.
 
 import numpy as np
+import pandas as pd
+import cse 
 from joblib import Parallel, delayed
 import multiprocessing
-import models.ssl as ssl
+import qns3vm as ssl
+import benchmark_datagen as bmdg
 
 class ComposeV1(): 
     def __init__(self, 
@@ -45,33 +48,32 @@ class ComposeV1():
         """
         Initialization of COMPOSEV1
         """
-        timestep = 1                   # [INTEGER] The current timestep of the datase
-        synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
-        n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
-        verbose = 1                    #    0  : No Information Displayed
+        self.timestep = 1                   # [INTEGER] The current timestep of the datase
+        self.synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
+        self.n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
+        self.verbose = 1                    #    0  : No Information Displayed
                                         #   {1} : Command line progress updates
                                         #    2  : Plots when possible and Command line progress updates
-        data = []                      # [LIST] list array of timesteps each containing a matrix N instances x D features
-        lables = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
-        hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        classifier_func = []           # [Tuple] Tuple of string corresponding to classifier in ssl class
-        classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
+        self.data = []            
+        self.lables = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
+        self.hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
+        self.core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        self.classifier_func = []           # [Tuple] Tuple of string corresponding to classifier in ssl class
+        self.classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
 
-        cse_func = []                  # [STRING] string corresponding to function in cse class
-        cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
+        self.cse_func = []                  # [STRING] string corresponding to function in cse class
+        self.cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
 
-        performance = []               # [list] column vector of classifier performances at each timestep
-        comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
-
-        dataset = []
-        figure_xlim = []
-        figure_ylim = []
+        self.performance = []               # [list] column vector of classifier performances at each timestep
+        self.comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
         self.classifier = classifier
         self.method = method
+        self.dataset = []
+        self.figure_xlim = []
+        self.figure_ylim = []
 
-    def check_compose_dataset(self, dataset, verbose, *args):
+    def compose(self, dataset, verbose):
         """
         Sets COMPOSE dataset and information processing options
         Check if the input parameters are not empty for compose
@@ -84,53 +86,63 @@ class ComposeV1():
         self.dataset = dataset
         self.verbose = verbose
 
-        # need to limit arguements to 2 for dataset and verbose 
-        max_args = 2
-        try:
-            len(*args) <= max_args
-        except ValueError:
-            print("Number of input parameters must be a min of two. Input valid dataset and valid option to display information")
-
         # set object displayed info setting
         if self.verbose >= 0 and self.verbose <=2:
            self.verbose = verbose 
         else:
             print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
 
-        if not self.dataset:
+        if self.dataset.empty:
             print("Dataset is empty!")
         else:
             self.dataset = dataset
 
-        return dataset, verbose
+        # set data 
+        self.data = np.zeros(np.shape(self.dataset)[0])
+        # set labels 
 
-    def determine_drift(self, data, dataset):
+        # set core support 
+
+        # set hypothesis
+
+        # set performance
+
+        # set comp_time
+
+
+    def drift_window(self):
         """
         Finds the lower and higher limits to determine drift
         """
-        self.data = data
-        self.data = dataset
+        data = self.data
+        dataset = self.dataset
+        
         # find window where data will drift
-        all_data = np.full_like(data, dataset)
-        self.figure_xlim = [min(all_data[:1]) , max(all_data[:1])]
-        self.figure_ylim = [min(all_data[:2]), max(all_data[:2])]
+        all_data = dataset
+        all_data['data'] = pd.Series(data, index=all_data.index)
+        
+        min_values = all_data.min()
+        max_values = all_data.max()
+       
+        self.figure_xlim = [min_values[0], max_values[0]]
+        self.figure_ylim = [min_values[1], max_values[1]]
 
-    def set_cores(self, cores, dataset):
+
+    def set_cores(self):
         """
         Establishes number of cores to conduct parallel processing
         """
-        self.dataset = dataset
-        self.n_cores = cores
+        
         num_cores = multiprocessing.cpu_count()         # determines number of cores
+        print(num_cores)
         if self.n_cores > num_cores:
             print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
             self.n_cores = num_cores                   # sets number of cores to available 
         else:
             self.n_cores = num_cores                   # original number of cores to 1
         
-        process_features = Parallel(n_jobs=num_cores)(delayed(dataset)(i) for i in dataset)
-
-        return process_features
+        print(self.n_cores)
+        process_features = Parallel(n_jobs=num_cores)(delayed(self.dataset)(i) for i in self.dataset)
 
     def set_classifier(self, user_selction, user_options, *args):
         """
@@ -156,6 +168,17 @@ class ComposeV1():
         """
         """
         self.classifier
+
+if __name__ == '__main__':
+    data = bmdg.Datagen.dataset("UnitTest")
+    COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
+    COMPV1.compose(data, 1)
+    # COMPV1.drift_window()
+    COMPV1.set_cores()
+
+
+
+
     
 
 class ComposeV2(): 
