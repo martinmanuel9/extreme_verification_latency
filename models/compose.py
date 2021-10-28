@@ -174,8 +174,8 @@ class ComposeV1():
         self.classifier_opts = user_options
 
     def set_cse(self, user_selection, user_options ):
-        if not self.cse_func:
-            self.cse_func = cse.CSE(self.dataset)
+        if not self.cse:
+            self.cse= cse.CSE(self.dataset)
             
         self.cse.set_data(self.dataset)
 
