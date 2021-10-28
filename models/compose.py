@@ -103,22 +103,29 @@ class ComposeV1():
             self.dataset = dataset
 
         # set timesteps (data is the timesteps)
+        self.data = dataset
         
+        # set labels 
+        self.labels = self.dataset['label']
+
+        # set core support 
+        self.core_support = self.dataset
+
+        # set hypthothesis
+        self.hypothesis = []     
+
+        # set performance
+        self.performance = np.zeros(np.shape(self.dataset)[0])
+
+        # set comp time 
+        self.comp_time = np.zeros(2, np.shape(self.dataset)[0])
+
         # set cores
         self.set_cores()
 
         # set drift window
         self.set_drift_window()
    
-        # set labels 
-
-        # set core support 
-
-        # set hypothesis
-
-        # set performance
-
-        # set comp_time
 
     def set_drift_window(self):
         """
