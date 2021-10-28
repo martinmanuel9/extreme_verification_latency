@@ -36,8 +36,9 @@ College of Engineering
 import numpy as np
 import pandas as pd
 import cse 
-from joblib import Parallel, delayed
+from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+from extreme_verification_latency.models.qns3vm import QN_S3VM
 import qns3vm as ssl
 import benchmark_datagen as bmdg
 
@@ -54,12 +55,14 @@ class ComposeV1():
         self.verbose = 1                    #    0  : No Information Displayed
                                         #   {1} : Command line progress updates
                                         #    2  : Plots when possible and Command line progress updates
-        self.data = []            
-        self.lables = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
+        self.data = {}           
+        self.labels = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
+        self.unlabeled = []
         self.hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        self.classifier_func = []           # [Tuple] Tuple of string corresponding to classifier in ssl class
+        self.classifier_func = []
         self.classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
+        self.learner = {}
 
         self.cse_func = []                  # [STRING] string corresponding to function in cse class
         self.cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
@@ -72,6 +75,7 @@ class ComposeV1():
         self.dataset = []
         self.figure_xlim = []
         self.figure_ylim = []
+        self.cse = cse.CSE(self.dataset)
 
     def compose(self, dataset, verbose):
         """
@@ -83,6 +87,7 @@ class ComposeV1():
                  1 : Command Line progress updates
                  2 : Plots when possible and Command Line progress updates
         """
+        # sets dataset and verbose
         self.dataset = dataset
         self.verbose = verbose
 
@@ -97,8 +102,14 @@ class ComposeV1():
         else:
             self.dataset = dataset
 
-        # set data 
-        self.data = np.zeros(np.shape(self.dataset)[0])
+        # set timesteps (data is the timesteps)
+        
+        # set cores
+        self.set_cores()
+
+        # set drift window
+        self.set_drift_window()
+   
         # set labels 
 
         # set core support 
@@ -109,8 +120,7 @@ class ComposeV1():
 
         # set comp_time
 
-
-    def drift_window(self):
+    def set_drift_window(self):
         """
         Finds the lower and higher limits to determine drift
         """
@@ -127,42 +137,56 @@ class ComposeV1():
         self.figure_xlim = [min_values[0], max_values[0]]
         self.figure_ylim = [min_values[1], max_values[1]]
 
-
     def set_cores(self):
         """
         Establishes number of cores to conduct parallel processing
         """
-        
         num_cores = multiprocessing.cpu_count()         # determines number of cores
-        print(num_cores)
+
         if self.n_cores > num_cores:
             print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
             self.n_cores = num_cores                   # sets number of cores to available 
         else:
             self.n_cores = num_cores                   # original number of cores to 1
         
-        print(self.n_cores)
-        process_features = Parallel(n_jobs=num_cores)(delayed(self.dataset)(i) for i in self.dataset)
+        print("Available number of cores:", self.n_cores)
+        user_input = input("Enter the amount of cores you wish to begin processing: ")
+        self.n_cores = user_input
+        print("User selected the following cores to process:", self.n_cores)
 
-    def set_classifier(self, user_selction, user_options, *args):
+    def set_classifier(self, user_selction, user_options):
         """
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
         """
-        max_args = 4
-        # first check if user input a learner else create learner - ssl(0)
-        if not self._learner:                                       # if we do not get the learner object from ssl 
-            self.learner = ssl(0)
-            # need to get call ssl class and set the data to load it to the learner
-            set_data = ssl.set_data(self.data, self.timestep)     # create ssl(0) as learner 
-            self.learner                                           # load first batch of data into learner object
-        
-        if len(*args) < max_args:
-            self._learner = self.learner 
-        else:
-            self.set_classifier = self.set_classifier(learner, labels, timestep, data)
+        if not self.learner: 
+            self.classifier = ssl.QN_S3VM(user_options)
+            self.learner = (self.data[self.timestep], self.labels[self.timestep])
+            
+        self.classifier_func = user_selction
+        self.classifier_opts = user_options
 
-        self.classifer_func = self.set_classifier(learner, labels, timestep, data)
+    def set_cse(self, user_selection, user_options ):
+        if not self.cse_func:
+            self.cse_func = cse.CSE(self.dataset)
+            
+        self.cse.set_data(self.dataset)
+
+        self.cse_func = user_selection
+        self.cse_opts = user_options
+
+        self.cse.set_boundary(self.cse_func)
+        self.cse.set_user_opts(self.cse_opts)
+
+        if self.cse_func == 'gmm':
+            self.cse.gmm()
+        elif self.cse_func == 'parzen':
+            self.cse.parzen()
+        elif self.cse_func == 'knn':
+            self.cse.k_nn()
+        elif self.cse_func == 'a_shape':
+            self.cse.alpha_shape()
+            self.cse.a_shape_compaction()
 
     def run(self, Xt, Yt, Ut): 
         """
