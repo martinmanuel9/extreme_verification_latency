@@ -41,42 +41,47 @@ import numpy as np
 import os
 import math
 
-class Datagen():
-    def __init__(self, data, dataset):
-        _data = []                              # Unimodal, Multimodal, 1cdt, 2cdt, Unimodal3D,  1cht, 2cht, 4cr, 4crev1,4crev2
-                                                # 5cvt, 1csurr, 4ce1cf, fg2c2d, gears2c2d, keystroke, Unimodal5D, noaa, custom
-                                                # custom_mm, spirals, corners, cic, hk, nss_ext, nss, nss1, ol, diff_clus, 
-                                                # mov_dat, cyc, vio_dcr, const_nvio_dcr, const_vio_dcr, gwac, vt, custom_vt
-        _dataset=[]
+class Datagen:
+    def __init__(self) -> None:
+        # Unimodal, Multimodal, 1cdt, 2cdt, Unimodal3D,  1cht, 2cht, 4cr, 4crev1,4crev2
+        # 5cvt, 1csurr, 4ce1cf, fg2c2d, gears2c2d, keystroke, Unimodal5D, noaa, custom
+        # custom_mm, spirals, corners, cic, hk, nss_ext, nss, nss1, ol, diff_clus, 
+        # mov_dat, cyc, vio_dcr, const_nvio_dcr, const_vio_dcr, gwac, vt, custom_vt
+        self.datatype = ''
+        self.data = []
+        self.dataset = []
 
-        self._data = data
-        self._dataset = dataset
-
-    def dataset(datatype):
+    def gen_dataset(self, datatype):
         # change the directory to your particular files location
         os.chdir('/Users/martinlopez/extreme_verification_latency_lopez/extreme_verification_latency/data/files/')
-
-        if datatype == 'Unimodal':
+        self.datatype = datatype
+        if self.datatype == 'Unimodal':
             # Unimodal option
             UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['column1', 'column2', 'column3'])                              
             l = 0                                                             
             step = 1000
             data = pd.DataFrame() 
             df = pd.DataFrame(UG_2C_2D)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(1000)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            self.data = df
+            check_label = self.label_check()
+            if self.label_check() is True:
+                self.dataset = self.data
+            else:
+                zero = pd.DataFrame()
+                for i in range(0, len(df), step):                           
+                    for j in range(0, step):                                
+                        data[l] = df.iloc[j,:2]                             
+                        zero[l] = np.zeros_like(df.iloc[j,:2])
+                        a = np.random.permutation(1000)
+                        aT = a.T
+                        if l == 0:
+                            data[l] = aT[j]
+                        dataset = data.T
+                        dataset["label"] = 1
+                    l += 1
+                self.dataset = dataset
     
-        if datatype == 'Multimodal':           
+        if self.datatype == 'Multimodal':           
             # multimodal option
             MG_2C_2D = pd.read_csv("MG_2C_2D.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
@@ -96,7 +101,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1
 
-        if datatype == '1CDT':           
+        if self.datatype == '1CDT':           
             X1CDT = pd.read_csv("1CDT.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 400
@@ -115,7 +120,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1
 
-        if datatype == '2CDT':           
+        if self.datatype == '2CDT':           
             X2CDT = pd.read_csv("2CDT.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 400
@@ -134,7 +139,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1
         
-        if datatype == 'Unimodal3D':           
+        if self.datatype == 'Unimodal3D':           
             UG_2C_3D = pd.read_csv("UG_2C_3D.txt", delimiter=",", names=['column1', 'column2', 'column3', 'column4'])                         
             l = 0                                                             
             step = 2000
@@ -153,7 +158,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1        
         
-        if datatype == '1cht':           
+        if self.datatype == '1cht':           
             X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 400
@@ -172,7 +177,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1
         
-        if datatype == '2cht':           
+        if self.datatype == '2cht':           
             X2CHT = pd.read_csv("4CR.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 400
@@ -191,7 +196,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1       
 
-        if datatype == '4cr':           
+        if self.datatype == '4cr':           
             X4CR = pd.read_csv("4CR.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 400
@@ -210,7 +215,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1   
 
-        if datatype == '4crev1':           
+        if self.datatype == '4crev1':           
             X4CRE_V1 = pd.read_csv("4CRE-V1.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 1000
@@ -229,7 +234,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1 
 
-        if datatype == '4crev2':           
+        if self.datatype == '4crev2':           
             X4CRE_V2 = pd.read_csv("4CRE-V2.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 1000
@@ -248,7 +253,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1 
 
-        if datatype == '5cvt':           
+        if self.datatype == '5cvt':           
             X5CVT = pd.read_csv("5CVT.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 1000
@@ -267,7 +272,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1
 
-        if datatype == '1csurr':           
+        if self.datatype == '1csurr':           
             X1Csurr = pd.read_csv("1Csurr.txt", delimiter=",", names=['column1', 'column2', 'column3'])
             num = 600 * math.floor(len(X1Csurr)/600)
             X1Csurr = X1Csurr[0:num]                 
@@ -288,7 +293,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1 
 
-        if datatype == '4ce1cf':           
+        if self.datatype == '4ce1cf':           
             X4CE1CF = pd.read_csv("4CE1CF.txt", delimiter=",", names=['column1', 'column2', 'column3'])
             drift_no = 750
             num = drift_no * math.floor(len(X4CE1CF)/drift_no)
@@ -309,7 +314,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1 
 
-        if datatype == 'fg2c2d':           
+        if self.datatype == 'fg2c2d':           
             FG_2C_2D = pd.read_csv("FG_2C_2D.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 2000
@@ -328,7 +333,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1  
 
-        if datatype == 'gears2c2d':           
+        if self.datatype == 'gears2c2d':           
             GEARS_2C_2D = pd.read_csv("GEARS_2C_2D.txt", delimiter=",", names=['column1', 'column2', 'column3'])                         
             l = 0                                                             
             step = 2000
@@ -348,7 +353,7 @@ class Datagen():
                 l += 1 
 
 
-        if datatype == 'keystroke':           
+        if self.datatype == 'keystroke':           
             keystroke = pd.read_csv("keystroke.txt", delimiter=",", names=['column1', 'column2', 'column3','column4', 
                                     'column5', 'column6', 'column7', 'column8', 'column9', 'column10'])                         
             l = 0                                                             
@@ -368,7 +373,7 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1 
     
-        if datatype == 'Unimodal5D':           
+        if self.datatype == 'Unimodal5D':           
             UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['column1', 'column2', 'column3',
                                     'column4', 'column5'])                         
             l = 0                                                             
@@ -388,16 +393,34 @@ class Datagen():
                     dataset["label"] = 1
                 l += 1
 
-        if datatype == 'UnitTest':           
+        if self.datatype == 'UnitTest':           
             unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['column1', 'column2', 'column3'])                                                                                  
             data = pd.DataFrame() 
             df = pd.DataFrame(unitTestData)
-            zero = pd.DataFrame()                               
-            data = df.iloc[:,:2]                             
-            dataset = data
-            dataset["label"] = 1
+            self.data = df
+            self.label_check()
+            if self.label_check() is True:
+                self.dataset = self.data
+                self.dataset.columns = [*self.dataset.columns[:-1], 'label']
+            else:
+                zero = pd.DataFrame()                               
+                data = df.iloc[:,:2]                             
+                dataset = data
+                dataset["label"] = 1
+                self.dataset = dataset
+            
 
-        return dataset
+        return self.dataset
+
+    def label_check(self):
+        # length_data = len(self.data.columns)
+        # print(length_data)
+        exists_label = 1 in self.data.values   # self.data.iloc[:,-1:]
+
+        if exists_label is True:
+            return True
+        else:
+            return False
 
 if __name__ == '__main__':
     # testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
@@ -408,9 +431,11 @@ if __name__ == '__main__':
     #         print(i + "is empty")
     #     else: 
     #         print(i + " dataset created")
+    testData = Datagen()
     
-    test_data = Datagen.dataset('UnitTest')
-    if test_data.empty:
-        print("Unit Test dataset is empty")
-    else:
-        print("Unit Test dataset created")
+    test = testData.gen_dataset('UnitTest')
+    print(test)
+    # if test.empty:
+    #     print("Unit Test dataset is empty")
+    # else:
+    #     print("Unit Test dataset created")

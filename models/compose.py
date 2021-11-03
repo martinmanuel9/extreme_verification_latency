@@ -38,7 +38,7 @@ import pandas as pd
 import cse 
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
-from extreme_verification_latency.models.qns3vm import QN_S3VM
+# from extreme_verification_latency.models.qns3vm import QN_S3VM
 import qns3vm as ssl
 import benchmark_datagen as bmdg
 
@@ -53,16 +53,16 @@ class ComposeV1():
         self.synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
         self.verbose = 1                    #    0  : No Information Displayed
-                                        #   {1} : Command line progress updates
-                                        #    2  : Plots when possible and Command line progress updates
-        self.data = {}           
-        self.labels = []                    # [LIST] list array of timesteps each containing a vector N instances x 1 - Correct label
+                                            #   {1} : Command line progress updates
+                                            #    2  : Plots when possible and Command line progress updates
+        self.batches = {}                    #  array of timesteps each containing a matrix N instances x D features
+        self.labels = []                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = []
-        self.hypothesis =[]                 # [LIST] list array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        self.core_support = []              # [LIST] list array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
+        self.core_support = []              #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.classifier_func = []
         self.classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
-        self.learner = {}
+        self.learner = {}                   # Object from the ssl 
 
         self.cse_func = []                  # [STRING] string corresponding to function in cse class
         self.cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
@@ -71,10 +71,11 @@ class ComposeV1():
         self.comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
         self.classifier = classifier
-        self.method = method
+        self.method = method                # not sure what to use for method
         self.dataset = []
         self.figure_xlim = []
         self.figure_ylim = []
+        self.data = {}                      # data to set up batches
         self.cse = cse.CSE(self.dataset)
 
     def compose(self, dataset, verbose):
@@ -102,17 +103,16 @@ class ComposeV1():
         else:
             self.dataset = dataset
 
-        # set timesteps (data is the timesteps)
-        self.data = dataset
-        
-        # set labels 
-        self.labels = self.dataset['label']
+        # set labels and unlabeles and dataset to process
+        self.set_data()
 
+        # set batches to account for time steps with matrix of N instanced x  D features
+        # self.batches = 
         # set core support 
-        self.core_support = self.dataset
+        # self.core_support = 
 
         # set hypthothesis
-        self.hypothesis = []     
+        # self.hypothesis = 
 
         # set performance
         self.performance = np.zeros(np.shape(self.dataset)[0])
@@ -165,10 +165,17 @@ class ComposeV1():
         """
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
+        The QN_S3VM options are the following:  
+        X_l -- patterns of labeled part of the data
+        L_l -- labels of labeled part of the data
+        X_u -- patterns of unlabeled part of the data
+        random_generator -- particular instance of a random_generator (default None)
+        kw -- additional parameters for the optimizer
         """
         if not self.learner: 
-            self.classifier = ssl.QN_S3VM(user_options)
-            self.learner = (self.data[self.timestep], self.labels[self.timestep])
+            # create the ssl 
+            self.learner = ssl.QN_S3VM()
+            self.learner = (self.batches[self.timestep], self.labels[self.timestep])
             
         self.classifier_func = user_selction
         self.classifier_opts = user_options
@@ -195,17 +202,46 @@ class ComposeV1():
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
 
+    def set_data(self):
+        """
+        """
+        # import from dataset generation
+        avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
+            '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
+        print('The following datasets are available:\n' , avail_data_opts)
+        user_data_input = input('Enter dataset:')
+        data_gen = bmdg.Datagen()
+        dataset_gen = data_gen.gen_dataset(user_data_input)
+
+        self.dataset = dataset_gen
+        data_id = 0
+        labels = []
+        unlabeled = []
+        # get labeled data/unlabeled data
+        for i in range(len(self.dataset)):
+            if self.dataset['label'][i] == 1:
+                data_id += 1
+                self.data = [[data_id], [self.dataset.iloc[i]]]
+                labels.append(self.data)
+            else:
+                data_id += 1
+                self.data = [[data_id], [self.dataset.iloc[i]]]
+                unlabeled.append(self.data)
+        
+        self.labels = pd.DataFrame(labels, columns=['data_id', 'data'])
+        self.unlabeled = pd.DataFrame(unlabeled, columns=['data_id', 'data'])
+
     def run(self, Xt, Yt, Ut): 
-        """
-        """
-        self.classifier
+        self.set_data()
+    
 
 if __name__ == '__main__':
-    data = bmdg.Datagen.dataset("UnitTest")
+    
     COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
-    COMPV1.compose(data, 1)
+    # COMPV1.compose(data, 1)
     # COMPV1.drift_window()
-    COMPV1.set_cores()
+    # COMPV1.set_cores()
+    COMPV1.set_data()
 
 
 
