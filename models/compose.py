@@ -49,7 +49,7 @@ class ComposeV1():
         """
         Initialization of COMPOSEV1
         """
-        self.timestep = 1                   # [INTEGER] The current timestep of the datase
+        self.timestep = 1                  # [INTEGER] The current timestep of the datase
         self.synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
         self.verbose = 1                    #    0  : No Information Displayed
@@ -108,11 +108,12 @@ class ComposeV1():
 
         # set batches to account for time steps with matrix of N instanced x  D features
         # self.batches = 
+        self.set_batch()
         # set core support 
-        # self.core_support = 
+        self.core_support = self.batches
 
         # set hypthothesis
-        # self.hypothesis = 
+        self.hypothesis = [self.batches]
 
         # set performance
         self.performance = np.zeros(np.shape(self.dataset)[0])
@@ -161,6 +162,7 @@ class ComposeV1():
         self.n_cores = user_input
         print("User selected the following cores to process:", self.n_cores)
 
+    # TODO: need to understand how to set the classifier 
     def set_classifier(self, user_selction, user_options):
         """
         Sets classifier by getting the classifier object from ssl module
@@ -173,9 +175,8 @@ class ComposeV1():
         kw -- additional parameters for the optimizer
         """
         if not self.learner: 
-            # create the ssl 
+            # create the ssl
             self.learner = ssl.QN_S3VM()
-            self.learner = (self.batches[self.timestep], self.labels[self.timestep])
             
         self.classifier_func = user_selction
         self.classifier_opts = user_options
@@ -201,6 +202,12 @@ class ComposeV1():
         elif self.cse_func == 'a_shape':
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
+
+    def set_batch(self):
+        """
+        """
+        self.batches = {"timestep": self.timestep, "data": self.dataset}
+        print(self.batches)
 
     def set_data(self):
         """
@@ -231,46 +238,52 @@ class ComposeV1():
         self.labels = pd.DataFrame(labels, columns=['data_id', 'data'])
         self.unlabeled = pd.DataFrame(unlabeled, columns=['data_id', 'data'])
 
-    def run(self, Xt, Yt, Ut): 
-        self.set_data()
+    def run(self):
+        ts = self.timestep
+        for ts in range(len(self.batches)):
+            self.timestep = ts
+            self.hypothesis[ts] = np.zeros(np.shape(self.batches[ts])[0])
+
+
+
+
+        
     
 
 if __name__ == '__main__':
-    
     COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
     # COMPV1.compose(data, 1)
     # COMPV1.drift_window()
     # COMPV1.set_cores()
     COMPV1.set_data()
+    COMPV1.set_batch()
+    COMPV1.run()
 
 
 
-
+# class ComposeV2(): 
+#     """
+#     """
+#     def __init__(self, 
+#                  classifier, 
+#                  method): 
+#         self.classifier = classifier 
     
-
-class ComposeV2(): 
-    """
-    """
-    def __init__(self, 
-                 classifier, 
-                 method): 
-        self.classifier = classifier 
-    
-    def run(self, Xt, Yt, Ut): 
-        """
-        """
-        self.classifier
+#     def run(self, Xt, Yt, Ut): 
+#         """
+#         """
+#         self.classifier
 
 
-class FastCompose(): 
-    """
-    """
-    def __init__(self, 
-                 classifier, 
-                 method): 
-        self.classifier = classifier 
+# class FastCompose(): 
+#     """
+#     """
+#     def __init__(self, 
+#                  classifier, 
+#                  method): 
+#         self.classifier = classifier 
 
-    def run(self, Xt, Yt, Ut): 
-        """
-        """
-        self.classifier
+#     def run(self, Xt, Yt, Ut): 
+#         """
+#         """
+#         self.classifier
