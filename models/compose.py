@@ -55,7 +55,7 @@ class ComposeV1():
         self.verbose = 1                    #    0  : No Information Displayed
                                             #   {1} : Command line progress updates
                                             #    2  : Plots when possible and Command line progress updates
-        self.batches = {}                    #  array of timesteps each containing a matrix N instances x D features
+        self.data = []                    #  array of timesteps each containing a matrix N instances x D features
         self.labels = []                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = []
         self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
@@ -75,7 +75,7 @@ class ComposeV1():
         self.dataset = []
         self.figure_xlim = []
         self.figure_ylim = []
-        self.data = {}                      # data to set up batches
+        self.step = 0
         self.cse = cse.CSE(self.dataset)
 
     def compose(self, dataset, verbose):
@@ -106,20 +106,18 @@ class ComposeV1():
         # set labels and unlabeles and dataset to process
         self.set_data()
 
-        # set batches to account for time steps with matrix of N instanced x  D features
-        # self.batches = 
-        self.set_batch()
+        # TODO: Need to develop the coresupport logic this may be just gmm and no need for coresupport
         # set core support 
-        self.core_support = self.batches
+        self.core_support = self.data
 
         # set hypthothesis
-        self.hypothesis = [self.batches]
+        self.hypothesis = self.data
 
         # set performance
         self.performance = np.zeros(np.shape(self.dataset)[0])
 
         # set comp time 
-        self.comp_time = np.zeros(2, np.shape(self.dataset)[0])
+        self.comp_time = np.zeros(np.shape(self.dataset)[0])
 
         # set cores
         self.set_cores()
@@ -127,17 +125,15 @@ class ComposeV1():
         # set drift window
         self.set_drift_window()
    
-
+    
     def set_drift_window(self):
         """
         Finds the lower and higher limits to determine drift
         """
-        data = self.data
         dataset = self.dataset
         
         # find window where data will drift
         all_data = dataset
-        all_data['data'] = pd.Series(data, index=all_data.index)
         
         min_values = all_data.min()
         max_values = all_data.max()
@@ -157,10 +153,11 @@ class ComposeV1():
         else:
             self.n_cores = num_cores                   # original number of cores to 1
         
-        print("Available number of cores:", self.n_cores)
-        user_input = input("Enter the amount of cores you wish to begin processing: ")
+        # print("Available number of cores:", self.n_cores)
+        # user_input = input("Enter the amount of cores you wish to begin processing: ")
+        user_input = self.n_cores
         self.n_cores = user_input
-        print("User selected the following cores to process:", self.n_cores)
+        # print("User selected the following cores to process:", self.n_cores)
 
     # TODO: need to understand how to set the classifier 
     def set_classifier(self, user_selction, user_options):
@@ -203,52 +200,89 @@ class ComposeV1():
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
 
-    def set_batch(self):
-        """
-        """
-        self.batches = {"timestep": self.timestep, "data": self.dataset}
-        print(self.batches)
-
     def set_data(self):
         """
+        Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
         # import from dataset generation
-        avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
-            '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
-        print('The following datasets are available:\n' , avail_data_opts)
-        user_data_input = input('Enter dataset:')
+        # avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
+        #     '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
+        # print('The following datasets are available:\n' , avail_data_opts)
+        # user_data_input = input('Enter dataset:')
+        user_data_input = 'UnitTest'     # comment out whenever you can run it or determine if I want to run all sets
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
 
         self.dataset = dataset_gen
+        timestep = 0
+        data = []
+        for i in range(len(self.dataset)):
+            timestep += 1
+            dat = self.dataset.iloc[i].to_numpy()
+            temp_batch = np.append(timestep, dat)
+            data.append(temp_batch)
+        
+        colmn_names = list(self.dataset)
+        colmn_names.insert(0,'timestep')
+        self.data = pd.DataFrame(data, columns=colmn_names)
+
+        # get labeled data/unlabeled data 
         data_id = 0
         labels = []
         unlabeled = []
-        # get labeled data/unlabeled data
+       
         for i in range(len(self.dataset)):
             if self.dataset['label'][i] == 1:
                 data_id += 1
-                self.data = [[data_id], [self.dataset.iloc[i]]]
-                labels.append(self.data)
+                lab_dat = self.dataset.iloc[i].to_numpy()
+                lab_temp = np.append(data_id, lab_dat)
+                labels.append(lab_temp)
             else:
                 data_id += 1
-                self.data = [[data_id], [self.dataset.iloc[i]]]
-                unlabeled.append(self.data)
+                unlab_dat = self.dataset.iloc[i].to_numpy()
+                unlab_temp = np.append(data_id, unlab_dat)
+                unlabeled.append(unlab_temp)
         
-        self.labels = pd.DataFrame(labels, columns=['data_id', 'data'])
-        self.unlabeled = pd.DataFrame(unlabeled, columns=['data_id', 'data'])
+        labeled_colmn = list(self.dataset)
+        labeled_colmn.insert(0,'data_id')
+
+        unlabeled_colm = list(self.dataset)
+        unlabeled_colm[-1] = 'unlabeled'
+        unlabeled_colm.insert(0, 'data_id')
+
+        self.labels = pd.DataFrame(labels, columns=labeled_colmn)
+        self.unlabeled = pd.DataFrame(unlabeled, columns=unlabeled_colm)
+
+
+    def classify(self, ts):
+        # sort data in descending so labeled data is at the top and unlabeled follows
+        self.hypothesis[ts] = np.sort(self.hypothesis[ts])[::-1]
 
     def run(self):
-        ts = self.timestep
-        for ts in range(len(self.batches)):
+        start = self.timestep
+
+        for ts in range(len(self.data)): # loop from start to end of batches
             self.timestep = ts
-            self.hypothesis[ts] = np.zeros(np.shape(self.batches[ts])[0])
+            self.hypothesis[ts] = np.zeros(np.shape(self.data[ts])[0])
+
+            # add info for core supports from previous time step
+            if start != ts:
+                n_cs = np.sum(self.core_support[ts-1]==1)           # find number of core supports from previous timesteps
+                self.data[ts] = self.data[ts-1][self.core_support[ts-1]]
+                self.hypothesis[ts] = self.hypthothesis[ts-1][self.core_support[ts-1]]
+                self.labels[ts] = self.labels[ts-1][self.core_support[ts-1]]
+                self.core_support[ts] = np.zeros(n_cs)
+
+            self.step = 1 
+
+            # plot labeled / unlabled data
+
+            unlabled_ind = self.classify(ts)
 
 
 
 
-        
-    
+     
 
 if __name__ == '__main__':
     COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
@@ -256,8 +290,10 @@ if __name__ == '__main__':
     # COMPV1.drift_window()
     # COMPV1.set_cores()
     COMPV1.set_data()
-    COMPV1.set_batch()
-    COMPV1.run()
+    # COMPV1.compose(COMPV1.dataset, 1)
+    # print(COMPV1.hypothesis)
+    
+    
 
 
 
