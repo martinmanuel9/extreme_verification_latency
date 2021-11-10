@@ -130,16 +130,15 @@ class ComposeV1():
         """
         Finds the lower and higher limits to determine drift
         """
-        dataset = self.dataset
-        
         # find window where data will drift
-        all_data = dataset
+        all_data = self.dataset
         
         min_values = all_data.min()
         max_values = all_data.max()
-       
+
         self.figure_xlim = [min_values[0], max_values[0]]
         self.figure_ylim = [min_values[1], max_values[1]]
+
 
     def set_cores(self):
         """
@@ -290,6 +289,8 @@ if __name__ == '__main__':
     # COMPV1.drift_window()
     # COMPV1.set_cores()
     COMPV1.set_data()
+    COMPV1.set_drift_window()
+    
     # COMPV1.compose(COMPV1.dataset, 1)
     # print(COMPV1.hypothesis)
     
