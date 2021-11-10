@@ -58,7 +58,7 @@ class ComposeV1():
         self.data = []                    #  array of timesteps each containing a matrix N instances x D features
         self.labels = []                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = []
-        self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
+        self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_support = []              #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.classifier_func = []
         self.classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
@@ -106,18 +106,8 @@ class ComposeV1():
         # set labels and unlabeles and dataset to process
         self.set_data()
 
-        # TODO: Need to develop the coresupport logic this may be just gmm and no need for coresupport
         # set core support 
-        self.core_support = self.data
-
-        # set hypthothesis
-        self.hypothesis = self.data
-
-        # set performance
-        self.performance = np.zeros(np.shape(self.dataset)[0])
-
-        # set comp time 
-        self.comp_time = np.zeros(np.shape(self.dataset)[0])
+        self.core_support = self.dataset            # load the dataset in the core support property
 
         # set cores
         self.set_cores()
@@ -259,15 +249,24 @@ class ComposeV1():
 
     def run(self):
         start = self.timestep
-
+        
         for ts in range(len(self.data)): # loop from start to end of batches
             self.timestep = ts
             self.hypothesis[ts] = np.zeros(np.shape(self.data[ts])[0])
 
+            # check if at timestep we have labeled data
+            if self.data[2] == 1: 
+                # copy labels into hypothesis
+                label = self.data.iloc[ts].to_numpy()
+                self.hypothesis.append(label)
+
             # add info for core supports from previous time step
             if start != ts:
-                n_cs = np.sum(self.core_support[ts-1]==1)           # find number of core supports from previous timesteps
-                self.data[ts] = self.data[ts-1][self.core_support[ts-1]]
+                n_cs = self.core_support[ts-1]                                                  # find number of core supports from previous timesteps
+                self.data[ts] = self.core_support                        # append the current data with the core supports
+                
+                
+                
                 self.hypothesis[ts] = self.hypthothesis[ts-1][self.core_support[ts-1]]
                 self.labels[ts] = self.labels[ts-1][self.core_support[ts-1]]
                 self.core_support[ts] = np.zeros(n_cs)
