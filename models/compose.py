@@ -78,7 +78,7 @@ class ComposeV1():
         self.step = 0
         self.cse = cse.CSE(self.dataset)
 
-    def compose(self, dataset, verbose):
+    def compose(self, verbose):
         """
         Sets COMPOSE dataset and information processing options
         Check if the input parameters are not empty for compose
@@ -89,7 +89,6 @@ class ComposeV1():
                  2 : Plots when possible and Command Line progress updates
         """
         # sets dataset and verbose
-        self.dataset = dataset
         self.verbose = verbose
 
         # set object displayed info setting
@@ -98,16 +97,12 @@ class ComposeV1():
         else:
             print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
 
-        if self.dataset.empty:
-            print("Dataset is empty!")
-        else:
-            self.dataset = dataset
 
         # set labels and unlabeles and dataset to process
         self.set_data()
 
         # set core support 
-        self.core_support = self.dataset            # load the dataset in the core support property
+        self.core_support = self.data           # load the dataset in the core support property this includes labeled and unlabeled data from set_data
 
         # set cores
         self.set_cores()
@@ -216,31 +211,25 @@ class ComposeV1():
         self.data = pd.DataFrame(data, columns=colmn_names)
 
         # get labeled data/unlabeled data 
-        data_id = 0
         labels = []
         unlabeled = []
        
-        for i in range(len(self.dataset)):
+        for i in range(len(self.data)):
             if self.dataset['label'][i] == 1:
-                data_id += 1
-                lab_dat = self.dataset.iloc[i].to_numpy()
-                lab_temp = np.append(data_id, lab_dat)
-                labels.append(lab_temp)
+                lab_dat = self.data.iloc[i].to_numpy()
+                labels.append(lab_dat)
             else:
-                data_id += 1
-                unlab_dat = self.dataset.iloc[i].to_numpy()
-                unlab_temp = np.append(data_id, unlab_dat)
-                unlabeled.append(unlab_temp)
+                unlab_dat = self.data.iloc[i].to_numpy()
+                unlabeled.append(unlab_dat)
         
-        labeled_colmn = list(self.dataset)
-        labeled_colmn.insert(0,'data_id')
+        labeled_colmn = list(self.data)
 
-        unlabeled_colm = list(self.dataset)
+        unlabeled_colm = list(self.data)
         unlabeled_colm[-1] = 'unlabeled'
-        unlabeled_colm.insert(0, 'data_id')
-
+        
         self.labels = pd.DataFrame(labels, columns=labeled_colmn)
         self.unlabeled = pd.DataFrame(unlabeled, columns=unlabeled_colm)
+
 
 
     def classify(self, ts):
@@ -249,33 +238,34 @@ class ComposeV1():
 
     def run(self):
         start = self.timestep
-        
         for ts in range(len(self.data)): # loop from start to end of batches
             self.timestep = ts
-            self.hypothesis[ts] = np.zeros(np.shape(self.data[ts])[0])
+            # self.hypothesis[ts] = np.zeros(np.shape(self.data[ts])[0])
 
             # check if at timestep we have labeled data
-            if self.data[2] == 1: 
+            if self.core_support.iloc[ts, -1] == 1: 
                 # copy labels into hypothesis
-                label = self.data.iloc[ts].to_numpy()
+                label = self.core_support.iloc[ts].to_numpy()
                 self.hypothesis.append(label)
 
-            # add info for core supports from previous time step
-            if start != ts:
-                n_cs = self.core_support[ts-1]                                                  # find number of core supports from previous timesteps
-                self.data[ts] = self.core_support                        # append the current data with the core supports
+          
+
+            # # add info for core supports from previous time step
+            # if start != ts:
+            #     n_cs = self.core_support[ts-1]                                                  # find number of core supports from previous timesteps
+            #     self.data[ts] = self.core_support                        # append the current data with the core supports
                 
                 
                 
-                self.hypothesis[ts] = self.hypthothesis[ts-1][self.core_support[ts-1]]
-                self.labels[ts] = self.labels[ts-1][self.core_support[ts-1]]
-                self.core_support[ts] = np.zeros(n_cs)
+            #     self.hypothesis[ts] = self.hypthothesis[ts-1][self.core_support[ts-1]]
+            #     self.labels[ts] = self.labels[ts-1][self.core_support[ts-1]]
+            #     self.core_support[ts] = np.zeros(n_cs)
 
-            self.step = 1 
+            # self.step = 1 
 
-            # plot labeled / unlabled data
+            # # plot labeled / unlabled data
 
-            unlabled_ind = self.classify(ts)
+            # unlabled_ind = self.classify(ts)
 
 
 
@@ -284,11 +274,12 @@ class ComposeV1():
 
 if __name__ == '__main__':
     COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
-    # COMPV1.compose(data, 1)
+    COMPV1.compose(1)
     # COMPV1.drift_window()
     # COMPV1.set_cores()
-    COMPV1.set_data()
+    # COMPV1.set_data()
     COMPV1.set_drift_window()
+    COMPV1.run()
     
     # COMPV1.compose(COMPV1.dataset, 1)
     # print(COMPV1.hypothesis)
