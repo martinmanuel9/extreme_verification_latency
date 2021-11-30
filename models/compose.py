@@ -183,7 +183,7 @@ class ComposeV1():
         elif self.cse_func == 'a_shape':
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
-
+    #TODO: create batches one timestep per mxn of data 
     def set_data(self):
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
@@ -237,7 +237,11 @@ class ComposeV1():
         self.hypothesis[ts] = np.sort(self.hypothesis[ts])[::-1]
 
     def run(self):
-        start = self.timestep
+        # start = self.timestep
+        start = 3
+        n = self.core_support[self.core_support['label']==1]['label'].count()
+        print(n)
+
         for ts in range(len(self.data)): # loop from start to end of batches
             self.timestep = ts
             # self.hypothesis[ts] = np.zeros(np.shape(self.data[ts])[0])
@@ -248,12 +252,13 @@ class ComposeV1():
                 label = self.core_support.iloc[ts].to_numpy()
                 self.hypothesis.append(label)
 
-          
-
+            
             # # add info for core supports from previous time step
-            # if start != ts:
-            #     n_cs = self.core_support[ts-1]                                                  # find number of core supports from previous timesteps
-            #     self.data[ts] = self.core_support                        # append the current data with the core supports
+            #TODO:Determine what to do with getting past core-supports. I want to understand why past
+            if start != ts:                                              # if not initialized 
+                n_cs = self.core_support[ts-1][0].count()                # find number of core supports from previous timesteps
+                print(n_cs)
+                # self.data[ts] = self.core_support                        # append the current data with the core supports
                 
                 
                 

@@ -407,8 +407,8 @@ class Datagen:
                 self.dataset.columns = [*self.dataset.columns[:-1], 'label']
                 for i in range(0, len(df), step):
                     for j in range(0,step):
-                        data[l] = df.iloc[j,:5]                             
-                        zero[l] = np.zeros_like(df.iloc[j,:5])
+                        data[l] = df.iloc[j,:np.shape(self.data)[1]]                             
+                        zero[l] = np.zeros_like(df.iloc[j,:np.shape(self.data)[1]])
                         a = np.random.permutation(step)
                         aT = a.T
                         if l == 0:
