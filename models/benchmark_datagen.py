@@ -51,6 +51,7 @@ class Datagen:
         self.data = []
         self.dataset = []
 
+
     def gen_dataset(self, datatype):
         # change the directory to your particular files location
         os.chdir('/Users/martinlopez/extreme_verification_latency_lopez/extreme_verification_latency/data/files/')
@@ -395,33 +396,33 @@ class Datagen:
 
         if self.datatype == 'UnitTest':           
             unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])       
-            l = 0
             step = 10                                                                           
-            data = pd.DataFrame() 
+            data = pd.DataFrame()
             df = pd.DataFrame(unitTestData)
             self.data = df
-            self.label_check()
-            zero = pd.DataFrame()
-            if self.label_check() is True:
-                self.dataset = self.data
-                self.dataset.columns = [*self.dataset.columns[:-1], 'label']
+            num_col = np.shape(self.data)[1]
+
+            label_exist = False
+            
+            if label_exist is True:
+                # self.dataset = self.data
+                # self.dataset.columns = [*self.dataset.columns[:-1], 'label'] # set last column to 'label'
                 for i in range(0, len(df), step):
                     for j in range(0,step):
-                        data[l] = df.iloc[j,:np.shape(self.data)[1]]                             
-                        zero[l] = np.zeros_like(df.iloc[j,:np.shape(self.data)[1]])
-                        a = np.random.permutation(step)
-                        aT = a.T
-                        if l == 0:
-                            data[l] = aT[j]
-                        dataset = data.T 
-                    l += 1
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            #TODO: make sure that edge case creates label and adds them in batches to self.dataset
             else:
-                zero = pd.DataFrame()                               
-                data = df.iloc[:,:2]                             
-                dataset = data
-                dataset["label"] = 1
-                self.dataset = dataset
-            
+                zero = pd.DataFrame()
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[:,(num_col-1)]                             
+                        test_train = np.array(data.T)
+                        print(test_train)
+
+                    self.dataset.append(test_train)
+                # print(self.dataset)
 
         return self.dataset
 
@@ -446,8 +447,8 @@ if __name__ == '__main__':
     #         print(i + " dataset created")
     testData = Datagen()
     
-    test = testData.gen_dataset('Unimodal')
-    print(test)
+    test = testData.gen_dataset('UnitTest')
+    # print(test)
     # if test.empty:
     #     print("Unit Test dataset is empty")
     # else:
