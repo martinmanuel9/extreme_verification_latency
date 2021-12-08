@@ -58,341 +58,404 @@ class Datagen:
         self.datatype = datatype
         if self.datatype == 'Unimodal':
             # Unimodal option
-            UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['feat1', 'feat2', 'feat3'])                              
-            l = 0                                                             
+            UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['feat1', 'feat2', 'feat3'])                                                                                        
             step = 1000
-            data = pd.DataFrame() 
+            data = pd.DataFrame()
             df = pd.DataFrame(UG_2C_2D)
             self.data = df
-            check_label = self.label_check()
+            num_col = np.shape(self.data)[1]
+    
             if self.label_check() is True:
-                self.dataset = self.data
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
             else:
-                zero = pd.DataFrame()
-                for i in range(0, len(df), step):                           
-                    for j in range(0, step):                                
-                        data[l] = df.iloc[j,:2]                             
-                        zero[l] = np.zeros_like(df.iloc[j,:2])
-                        a = np.random.permutation(1000)
-                        aT = a.T
-                        if l == 0:
-                            data[l] = aT[j]
-                        dataset = data.T
-                        dataset["label"] = 1
-                    l += 1
-                self.dataset = dataset
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
+
     
         if self.datatype == 'Multimodal':           
             # multimodal option
-            MG_2C_2D = pd.read_csv("MG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            MG_2C_2D = pd.read_csv("MG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 2000
-            data = pd.DataFrame() 
-            df = pd.DataFrame(MG_2C_2D)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(2000)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            data = pd.DataFrame()
+            df = pd.DataFrame(MG_2C_2D) 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '1CDT':           
-            X1CDT = pd.read_csv("1CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X1CDT = pd.read_csv("1CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = pd.DataFrame() 
             df = pd.DataFrame(X1CDT)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(400)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '2CDT':           
-            X2CDT = pd.read_csv("2CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X2CDT = pd.read_csv("2CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = pd.DataFrame() 
             df = pd.DataFrame(X2CDT)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(400)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
         
         if self.datatype == 'Unimodal3D':           
-            UG_2C_3D = pd.read_csv("UG_2C_3D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3', 'feat4'])                         
-            l = 0                                                             
+            UG_2C_3D = pd.read_csv("UG_2C_3D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3', 'feat4'])                                                                                    
             step = 2000
             data = pd.DataFrame() 
             df = pd.DataFrame(UG_2C_3D)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:3]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:3])
-                    a = np.random.permutation(2000)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1        
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)      
         
         if self.datatype == '1cht':           
-            X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 400
             data = pd.DataFrame() 
             df = pd.DataFrame(X1CHT)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(400)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
         
         if self.datatype == '2cht':           
-            X2CHT = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X2CHT = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                      
             step = 400
             data = pd.DataFrame() 
             df = pd.DataFrame(X2CHT)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(400)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1       
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)       
 
         if self.datatype == '4cr':           
-            X4CR = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X4CR = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = pd.DataFrame() 
             df = pd.DataFrame(X4CR)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(400)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1   
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '4crev1':           
-            X4CRE_V1 = pd.read_csv("4CRE-V1.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X4CRE_V1 = pd.read_csv("4CRE-V1.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 1000
             data = pd.DataFrame() 
             df = pd.DataFrame(X4CRE_V1)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(1000)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '4crev2':           
-            X4CRE_V2 = pd.read_csv("4CRE-V2.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X4CRE_V2 = pd.read_csv("4CRE-V2.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 1000
             data = pd.DataFrame() 
             df = pd.DataFrame(X4CRE_V2)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(1000)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '5cvt':           
-            X5CVT = pd.read_csv("5CVT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            X5CVT = pd.read_csv("5CVT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 1000
             data = pd.DataFrame() 
             df = pd.DataFrame(X5CVT)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(1000)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '1csurr':           
             X1Csurr = pd.read_csv("1Csurr.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])
             num = 600 * math.floor(len(X1Csurr)/600)
-            X1Csurr = X1Csurr[0:num]                 
-            l = 0                                                             
+            X1Csurr = X1Csurr[0:num]                                                                              
             step = 600
             data = pd.DataFrame() 
             df = pd.DataFrame(X1Csurr)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(600)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == '4ce1cf':           
             X4CE1CF = pd.read_csv("4CE1CF.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])
             drift_no = 750
             num = drift_no * math.floor(len(X4CE1CF)/drift_no)
-            X4CE1CF = X4CE1CF[0:num]                 
-            l = 0                                                             
+            X4CE1CF = X4CE1CF[0:num]                                                                           
             data = pd.DataFrame() 
             df = pd.DataFrame(X4CE1CF)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), drift_no):                           
-                for j in range(0, drift_no):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(drift_no)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == 'fg2c2d':           
-            FG_2C_2D = pd.read_csv("FG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            FG_2C_2D = pd.read_csv("FG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 2000
             data = pd.DataFrame() 
             df = pd.DataFrame(FG_2C_2D)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(step)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1  
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == 'gears2c2d':           
-            GEARS_2C_2D = pd.read_csv("GEARS_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                         
-            l = 0                                                             
+            GEARS_2C_2D = pd.read_csv("GEARS_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 2000
             data = pd.DataFrame() 
             df = pd.DataFrame(GEARS_2C_2D)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:2]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:2])
-                    a = np.random.permutation(step)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
 
         if self.datatype == 'keystroke':           
             keystroke = pd.read_csv("keystroke.txt", delimiter=",", names=['feat1', 'feat2', 'feat3','feat4', 
-                                    'feat5', 'feat6', 'feat7', 'feat8', 'feat9', 'feat10'])                         
-            l = 0                                                             
+                                    'feat5', 'feat6', 'feat7', 'feat8', 'feat9', 'feat10'])                                                                                    
             step = 200
             data = pd.DataFrame() 
             df = pd.DataFrame(keystroke)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:10]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:10])
-                    a = np.random.permutation(step)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1 
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
     
         if self.datatype == 'Unimodal5D':           
             UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3',
-                                    'feat4', 'feat5'])                         
-            l = 0                                                             
+                                    'feat4', 'feat5'])                                                                                      
             step = 2000
             data = pd.DataFrame() 
             df = pd.DataFrame(UG_2C_5D)
-            zero = pd.DataFrame()
-            for i in range(0, len(df), step):                           
-                for j in range(0, step):                                
-                    data[l] = df.iloc[j,:5]                             
-                    zero[l] = np.zeros_like(df.iloc[j,:5])
-                    a = np.random.permutation(step)
-                    aT = a.T
-                    if l == 0:
-                        data[l] = aT[j]
-                    dataset = data.T
-                    dataset["label"] = 1
-                l += 1
+            self.data = df
+            num_col = np.shape(self.data)[1]
+    
+            if self.label_check() is True:
+                for i in range(0, len(df), step):
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col]
+                        test_train = np.array(data.T) 
+                    self.dataset.append(test_train)  # appends to test_train.
+            else:
+                for i in range(0, len(df), step):                               
+                    for j in range(0,step):
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         if self.datatype == 'UnitTest':           
             unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])       
@@ -401,28 +464,21 @@ class Datagen:
             df = pd.DataFrame(unitTestData)
             self.data = df
             num_col = np.shape(self.data)[1]
-
-            label_exist = False
-            
-            if label_exist is True:
-                # self.dataset = self.data
-                # self.dataset.columns = [*self.dataset.columns[:-1], 'label'] # set last column to 'label'
+    
+            if self.label_check() is True:
                 for i in range(0, len(df), step):
                     for j in range(0,step):
                         data[j] = df.iloc[j,:num_col]
                         test_train = np.array(data.T) 
                     self.dataset.append(test_train)  # appends to test_train.
-            #TODO: make sure that edge case creates label and adds them in batches to self.dataset
             else:
-                zero = pd.DataFrame()
                 for i in range(0, len(df), step):                               
                     for j in range(0,step):
-                        data[j] = df.iloc[:,(num_col-1)]                             
-                        test_train = np.array(data.T)
-                        print(test_train)
-
-                    self.dataset.append(test_train)
-                # print(self.dataset)
+                        data[j] = df.iloc[j,:num_col-1]                             
+                        test_train = data.T
+                        test_train["label"] = 1 
+                        arr_test_train = np.array(test_train)
+                    self.dataset.append(arr_test_train)
 
         return self.dataset
 
@@ -448,7 +504,7 @@ if __name__ == '__main__':
     testData = Datagen()
     
     test = testData.gen_dataset('UnitTest')
-    # print(test)
+    print(test)
     # if test.empty:
     #     print("Unit Test dataset is empty")
     # else:
