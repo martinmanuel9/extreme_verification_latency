@@ -492,7 +492,7 @@ class Datagen:
         else:
             return False
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
     #             '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D']
     # for i in testArray:
@@ -501,10 +501,10 @@ if __name__ == '__main__':
     #         print(i + "is empty")
     #     else: 
     #         print(i + " dataset created")
-    testData = Datagen()
+    # testData = Datagen()
     
-    test = testData.gen_dataset('UnitTest')
-    print(test)
+    # test = testData.gen_dataset('UnitTest')
+    # print(test[1], test[2])
     # if test.empty:
     #     print("Unit Test dataset is empty")
     # else:
