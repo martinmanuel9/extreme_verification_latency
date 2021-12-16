@@ -49,14 +49,14 @@ class ComposeV1():
         """
         Initialization of COMPOSEV1
         """
-        self.timestep = 1                  # [INTEGER] The current timestep of the datase
+        self.timestep = 1                   # [INTEGER] The current timestep of the datase
         self.synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
         self.verbose = 1                    #    0  : No Information Displayed
                                             #   {1} : Command line progress updates
                                             #    2  : Plots when possible and Command line progress updates
-        self.data = []                    #  array of timesteps each containing a matrix N instances x D features
-        self.labels = []                   #  array of timesteps each containing a vector N instances x 1 - Correct label
+        self.data = []                      #  array of timesteps each containing a matrix N instances x D features
+        self.labels = []                    #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = []
         self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_support = []              #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
@@ -198,37 +198,48 @@ class ComposeV1():
         dataset_gen = data_gen.gen_dataset(user_data_input)
 
         self.dataset = dataset_gen
+        # print(self.dataset[0])
+        print(self.dataset)
+        # print(np.shape(self.dataset))
         timestep = 0
-        data = []
-        for i in range(len(self.dataset)):
-            timestep += 1
-            dat = self.dataset.iloc[i].to_numpy()
-            temp_batch = np.append(timestep, dat)
-            data.append(temp_batch)
-        
-        colmn_names = list(self.dataset)
-        colmn_names.insert(0,'timestep')
-        self.data = pd.DataFrame(data, columns=colmn_names)
+        data = {}                       # data as dictionary to capture timesteps and 
 
-        # get labeled data/unlabeled data 
-        labels = []
-        unlabeled = []
+        
+
+
+        # 
+        # Previously we had a single dataframe that captures all values 
+        # in the datagen we create a d
+
+        # for i in range(len(self.dataset)):
+        #     timestep += 1
+        #     dat = self.dataset.iloc[i].to_numpy()
+        #     temp_batch = np.append(timestep, dat)
+        #     data.append(temp_batch)
+        
+        # colmn_names = list(self.dataset)
+        # colmn_names.insert(0,'timestep')
+        # self.data = pd.DataFrame(data, columns=colmn_names)
+
+        # # get labeled data/unlabeled data 
+        # labels = []
+        # unlabeled = []
        
-        for i in range(len(self.data)):
-            if self.dataset['label'][i] == 1:
-                lab_dat = self.data.iloc[i].to_numpy()
-                labels.append(lab_dat)
-            else:
-                unlab_dat = self.data.iloc[i].to_numpy()
-                unlabeled.append(unlab_dat)
+        # for i in range(len(self.data)):
+        #     if self.dataset['label'][i] == 1:
+        #         lab_dat = self.data.iloc[i].to_numpy()
+        #         labels.append(lab_dat)
+        #     else:
+        #         unlab_dat = self.data.iloc[i].to_numpy()
+        #         unlabeled.append(unlab_dat)
         
-        labeled_colmn = list(self.data)
+        # labeled_colmn = list(self.data)
 
-        unlabeled_colm = list(self.data)
-        unlabeled_colm[-1] = 'unlabeled'
+        # unlabeled_colm = list(self.data)
+        # unlabeled_colm[-1] = 'unlabeled'
         
-        self.labels = pd.DataFrame(labels, columns=labeled_colmn)
-        self.unlabeled = pd.DataFrame(unlabeled, columns=unlabeled_colm)
+        # self.labels = pd.DataFrame(labels, columns=labeled_colmn)
+        # self.unlabeled = pd.DataFrame(unlabeled, columns=unlabeled_colm)
 
 
 
@@ -273,26 +284,19 @@ class ComposeV1():
             # unlabled_ind = self.classify(ts)
 
 
-
-
-     
-
 if __name__ == '__main__':
     COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
     COMPV1.compose(1)
     # COMPV1.drift_window()
     # COMPV1.set_cores()
-    # COMPV1.set_data()
-    COMPV1.set_drift_window()
-    COMPV1.run()
+    COMPV1.set_data()
+    # COMPV1.set_drift_window()
+    # COMPV1.run()
     
     # COMPV1.compose(COMPV1.dataset, 1)
     # print(COMPV1.hypothesis)
     
     
-
-
-
 # class ComposeV2(): 
 #     """
 #     """
