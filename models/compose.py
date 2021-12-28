@@ -209,30 +209,6 @@ class ComposeV1():
                 else:
                     self.unlabeled.append(self.data[i][j])
 
-        print(self.labeled)
-        print(self.unlabeled)
-        # for i in range(1, len(self.data)):
-        #     if self.data[i][]
-        # # get labeled data/unlabeled data 
-        # labels = []
-        # unlabeled = []
-       
-        # for i in range(len(self.data)):
-        #     if self.dataset['label'][i] == 1:
-        #         lab_dat = self.data.iloc[i].to_numpy()
-        #         labels.append(lab_dat)
-        #     else:
-        #         unlab_dat = self.data.iloc[i].to_numpy()
-        #         unlabeled.append(unlab_dat)
-        
-        # labeled_colmn = list(self.data)
-
-        # unlabeled_colm = list(self.data)
-        # unlabeled_colm[-1] = 'unlabeled'
-        
-        # self.labels = pd.DataFrame(labels, columns=labeled_colmn)
-        # self.unlabeled = pd.DataFrame(unlabeled, columns=unlabeled_colm)
-
     def classify(self, ts):
         # sort data in descending so labeled data is at the top and unlabeled follows
         self.hypothesis[ts] = np.sort(self.hypothesis[ts])[::-1]
