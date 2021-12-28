@@ -56,8 +56,8 @@ class ComposeV1():
                                             #   {1} : Command line progress updates
                                             #    2  : Plots when possible and Command line progress updates
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
-        self.labeled = []                    #  array of timesteps each containing a vector N instances x 1 - Correct label
-        self.unlabeled = []
+        self.labeled = {}                    #  array of timesteps each containing a vector N instances x 1 - Correct label
+        self.unlabeled = {}
         self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_support = []              #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.classifier_func = []
@@ -201,13 +201,15 @@ class ComposeV1():
             timestep += 1
 
         
-        # filter out labeled and unlabeled from data 
-        for i in range(1, len(self.data)):
+        # filter out labeled and unlabeled from of each timestep
+
+        for i in self.data:            
             for j in range(0, len(self.data[i])):
                 if self.data[i][j][2] == 1:
-                    self.labeled.append(self.data[i][j])
+                    self.labeled[i] = self.data[i][j]
                 else:
-                    self.unlabeled.append(self.data[i][j])
+                    self.unlabeled[i] = self.data[i][j]
+
 
     def classify(self, ts):
         # sort data in descending so labeled data is at the top and unlabeled follows
