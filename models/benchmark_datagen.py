@@ -363,11 +363,12 @@ class Datagen:
             step = 10                                                                          
             data = []
             self.data = unitTestData
-            label = False
-            if label is True:
+            timestep = 1
+            # label = False
+            if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -404,8 +405,8 @@ class Datagen:
 #             print(i, " dataset created with size ", np.shape(test_dataset))
     
 #     # testData = Datagen()
-#     # test = testData.gen_dataset('UnitTest')
-#     # print(test)
+    # test = testData.gen_dataset('UnitTest')
+    # print(test)
 #     # if test.empty:
 #     #     print("Unit Test dataset is empty")
 #     # else:

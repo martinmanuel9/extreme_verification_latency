@@ -55,8 +55,8 @@ class ComposeV1():
         self.verbose = 1                    #    0  : No Information Displayed
                                             #   {1} : Command line progress updates
                                             #    2  : Plots when possible and Command line progress updates
-        self.data = []                      #  array of timesteps each containing a matrix N instances x D features
-        self.labels = []                    #  array of timesteps each containing a vector N instances x 1 - Correct label
+        self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
+        self.labeled = []                    #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = []
         self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_support = []              #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
@@ -115,15 +115,8 @@ class ComposeV1():
         """
         Finds the lower and higher limits to determine drift
         """
-        # find window where data will drift
-        all_data = self.dataset
-        
-        min_values = all_data.min()
-        max_values = all_data.max()
-
-        self.figure_xlim = [min_values[0], max_values[0]]
-        self.figure_ylim = [min_values[1], max_values[1]]
-
+        self.figure_xlim = np.amin(self.dataset)
+        self.figure_ylim = np.amax(self.dataset)
 
     def set_cores(self):
         """
@@ -183,6 +176,7 @@ class ComposeV1():
         elif self.cse_func == 'a_shape':
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
+
     #TODO: create batches one timestep per mxn of data 
     def set_data(self):
         """
@@ -198,29 +192,27 @@ class ComposeV1():
         dataset_gen = data_gen.gen_dataset(user_data_input)
 
         self.dataset = dataset_gen
-        # print(self.dataset[0])
-        print(self.dataset)
-        # print(np.shape(self.dataset))
-        timestep = 0
-        data = {}                       # data as dictionary to capture timesteps and 
+        timestep = 1                
+
+        ## set a self.data dictionary for each time step 
+        ## self.dataset[0][i] loop the arrays and append them to dictionary
+        for i in range(0, len(self.dataset[0][0])):
+            self.data[timestep] = self.dataset[0][i]
+            timestep += 1
 
         
+        # filter out labeled and unlabeled from data 
+        for i in range(1, len(self.data)):
+            for j in range(0, len(self.data[i])):
+                if self.data[i][j][2] == 1:
+                    self.labeled.append(self.data[i][j])
+                else:
+                    self.unlabeled.append(self.data[i][j])
 
-
-        # 
-        # Previously we had a single dataframe that captures all values 
-        # in the datagen we create a d
-
-        # for i in range(len(self.dataset)):
-        #     timestep += 1
-        #     dat = self.dataset.iloc[i].to_numpy()
-        #     temp_batch = np.append(timestep, dat)
-        #     data.append(temp_batch)
-        
-        # colmn_names = list(self.dataset)
-        # colmn_names.insert(0,'timestep')
-        # self.data = pd.DataFrame(data, columns=colmn_names)
-
+        print(self.labeled)
+        print(self.unlabeled)
+        # for i in range(1, len(self.data)):
+        #     if self.data[i][]
         # # get labeled data/unlabeled data 
         # labels = []
         # unlabeled = []
@@ -240,8 +232,6 @@ class ComposeV1():
         
         # self.labels = pd.DataFrame(labels, columns=labeled_colmn)
         # self.unlabeled = pd.DataFrame(unlabeled, columns=unlabeled_colm)
-
-
 
     def classify(self, ts):
         # sort data in descending so labeled data is at the top and unlabeled follows
@@ -286,7 +276,7 @@ class ComposeV1():
 
 if __name__ == '__main__':
     COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
-    COMPV1.compose(1)
+    # COMPV1.compose(1)
     # COMPV1.drift_window()
     # COMPV1.set_cores()
     COMPV1.set_data()
