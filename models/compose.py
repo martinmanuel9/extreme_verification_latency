@@ -42,7 +42,7 @@ import multiprocessing
 import qns3vm as ssl
 import benchmark_datagen as bmdg
 
-class ComposeV1(): 
+class FastCOMPOSE(): 
     def __init__(self, 
                  classifier, 
                  method): 
@@ -102,7 +102,7 @@ class ComposeV1():
         self.set_data()
 
         # set core support 
-        self.core_support = self.data           # load the dataset in the core support property this includes labeled and unlabeled data from set_data
+        self.core_support = self.data     # load the dataset in the core support property this includes labeled and unlabeled data from set_data
 
         # set cores
         self.set_cores()
@@ -114,9 +114,11 @@ class ComposeV1():
     def set_drift_window(self):
         """
         Finds the lower and higher limits to determine drift
+        Initial assumption is based on dataset min/max
         """
         self.figure_xlim = np.amin(self.dataset)
         self.figure_ylim = np.amax(self.dataset)
+        print(self.figure_xlim, self.figure_ylim)
 
     def set_cores(self):
         """
@@ -177,7 +179,7 @@ class ComposeV1():
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
 
-    #TODO: create batches one timestep per mxn of data 
+    
     def set_data(self):
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
@@ -199,70 +201,35 @@ class ComposeV1():
         for i in range(0, len(self.dataset[0][0])):
             self.data[timestep] = self.dataset[0][i]
             timestep += 1
-
         
         # filter out labeled and unlabeled from of each timestep
-
-        for i in self.data:            
-            for j in range(0, len(self.data[i])):
+        for i in self.data:
+            len_of_batch = len(self.data[i])
+            label_batch = []
+            unlabeled_batch = []            
+            for j in range(0, len_of_batch - 1):
                 if self.data[i][j][2] == 1:
-                    self.labeled[i] = self.data[i][j]
+                    # print(self.data[i][j])
+                    label_batch.append(self.data[i][j])
+                    self.labeled[i] = label_batch
                 else:
-                    self.unlabeled[i] = self.data[i][j]
-
-
+                    unlabeled_batch.append(self.data[i][j])
+                    self.unlabeled[i] = unlabeled_batch
+        
     def classify(self, ts):
         # sort data in descending so labeled data is at the top and unlabeled follows
         self.hypothesis[ts] = np.sort(self.hypothesis[ts])[::-1]
 
     def run(self):
-        # start = self.timestep
-        start = 3
-        n = self.core_support[self.core_support['label']==1]['label'].count()
-        print(n)
-
-        for ts in range(len(self.data)): # loop from start to end of batches
-            self.timestep = ts
-            # self.hypothesis[ts] = np.zeros(np.shape(self.data[ts])[0])
-
-            # check if at timestep we have labeled data
-            if self.core_support.iloc[ts, -1] == 1: 
-                # copy labels into hypothesis
-                label = self.core_support.iloc[ts].to_numpy()
-                self.hypothesis.append(label)
-
-            
-            # # add info for core supports from previous time step
-            #TODO:Determine what to do with getting past core-supports. I want to understand why past
-            if start != ts:                                              # if not initialized 
-                n_cs = self.core_support[ts-1][0].count()                # find number of core supports from previous timesteps
-                print(n_cs)
-                # self.data[ts] = self.core_support                        # append the current data with the core supports
-                
-                
-                
-            #     self.hypothesis[ts] = self.hypthothesis[ts-1][self.core_support[ts-1]]
-            #     self.labels[ts] = self.labels[ts-1][self.core_support[ts-1]]
-            #     self.core_support[ts] = np.zeros(n_cs)
-
-            # self.step = 1 
-
-            # # plot labeled / unlabled data
-
-            # unlabled_ind = self.classify(ts)
+        pass
 
 
 if __name__ == '__main__':
-    COMPV1 = ComposeV1(classifier="qns3vm", method="gmm")
-    # COMPV1.compose(1)
-    # COMPV1.drift_window()
-    # COMPV1.set_cores()
-    COMPV1.set_data()
-    # COMPV1.set_drift_window()
+    COMPV1 = FastCOMPOSE(classifier="qns3vm", method="gmm")
+    COMPV1.compose(1)
     # COMPV1.run()
     
-    # COMPV1.compose(COMPV1.dataset, 1)
-    # print(COMPV1.hypothesis)
+
     
     
 # class ComposeV2(): 
@@ -279,7 +246,7 @@ if __name__ == '__main__':
 #         self.classifier
 
 
-# class FastCompose(): 
+# class ComposeV1(): 
 #     """
 #     """
 #     def __init__(self, 
