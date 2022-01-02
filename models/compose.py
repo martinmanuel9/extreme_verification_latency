@@ -38,37 +38,38 @@ import pandas as pd
 import cse 
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
-# from extreme_verification_latency.models.qns3vm import QN_S3VM
 import qns3vm as ssl
 import benchmark_datagen as bmdg
 
-class FastCOMPOSE(): 
+class FastCOMPOSE: 
     def __init__(self, 
-                 classifier, 
-                 method): 
+                 classifier = 's3vm', 
+                 method= None,
+                 verbose = 1): 
         """
-        Initialization of COMPOSEV1
+        Initialization of Fast COMPOSE
         """
-        self.timestep = 1                   # [INTEGER] The current timestep of the datase
-        self.synthetic = 0                  # [INTEGER] 1 Allows synthetic data during cse and {0} does not allow synthetic data
-        self.n_cores =  1                   # [INTEGER] Level of feedback displayed during run {default}
-        self.verbose = 1                    #    0  : No Information Displayed
-                                            #   {1} : Command line progress updates
+
+
+        self.timestep = 1                   # The current timestep of the datase
+        self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
+        self.n_cores =  1                   # Level of feedback displayed during run {default}
+        self.verbose = verbose              #    0  : No Information Displayed
+                                            #    1  : Command line progress updates - {default}
                                             #    2  : Plots when possible and Command line progress updates
+
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
-        self.labeled = {}                    #  array of timesteps each containing a vector N instances x 1 - Correct label
+        self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
         self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        self.core_support = []              #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        self.classifier_func = []
-        self.classifier_opts = []           # [Tuple] Tuple of options for the selected classifer in ssl class
-        self.learner = {}                   # Object from the ssl 
+        # self.core_support = []            #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        # self.learner = {}                 #  Object from the ssl 
 
-        self.cse_func = []                  # [STRING] string corresponding to function in cse class
-        self.cse_opts = []                  # [Tuple] tuple of options for the selected cse function in cse class
+        self.cse_func = []                  # corresponding to function in cse class
+        self.cse_opts = []                  # options for the selected cse function in cse class
 
-        self.performance = []               # [list] column vector of classifier performances at each timestep
-        self.comp_time = []                 # [MATRIX] matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
+        # self.performance = []               # classifier performances at each timestep
+        # self.comp_time = []                 # matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
         self.classifier = classifier
         self.method = method                # not sure what to use for method
@@ -77,8 +78,33 @@ class FastCOMPOSE():
         self.figure_ylim = []
         self.step = 0
         self.cse = cse.CSE(self.dataset)
+        
+        if self.classifier is None:
+            avail_classifier = ['gmm','parzen', 'knn', 'a_shape', 's3vm']
+            print('The following classifiers are available:\n' , avail_classifier)
+            classifier_input = input('Enter classifier:')
+            self.classifier = classifier_input
+        
+        if verbose is None:
+            # set object displayed info setting 
+            print("Only 3 options to display information for verbose: \n", 
+                "0 - No Info ; \n", 
+                "1 - Command Line Progress Updates; \n",
+                "2 - Plots when possilbe and Command Line Progress \n")
+            print("Set Verbose: ")
+            verbose_input = input("Enter display information option:")
+            self.verbose = verbose_input
 
-    def compose(self, verbose):
+        if self.verbose >= 0 and self.verbose <=2:
+            print("Run method: ", self.verbose)
+        else:
+            print("Only 3 options to display information: \n", 
+            "0 - No Info ;\n", 
+            "1 - Command Line Progress Updates;\n",
+            "2 - Plots when possilbe and Command Line Progress")
+
+
+    def compose(self):
         """
         Sets COMPOSE dataset and information processing options
         Check if the input parameters are not empty for compose
@@ -88,15 +114,6 @@ class FastCOMPOSE():
                  1 : Command Line progress updates
                  2 : Plots when possible and Command Line progress updates
         """
-        # sets dataset and verbose
-        self.verbose = verbose
-
-        # set object displayed info setting
-        if self.verbose >= 0 and self.verbose <=2:
-           self.verbose = verbose 
-        else:
-            print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates; 2 - Plots when possilbe and Command Line Progress")
-
 
         # set labels and unlabeles and dataset to process
         self.set_data()
@@ -118,7 +135,7 @@ class FastCOMPOSE():
         """
         self.figure_xlim = np.amin(self.dataset)
         self.figure_ylim = np.amax(self.dataset)
-        print(self.figure_xlim, self.figure_ylim)
+        print("Drift window:" , [self.figure_xlim, self.figure_ylim])
 
     def set_cores(self):
         """
@@ -136,11 +153,13 @@ class FastCOMPOSE():
         # user_input = input("Enter the amount of cores you wish to begin processing: ")
         user_input = self.n_cores
         self.n_cores = user_input
+        print("Num of cores:", self.n_cores)
         # print("User selected the following cores to process:", self.n_cores)
 
-    # TODO: need to understand how to set the classifier 
-    def set_classifier(self, user_selction, user_options):
+    def set_classifier(self):
         """
+        Available classifiers : 'gmm','parzen', 'knn', 'a_shape', 's3vm'
+        For S3VM:  
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
         The QN_S3VM options are the following:  
@@ -150,22 +169,23 @@ class FastCOMPOSE():
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
+
+        classifier_input = 's3vm'
+
         if not self.learner: 
             # create the ssl
             self.learner = ssl.QN_S3VM()
-            
-        self.classifier_func = user_selction
-        self.classifier_opts = user_options
 
-    def set_cse(self, user_selection, user_options ):
+        # construct cse
         if not self.cse:
             self.cse= cse.CSE(self.dataset)
             
         self.cse.set_data(self.dataset)
 
-        self.cse_func = user_selection
-        self.cse_opts = user_options
-
+        self.cse_func = classifier_input
+        self.classifier = classifier_input
+        self.cse_opts = classifier_input
+        
         self.cse.set_boundary(self.cse_func)
         self.cse.set_user_opts(self.cse_opts)
 
@@ -178,8 +198,9 @@ class FastCOMPOSE():
         elif self.cse_func == 'a_shape':
             self.cse.alpha_shape()
             self.cse.a_shape_compaction()
+        elif self.cse_func == 's3vm':
+            pass
 
-    
     def set_data(self):
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
@@ -192,15 +213,14 @@ class FastCOMPOSE():
         user_data_input = 'UnitTest'     # comment out whenever you can run it or determine if I want to run all sets
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
-
-        self.dataset = dataset_gen
-        timestep = 1                
+        self.dataset = dataset_gen              
+        print("Dataset:", user_data_input)
 
         ## set a self.data dictionary for each time step 
         ## self.dataset[0][i] loop the arrays and append them to dictionary
         for i in range(0, len(self.dataset[0][0])):
-            self.data[timestep] = self.dataset[0][i]
-            timestep += 1
+            self.data[self.timestep] = self.dataset[0][i]
+            self.timestep += 1
         
         # filter out labeled and unlabeled from of each timestep
         for i in self.data:
@@ -216,18 +236,16 @@ class FastCOMPOSE():
                     unlabeled_batch.append(self.data[i][j])
                     self.unlabeled[i] = unlabeled_batch
         
-    def classify(self, ts):
-        # sort data in descending so labeled data is at the top and unlabeled follows
-        self.hypothesis[ts] = np.sort(self.hypothesis[ts])[::-1]
+    def classify(self):
+        pass
 
     def run(self):
         pass
 
 
 if __name__ == '__main__':
-    COMPV1 = FastCOMPOSE(classifier="qns3vm", method="gmm")
-    COMPV1.compose(1)
-    # COMPV1.run()
+    fastcompose_test = FastCOMPOSE(classifier="qns3vm", method="gmm")
+    fastcompose_test.compose()
     
 
     
