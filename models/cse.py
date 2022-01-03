@@ -61,24 +61,7 @@ class CSE:
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
         self.ashape = dict()                                                    # dictionary for ashape
 
-    # check to see if cse gets right inputs 
-    def check_input(self, verbose, synthetic_data):
-        self.verbose = verbose
-        # set object displayed info setting
-        if verbose < 0 or verbose > 2:
-            print("Only 3 options to display information: 0 - No Info ; 1 - Command Line Progress Updates;" 
-                    + "2 - Plots when possilbe and Command Line Progress")
-            return False
-        
-        self.synthetic_data = synthetic_data
-
-        if synthetic_data.empty:
-            print("Dataset is empty!")
-            return False
-
-        return True
-
-        # set data by getting inputs from benchmark_datagen
+    # set data by getting inputs from benchmark_datagen
     def set_data(self, data): 
         self.data = data
 
@@ -413,7 +396,7 @@ class CSE:
 
  ## unit tests        
 if __name__ == '__main__':
-    gen_data = bm_gen_data.Datagen.dataset("UnitTest")
+    gen_data = bm_gen_data.Datagen()
     
     # # check input
     # test_cse = CSE()
@@ -454,11 +437,12 @@ if __name__ == '__main__':
     # test_alpha.alpha_shape()
     # test_alpha.a_shape_compaction()
 
-    ## test GMM 
-    # testGMM = CSE(gen_data)
-    # testGMM.set_data(gen_data)
-    # testGMM.set_boundary('gmm')
-    # testGMM.gmm()
+    # test GMM 
+    gmm_data = gen_data.gen_dataset('UnitTest')
+    testGMM = CSE(gmm_data)
+    testGMM.set_data(gmm_data)
+    testGMM.set_boundary('gmm')
+    testGMM.gmm()
 
     ## test Parzen 
     # testParzen = CSE(gen_data)
@@ -467,7 +451,7 @@ if __name__ == '__main__':
     # testParzen.parzen()
 
     ## test KNN
-    testKNN = CSE(gen_data)
-    testKNN.set_data(gen_data)
-    testKNN.set_boundary('knn')
-    testKNN.k_nn()
+    # testKNN = CSE(gen_data)
+    # testKNN.set_data(gen_data)
+    # testKNN.set_boundary('knn')
+    # testKNN.k_nn()
