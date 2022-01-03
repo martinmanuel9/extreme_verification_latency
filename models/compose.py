@@ -77,7 +77,7 @@ class FastCOMPOSE:
         self.figure_xlim = []
         self.figure_ylim = []
         self.step = 0
-        self.cse = cse.CSE(self.dataset)
+        self.cse = cse.CSE()
         
         if self.classifier is None:
             avail_classifier = ['gmm','parzen', 'knn', 'a_shape', 's3vm']
@@ -159,6 +159,7 @@ class FastCOMPOSE:
     def set_classifier(self):
         """
         Available classifiers : 'gmm','parzen', 'knn', 'a_shape', 's3vm'
+        
         For S3VM:  
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
@@ -178,9 +179,7 @@ class FastCOMPOSE:
 
         # construct cse
         if not self.cse:
-            self.cse= cse.CSE(self.dataset)
-            
-        self.cse.set_data(self.dataset)
+            self.cse= cse.CSE()
 
         self.cse_func = classifier_input
         self.classifier = classifier_input
@@ -246,6 +245,7 @@ class FastCOMPOSE:
 if __name__ == '__main__':
     fastcompose_test = FastCOMPOSE(classifier="qns3vm", method="gmm")
     fastcompose_test.compose()
+    
     
 
     

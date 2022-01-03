@@ -34,6 +34,7 @@ College of Engineering
 # SOFTWARE.
 
 from numpy import linalg
+from numpy.lib import utils
 from numpy.lib.twodim_base import diag
 from pandas.core.tools.datetimes import DatetimeScalarOrArrayConvertible
 from pandas.io.formats.format import return_docstring
@@ -48,7 +49,7 @@ import math
 from sklearn.covariance import EmpiricalCovariance, MinCovDet
 
 class Util:
-    def __init__(self, data) -> None:
+    def __init__(self, data=None) -> None:
         self.data = pd.DataFrame(data)
         self.N_features = np.shape(self.data)[1]
 
@@ -86,9 +87,13 @@ class Util:
         mahal = np.dot(left_term, x_minus_mu.T).diagonal()
         dist = np.sum(mahal)
         return dist
-    
+
+
 # if __name__ == '__main__':
-    # gen_data = bm_gen_dat.Datagen.dataset("UnitTest")
+#     gen_data = bm_gen_dat.Datagen()
+#     data = gen_data.gen_dataset("UnitTest")
+#     util = Util()
+#     util.makeDataframe(data)
     # util = Util(gen_data)
     ## test Mahalanobis Distance
     # util = Util(gen_data)

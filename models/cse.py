@@ -44,35 +44,30 @@ import math
 from scipy.spatial import Delaunay, distance
 # import trimesh
 from sklearn.mixture import GaussianMixture as GMM
-import evl_util
+import util
 import knn
 
 
 class CSE:
-    def __init__(self, data) -> None:
+    def __init__(self, data=None) -> None:
         self.synthetic_data = []
-        self.verbose = 1
-        self.data = pd.DataFrame(data)
-        self.boundary = []
-        self.boundary_data = dict()
-        self.boundary_opts = dict()                                             # creates dictionary 
-        self.N_Instances = np.shape(self.data)[0]
-        self.N_features = np.shape(self.data)[1]
-        self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
-        self.ashape = dict()                                                    # dictionary for ashape
-
-    # set data by getting inputs from benchmark_datagen
-    def set_data(self, data): 
+        # self.data must be updated as it is taking data as a dictionary 
         self.data = data
-
+        self.boundary = []
+        self.boundary_data = {}
+        self.boundary_opts = {} 
+        # TODO: need to fix this to get correct instances                                            
+        self.N_Instances =[]
+        self.N_features = []
+        self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
+        self.ashape = {}                                                    
         
-    
     # Set Boundary Construction Type and Options 
     def set_boundary(self, boundary_selection, opts=None):
         if not opts:
             self.boundary_opts.clear()
 
-        self.boundary_opts.clear()                # clears any past boundary options
+        self.boundary_opts.clear()                          # clears any past boundary options
 
         if boundary_selection in self.valid_boundary:
             self.boundary = boundary_selection
@@ -91,7 +86,7 @@ class CSE:
 
         if not self.boundary:
             print('Boundary construction type not set - default classifier and options loaded') 
-            # sett gmm as defualt boundary
+            # set gmm as defualt boundary
             self.set_boundary('gmm', opts='gmm')
 
         # plot labeled and unlabeled data 
@@ -106,10 +101,9 @@ class CSE:
             self.plot_cse(self.Indices)
         
     def set_defualt_opts(self): 
-        # get n features
-        df = pd.DataFrame(self.data)
-        # self.N_features = df.shape[1]    # used to have -1  here removed for parzen windows 
-    
+        """
+        Sets classifier default options
+        """    
         if self.boundary == "a_shape":
             # alpha = 2
             # p = 2
@@ -139,8 +133,7 @@ class CSE:
     def set_user_opts(self, opts):
         # must be an array input 
         if isinstance(opts, list):
-            # self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
-            # need to determine if user inputs is the actual correct boundary 
+            # Determines if user inputs is the actual correct boundary 
             if any(i in self.valid_boundary for i in opts):
                 self.boundary_opts = opts
                 self.set_defualt_opts() 
@@ -149,36 +142,38 @@ class CSE:
         else:
             print("Options must be entered as list: [options]")
 
-    def plot_cse(self, indices):
-        if not indices:                 # if no indices are specified
-            indices = self.data
-            color = 'r.'                # red dot marker
-        else:
-            color = 'k.'                # black dot marker
+    # TODO: Update plotting: Create in util.py
+    # def plot_cse(self, indices=None):
+    #     if not indices:                 # if no indices are specified
+    #         indices = self.data
+    #         color = 'r.'                # red dot marker
+    #     else:
+    #         color = 'k.'                # black dot marker
         
-        df = pd.DataFrame(self.data)
-        self.N_features = df.shape[1] - 1
-        print(self.N_features)
-        if self.N_features == 2: 
-            print(self.data)              # command line progress
-            plt.plot(self.data["column1"], self.data["column2"], color)
-            plt.xlabel("Feature 1")
-            plt.ylabel("Feature 2")
-            plt.title("Boundary Constructor:" + self.boundary)
-            plt.show()
-        if self.N_features == 3:
-            print(self.data)
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='3d')
-            xs = self._data["column1"]
-            ys = self._data["column2"]
-            zs = self._data["column2"]
-            ax.scatter(xs, ys, zs, marker = '.')
-            ax.set_xlabel('Feature 1')
-            ax.set_ylabel('Feature 2')
-            ax.set_zlabel('Feature 3')
-            ax.set_title('Boundary Constructor: ' , self.boundary)
-            plt.show()
+    #     # need to update this to match correct data format
+    #     df = pd.DataFrame(self.data)
+        
+    #     print(self.N_features)
+    #     if self.N_features == 2: 
+    #         print(self.data)              # command line progress
+    #         plt.plot(self.data["column1"], self.data["column2"], color)
+    #         plt.xlabel("Feature 1")
+    #         plt.ylabel("Feature 2")
+    #         plt.title("Boundary Constructor:" + self.boundary)
+    #         plt.show()
+    #     if self.N_features == 3:
+    #         print(self.data)
+    #         fig = plt.figure()
+    #         ax = fig.add_subplot(projection='3d')
+    #         xs = self._data["column1"]
+    #         ys = self._data["column2"]
+    #         zs = self._data["column2"]
+    #         ax.scatter(xs, ys, zs, marker = '.')
+    #         ax.set_xlabel('Feature 1')
+    #         ax.set_ylabel('Feature 2')
+    #         ax.set_zlabel('Feature 3')
+    #         ax.set_title('Boundary Constructor: ' , self.boundary)
+    #         plt.show()
     
     ## Alpha shape and Dependencies Onion method
     def alpha_shape(self):  
@@ -207,14 +202,7 @@ class CSE:
             
         self.ashape['simplexes'] = simplexes                                    # adds tuple to simplexes and includes after Tesselation
         self.ashape['includes'] = includes
-        
-        # plot options for a-shape
-        # if self.verbose == 2:
-            
-        #     if self.N_features == 2:
-        #         trimesh()
-        #     elif self.N_features == 2:
-        #         trimesh()
+
 
     
     # calculate the radius 
@@ -323,8 +311,8 @@ class CSE:
         numComponents = BIC.count(minBIC)                
         
         # need to calculate the Mahalanobis Distance for GMM
-        util = evl_util.Util(x_ul)
-        D = util.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
+        utility = util.Util(data=x_ul)
+        D = utility.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
         mahalDistance = np.array(D)
         minMahal = np.amin(mahalDistance)
         I = np.where(minMahal)[0]
@@ -363,8 +351,8 @@ class CSE:
             
             if n_in > (self.boundary_opts['noise_thr'] * ur):
                 sig = diag(self.boundary_opts['win']/2 ** 2)
-                util = evl_util.Util(x_in)
-                norm_euc = util.quickMahal(x_in, x_center, sig)
+                utility = util.Util(x_in)
+                norm_euc = utility.quickMahal(x_in, x_center, sig)
                 ul_dist_sum = np.mean(math.exp(-4*norm_euc))
             else:
                 ul_dist_sum = 0
@@ -390,16 +378,7 @@ class CSE:
  ## unit tests        
 if __name__ == '__main__':
     gen_data = bm_gen_data.Datagen()
-    
-    # # check input
-    # test_cse = CSE()
-    # checkInputCse = test_cse.check_input(3, gen_data)
-
-    # # test set_data 
-    # test_set_data = CSE()
-    # check_set_data = test_set_data.set_data(gen_data)
-    # print(check_set_data)
-
+  
     # test set_boundary
     # test_set_boundary = CSE()
     # check_set_boundary = test_set_boundary.set_boundary('gmm', ["gmm", 1, [1, 1, 1]])
@@ -431,11 +410,12 @@ if __name__ == '__main__':
     # test_alpha.a_shape_compaction()
 
     # test GMM 
-    gmm_data = gen_data.gen_dataset('UnitTest')
-    testGMM = CSE(gmm_data)
-    testGMM.set_data(gmm_data)
+    unitTestData = gen_data.gen_dataset('UnitTest')
+    testGMM = CSE(unitTestData)
+    print("Instances:", testGMM.N_Instances)
+    print("Features:", testGMM.N_features)
     testGMM.set_boundary('gmm')
-    testGMM.gmm()
+    # testGMM.gmm()
 
     ## test Parzen 
     # testParzen = CSE(gen_data)
