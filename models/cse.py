@@ -65,13 +65,6 @@ class CSE:
     def set_data(self, data): 
         self.data = data
 
-    def set_verbose(self, verbose):
-
-        if verbose > 2:
-            verbose = 2
-        if verbose < 0:
-            verbose = 0
-        self.verbose = math.floor(verbose)
         
     
     # Set Boundary Construction Type and Options 
