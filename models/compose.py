@@ -43,7 +43,7 @@ import benchmark_datagen as bmdg
 
 class FastCOMPOSE: 
     def __init__(self, 
-                 classifier = 's3vm', 
+                 classifier = 'sv3m', 
                  method= None,
                  verbose = 1): 
         """
@@ -65,7 +65,7 @@ class FastCOMPOSE:
         # self.core_support = []            #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         # self.learner = {}                 #  Object from the ssl 
 
-        self.cse_func = []                  # corresponding to function in cse class
+        # self.cse_func = []                  # corresponding to function in cse class -- no longer needed method will takes it cse method place
         self.cse_opts = []                  # options for the selected cse function in cse class
 
         # self.performance = []               # classifier performances at each timestep
@@ -79,8 +79,9 @@ class FastCOMPOSE:
         self.step = 0
         self.cse = cse.CSE()
         
+        
         if self.classifier is None:
-            avail_classifier = ['gmm','parzen', 'knn', 'a_shape', 's3vm']
+            avail_classifier = ['knn', 's3vm']
             print('The following classifiers are available:\n' , avail_classifier)
             classifier_input = input('Enter classifier:')
             self.classifier = classifier_input
@@ -126,6 +127,9 @@ class FastCOMPOSE:
 
         # set drift window
         self.set_drift_window()
+
+        # set classifier
+        self.set_classifier()
    
     
     def set_drift_window(self):
@@ -159,7 +163,7 @@ class FastCOMPOSE:
     def set_classifier(self):
         """
         Available classifiers : 'gmm','parzen', 'knn', 'a_shape', 's3vm'
-        
+
         For S3VM:  
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
@@ -170,35 +174,43 @@ class FastCOMPOSE:
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
+    
 
         classifier_input = 's3vm'
 
-        if not self.learner: 
-            # create the ssl
-            self.learner = ssl.QN_S3VM()
+        # if not self.learner: 
+        #     # create the ssl
+        #     self.learner = ssl.QN_S3VM()
 
         # construct cse
         if not self.cse:
-            self.cse= cse.CSE()
+            self.cse= cse.CSE(data=self.data)
 
-        self.cse_func = classifier_input
-        self.classifier = classifier_input
-        self.cse_opts = classifier_input
+        self.cse = cse.CSE(data=self.data)
+
+
+
+        # test_labeled = cse.CSE(data=self.labeled)
+        # test_unlabeled = cse.CSE(data=self.unlabeled)
+
+        # self.cse_func = classifier_input
+        # self.classifier = classifier_input
+        # self.cse_opts = classifier_input
         
-        self.cse.set_boundary(self.cse_func)
-        self.cse.set_user_opts(self.cse_opts)
+        # self.cse.set_boundary(self.cse_func)
+        # self.cse.set_user_opts(self.cse_opts)
 
-        if self.cse_func == 'gmm':
-            self.cse.gmm()
-        elif self.cse_func == 'parzen':
-            self.cse.parzen()
-        elif self.cse_func == 'knn':
-            self.cse.k_nn()
-        elif self.cse_func == 'a_shape':
-            self.cse.alpha_shape()
-            self.cse.a_shape_compaction()
-        elif self.cse_func == 's3vm':
-            pass
+        # if self.method == 'gmm':
+        #     self.cse.gmm()
+        # elif self.method == 'parzen':
+        #     self.cse.parzen()
+        # elif self.method == 'knn':
+        #     self.cse.k_nn()
+        # elif self.method == 'a_shape':
+        #     self.cse.alpha_shape()
+        #     self.cse.a_shape_compaction()
+        # elif self.method == 's3vm':
+        #     pass
 
     def set_data(self):
         """
@@ -245,6 +257,7 @@ class FastCOMPOSE:
 if __name__ == '__main__':
     fastcompose_test = FastCOMPOSE(classifier="qns3vm", method="gmm")
     fastcompose_test.compose()
+    
     
     
 

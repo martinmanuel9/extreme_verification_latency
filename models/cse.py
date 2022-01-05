@@ -49,10 +49,10 @@ import knn
 
 
 class CSE:
-    def __init__(self, data=None) -> None:
+    def __init__(self, data=None):
         self.synthetic_data = []
         # self.data must be updated as it is taking data as a dictionary 
-        self.data = data
+        self.data = []
         self.boundary = []
         self.boundary_data = {}
         self.boundary_opts = {} 
@@ -60,8 +60,15 @@ class CSE:
         self.N_Instances =[]
         self.N_features = []
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
-        self.ashape = {}                                                    
-        
+        self.ashape = {} 
+
+        utility = util.Util()
+
+        if data is not None:
+            self.data = utility.makeDataFrame(data)
+            print(self.data)
+            
+
     # Set Boundary Construction Type and Options 
     def set_boundary(self, boundary_selection, opts=None):
         if not opts:
