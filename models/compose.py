@@ -44,8 +44,8 @@ import benchmark_datagen as bmdg
 
 class FastCOMPOSE: 
     def __init__(self, 
-                 classifier = 'sv3m', 
-                 method= None,
+                 classifier = 'QN_S3VM', 
+                 method= 'gmm',
                  verbose = 1): 
         """
         Initialization of Fast COMPOSE
@@ -163,9 +163,9 @@ class FastCOMPOSE:
 
     def set_classifier(self):
         """
-        Available classifiers : 'gmm','parzen', 'knn', 'a_shape', 's3vm'
+        Available classifiers : 'knn',  'QN_S3VM'
 
-        For S3VM:  
+        For QN_S3VM:  
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
         The QN_S3VM options are the following:  
@@ -175,43 +175,30 @@ class FastCOMPOSE:
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
-    
 
-        classifier_input = 's3vm'
 
-        # if not self.learner: 
-        #     # create the ssl
-        #     self.learner = ssl.QN_S3VM()
-
-        # construct cse
+        # construct cse if not done before
         if not self.cse:
             self.cse= cse.CSE(data=self.data)
 
-        self.cse = cse.CSE(data=self.unlabeled)
+        self.cse = cse.CSE(data=self.data)
 
 
-
-        # test_labeled = cse.CSE(data=self.labeled)
-        # test_unlabeled = cse.CSE(data=self.unlabeled)
-
-        # self.cse_func = classifier_input
-        # self.classifier = classifier_input
-        # self.cse_opts = classifier_input
-        
-        # self.cse.set_boundary(self.cse_func)
-        # self.cse.set_user_opts(self.cse_opts)
-
-        # if self.method == 'gmm':
-        #     self.cse.gmm()
-        # elif self.method == 'parzen':
-        #     self.cse.parzen()
-        # elif self.method == 'knn':
-        #     self.cse.k_nn()
-        # elif self.method == 'a_shape':
-        #     self.cse.alpha_shape()
-        #     self.cse.a_shape_compaction()
-        # elif self.method == 's3vm':
-        #     pass
+        if self.method == 'gmm':
+            self.cse.set_boundary(self.method)
+            self.cse.gmm()
+        elif self.method == 'parzen':
+            self.cse.set_boundary(self.method)
+            self.cse.parzen()
+        elif self.method == 'knn':
+            self.cse.set_boundary(self.method)
+            self.cse.k_nn()
+        elif self.method == 'a_shape':
+            self.cse.set_boundary(self.method)
+            self.cse.alpha_shape()
+            self.cse.a_shape_compaction()
+        elif self.method == 'QN_S3VM':
+            pass
 
     def set_data(self):
         """

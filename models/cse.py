@@ -56,16 +56,18 @@ class CSE:
         self.boundary = []
         self.boundary_data = {}
         self.boundary_opts = {} 
-        # TODO: need to fix this to get correct instances                                            
-        self.N_Instances =[]
-        self.N_features = []
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
         self.ashape = {} 
 
         utility = util.Util()
 
         if data is not None:
-            self.data = utility.makeDataFrame(data)
+            self.data = utility.makeDataFrame(data)     
+            self.N_Instances = np.shape(self.data)[0]
+            self.N_features = np.shape(self.data)[1]
+        else:
+            print("Please ensure that you pass in data to extract core supports!") 
+
             
 
     # Set Boundary Construction Type and Options 
@@ -313,7 +315,7 @@ class CSE:
                 BIC.append(GM[i].bic(x_ul))
         
         temp = self.boundary_opts['kl'] - 1
-        minBIC = np.amin(BIC)                       # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
+        minBIC = np.amin(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
         numComponents = BIC.count(minBIC)                
         
         # need to calculate the Mahalanobis Distance for GMM
@@ -321,17 +323,19 @@ class CSE:
         D = utility.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
         mahalDistance = np.array(D)
         minMahal = np.amin(mahalDistance)
-        I = np.where(minMahal)[0]
+        # I = np.where(minMahal)[0]
         
         sortMahal = np.sort(mahalDistance)
-        IX = np.where(sortMahal)
 
+        IX = np.where(sortMahal)
         support_indices = IX[:core_support_cutoff]
+        print(len(support_indices))
+
         print("GMM MD: " , sortMahal)
 
-        self.boundary_data['BIC']= BIC
+        self.boundary_data['BIC'] = BIC
         self.boundary_data['num_components'] = numComponents + temp
-        self.boundary_data['gmm']= GM[numComponents+temp]
+        self.boundary_data['gmm'] = GM[numComponents+temp]
         self.boundary_data['gmm_timestep'] = GM[numComponents+temp] 
     
     # Parzen Window Clustering
@@ -382,8 +386,8 @@ class CSE:
 
 
  ## unit tests        
-if __name__ == '__main__':
-    gen_data = bm_gen_data.Datagen()
+# if __name__ == '__main__':
+#     gen_data = bm_gen_data.Datagen()
   
     # test set_boundary
     # test_set_boundary = CSE()
@@ -416,11 +420,11 @@ if __name__ == '__main__':
     # test_alpha.a_shape_compaction()
 
     # test GMM 
-    unitTestData = gen_data.gen_dataset('UnitTest')
-    testGMM = CSE(unitTestData)
-    print("Instances:", testGMM.N_Instances)
-    print("Features:", testGMM.N_features)
-    testGMM.set_boundary('gmm')
+    # unitTestData = gen_data.gen_dataset('UnitTest')
+    # testGMM = CSE(unitTestData)
+    # print("Instances:", testGMM.N_Instances)
+    # print("Features:", testGMM.N_features)
+    # testGMM.set_boundary('gmm')
     # testGMM.gmm()
 
     ## test Parzen 

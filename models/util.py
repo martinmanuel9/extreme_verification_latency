@@ -89,10 +89,8 @@ class Util:
         return dist
 
     def makeDataFrame(self, data):
-        print(data)
         keys = data.keys()
         df = pd.DataFrame([data]).T
-        print(df)
         # df[first column - only colm with data][array in row][row in array][first number of array]
         # df[0][1][j]
         dataReturn = pd.DataFrame()
