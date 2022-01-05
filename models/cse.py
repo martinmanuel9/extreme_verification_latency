@@ -66,7 +66,6 @@ class CSE:
 
         if data is not None:
             self.data = utility.makeDataFrame(data)
-            print(self.data)
             
 
     # Set Boundary Construction Type and Options 

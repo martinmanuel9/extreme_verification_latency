@@ -89,23 +89,22 @@ class Util:
         return dist
 
     def makeDataFrame(self, data):
-        # print(data)
+        print(data)
+        keys = data.keys()
         df = pd.DataFrame([data]).T
-        print(len(df))
+        print(df)
         # df[first column - only colm with data][array in row][row in array][first number of array]
         # df[0][1][j]
         dataReturn = pd.DataFrame()
-        for i in range(1, len(df) + 1):
-            arrayRow = df[0][i]
+        for key in keys:
+            arrayRow = df[0][key]
             # print(len(arrayRow))              # this takes the first array - index begins at 1 since first timestep is 1
             for j in range(0, len(arrayRow)):
-                row = pd.Series(df[0][i][j])
+                row = pd.Series(df[0][key][j])
                 dataReturn = dataReturn.append(row, ignore_index=True)
 
         return dataReturn
 
-    def makeDataFrameMultipleEntries(self,data):
-        pass
 
 # if __name__ == '__main__':
 #     gen_data = bm_gen_dat.Datagen()

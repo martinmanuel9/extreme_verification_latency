@@ -34,6 +34,7 @@ College of Engineering
 # SOFTWARE.
 
 import numpy as np
+from numpy.lib.function_base import append
 import pandas as pd
 import cse 
 from concurrent.futures import ProcessPoolExecutor
@@ -116,17 +117,17 @@ class FastCOMPOSE:
                  2 : Plots when possible and Command Line progress updates
         """
 
-        # set labels and unlabeles and dataset to process
-        self.set_data()
-
-        # set core support 
-        self.core_support = self.data     # load the dataset in the core support property this includes labeled and unlabeled data from set_data
-
         # set cores
         self.set_cores()
 
+        # set labels and unlabeles and dataset to process
+        self.set_data()
+
         # set drift window
         self.set_drift_window()
+
+        # set core support 
+        self.core_support = self.data     # load the dataset in the core support property this includes labeled and unlabeled data from set_data
 
         # set classifier
         self.set_classifier()
@@ -186,7 +187,7 @@ class FastCOMPOSE:
         if not self.cse:
             self.cse= cse.CSE(data=self.data)
 
-        self.cse = cse.CSE(data=self.data)
+        self.cse = cse.CSE(data=self.unlabeled)
 
 
 
@@ -246,6 +247,44 @@ class FastCOMPOSE:
                 else:
                     unlabeled_batch.append(self.data[i][j])
                     self.unlabeled[i] = unlabeled_batch
+
+        # convert labeled data to match self.data data structure
+        labeled_keys = self.labeled.keys()
+        for key in labeled_keys:        
+            if len(self.labeled[key]) > 1:
+                len_of_components = len(self.labeled[key])
+                array_tuple = []
+                for j in range(0, len_of_components):
+                    array = np.array(self.labeled[key][j])
+                    arr_to_list = array.tolist()
+                    array_tuple.append(arr_to_list)
+                    array = []
+                    arr_to_list = []
+                concat_tuple = np.vstack(array_tuple)
+                self.labeled[key] = concat_tuple
+       
+        # convert unlabeled data to match self.data data structure
+        unlabeled_keys = self.unlabeled.keys()
+        for key in unlabeled_keys:        
+            if len(self.unlabeled[key]) > 1:
+                len_of_components = len(self.unlabeled[key])
+                array_tuple = []
+                for j in range(0, len_of_components):
+                    array = np.array(self.unlabeled[key][j])
+                    arr_to_list = array.tolist()
+                    array_tuple.append(arr_to_list)
+                    array = []
+                    arr_to_list = []
+                concat_tuple = np.vstack(array_tuple)    
+                self.unlabeled[key] = concat_tuple 
+
+ 
+
+
+
+
+                    
+                
         
     def classify(self):
         pass
