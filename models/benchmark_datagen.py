@@ -61,12 +61,11 @@ class Datagen:
             UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['feat1', 'feat2', 'feat3'])                                                                                        
             step = 1000
             data = []
-            self.data = UG_2C_2D
-        
+            self.data = UG_2C_2D 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -81,12 +80,11 @@ class Datagen:
             MG_2C_2D = pd.read_csv("MG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 2000
             data = []
-            self.data = MG_2C_2D
-        
+            self.data = MG_2C_2D 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -98,12 +96,11 @@ class Datagen:
             X1CDT = pd.read_csv("1CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = []
-            self.data = X1CDT
-        
+            self.data = X1CDT 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -116,12 +113,11 @@ class Datagen:
             X2CDT = pd.read_csv("2CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = []
-            self.data = X2CDT
-        
+            self.data = X2CDT 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -133,29 +129,27 @@ class Datagen:
             UG_2C_3D = pd.read_csv("UG_2C_3D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3', 'feat4'])                                                                                    
             step = 2000
             data = []
-            self.data = UG_2C_3D
-        
+            self.data = UG_2C_3D 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
-                self.data.drop('feat4', axis=1, inplace=True)
+                self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
                 for i in self.batch(self.data, step):
                     data.append(i)
-                self.dataset.append(data)      
+                self.dataset.append(data) 
         
         if self.datatype == '1cht':           
             X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 400
             data = []
-            self.data = X1CHT
-        
+            self.data = X1CHT 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -167,29 +161,27 @@ class Datagen:
             X2CHT = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                      
             step = 400
             data = []
-            self.data = X2CHT
-        
+            self.data = X2CHT 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
                 for i in self.batch(self.data, step):
                     data.append(i)
-                self.dataset.append(data)   
+                self.dataset.append(data)  
 
         if self.datatype == '4cr':           
             X4CR = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = []
-            self.data = X4CR
-        
+            self.data = X4CR 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -201,12 +193,11 @@ class Datagen:
             X4CRE_V1 = pd.read_csv("4CRE-V1.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 1000
             data = []
-            self.data = X4CRE_V1
-        
+            self.data = X4CRE_V1 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -218,35 +209,33 @@ class Datagen:
             X4CRE_V2 = pd.read_csv("4CRE-V2.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 1000
             data = []
-            self.data = X4CRE_V2
-        
+            self.data = X4CRE_V2 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
                 for i in self.batch(self.data, step):
                     data.append(i)
-                self.dataset.append(data) 
+                self.dataset.append(data)
 
         if self.datatype == '5cvt':           
             X5CVT = pd.read_csv("5CVT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 1000
             data = []
-            self.data = X5CVT
-        
+            self.data = X5CVT 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
                 for i in self.batch(self.data, step):
                     data.append(i)
-                self.dataset.append(data)     
+                self.dataset.append(data)    
        
 
         if self.datatype == '1csurr':           
@@ -255,12 +244,11 @@ class Datagen:
             X1Csurr = X1Csurr[0:num]                                                                              
             step = 600
             data = []
-            self.data = X1Csurr
-        
+            self.data = X1Csurr 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -273,17 +261,16 @@ class Datagen:
             drift_no = 750
             num = drift_no * math.floor(len(X4CE1CF)/drift_no)
             X4CE1CF = X4CE1CF[0:num]                                                                           
+            self.data = X4CE1CF 
             data = []
-            self.data = X4CE1CF
-            
             if self.label_check() is True:
-                for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                for i in self.batch(self.data , num):
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
-                for i in self.batch(self.data, step):
+                for i in self.batch(self.data, num):
                     data.append(i)
                 self.dataset.append(data)
 
@@ -291,12 +278,11 @@ class Datagen:
             FG_2C_2D = pd.read_csv("FG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 2000
             data = []
-            self.data = FG_2C_2D
-            
+            self.data = FG_2C_2D 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -308,12 +294,11 @@ class Datagen:
             GEARS_2C_2D = pd.read_csv("GEARS_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 2000
             data = []
-            self.data = GEARS_2C_2D
-            
+            self.data = GEARS_2C_2D 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat3', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -327,12 +312,11 @@ class Datagen:
                                     'feat5', 'feat6', 'feat7', 'feat8', 'feat9', 'feat10'])                                                                                    
             step = 200
             data = []
-            self.data = keystroke
-            
+            self.data = keystroke 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat10', axis=1, inplace=True)
                 self.data['label'] = 1 
@@ -346,15 +330,14 @@ class Datagen:
             step = 2000
             data = []
             self.data = UG_2C_5D
-            
             if self.label_check() is True:
-                for i in self.batch(self.data , step):
-                    data.append(i)
-                self.dataset.append(data)   
+                for i in self.batch(self.data , n=step):
+                    data.append(i) 
+                self.dataset.append(data)
             else:
                 self.data.drop('feat5', axis=1, inplace=True)
                 self.data['label'] = 1 
-                for i in self.batch(self.data, step):
+                for i in self.batch(self.data, n=step):
                     data.append(i)
                 self.dataset.append(data)       
 
@@ -362,9 +345,7 @@ class Datagen:
             unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])     
             step = 10                                                                          
             data = []
-            self.data = unitTestData
-            timestep = 1
-            # label = False
+            self.data = unitTestData 
             if self.label_check() is True:
                 for i in self.batch(self.data , step):
                     data.append(i) 
@@ -375,6 +356,8 @@ class Datagen:
                 for i in self.batch(self.data, step):
                     data.append(i)
                 self.dataset.append(data)
+
+
 
         return self.dataset
     
@@ -393,20 +376,20 @@ class Datagen:
         else:
             return False
 
-# if __name__ == '__main__':
-#     testData = Datagen()
-#     testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
-#                 '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D', 'UnitTest']
-#     for i in testArray:
-#         test_dataset = testData.gen_dataset(i)
-#         if len(test_dataset) == 0:
-#             print(i, "is empty")
-#         else: 
-#             print(i, " dataset created with size ", np.shape(test_dataset))
+if __name__ == '__main__':
+    testData = Datagen()
+    # testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
+    #             '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D', 'UnitTest']
+    # for i in testArray:
+    #     test_dataset = testData.gen_dataset(i)
+    #     if len(test_dataset) == 0:
+    #         print(i, "is empty")
+    #     else: 
+    #         print(i, " dataset created with size ", np.shape(test_dataset))
     
-#     # testData = Datagen()
-    # test = testData.gen_dataset('UnitTest')
-    # print(test)
+    # testData = Datagen()
+    test = testData.gen_dataset('Unimodal5D')
+    print(test)
 #     # if test.empty:
 #     #     print("Unit Test dataset is empty")
 #     # else:

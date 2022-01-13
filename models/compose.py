@@ -46,13 +46,14 @@ class FastCOMPOSE:
     def __init__(self, 
                  classifier = 'QN_S3VM', 
                  method= 'gmm',
-                 verbose = 1): 
+                 verbose = 1, 
+                 dataset = None): 
         """
         Initialization of Fast COMPOSE
         """
 
 
-        self.timestep = 1                   # The current timestep of the datase
+        self.timestep = 0                   # The current timestep of the datase
         self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  1                   # Level of feedback displayed during run {default}
         self.verbose = verbose              #    0  : No Information Displayed
@@ -63,7 +64,7 @@ class FastCOMPOSE:
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
         self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        # self.core_support = []            #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        self.core_supports = []            #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         # self.learner = {}                 #  Object from the ssl 
 
         # self.cse_func = []                  # corresponding to function in cse class -- no longer needed method will takes it cse method place
@@ -127,10 +128,10 @@ class FastCOMPOSE:
         self.set_drift_window()
 
         # set core support 
-        self.core_support = self.data     # load the dataset in the core support property this includes labeled and unlabeled data from set_data
+        # self.core_support = self.data     # load the dataset in the core support property this includes labeled and unlabeled data from set_data
 
-        # set classifier
-        self.set_classifier()
+        # set core supports
+        # self.set_core_supports()
    
     
     def set_drift_window(self):
@@ -161,21 +162,12 @@ class FastCOMPOSE:
         print("Num of cores:", self.n_cores)
         # print("User selected the following cores to process:", self.n_cores)
 
-    def set_classifier(self):
+    def set_core_supports(self):
         """
-        Available classifiers : 'knn',  'QN_S3VM'
-
-        For QN_S3VM:  
-        Sets classifier by getting the classifier object from ssl module
-        loads classifier based on user input
-        The QN_S3VM options are the following:  
-        X_l -- patterns of labeled part of the data
-        L_l -- labels of labeled part of the data
-        X_u -- patterns of unlabeled part of the data
-        random_generator -- particular instance of a random_generator (default None)
-        kw -- additional parameters for the optimizer
+        Method provides core supports based on desired core support extraction.
+        Available Core Support Extraction includes: 
+        GMM, Parzen Window, KNN, and Alpha Shape Core Supports
         """
-
 
         # construct cse if not done before
         if not self.cse:
@@ -183,43 +175,43 @@ class FastCOMPOSE:
 
         self.cse = cse.CSE(data=self.data)
 
-
         if self.method == 'gmm':
             self.cse.set_boundary(self.method)
-            self.cse.gmm()
+            self.core_supports = self.cse.gmm()
         elif self.method == 'parzen':
             self.cse.set_boundary(self.method)
-            self.cse.parzen()
+            self.core_supports = self.cse.parzen()
         elif self.method == 'knn':
             self.cse.set_boundary(self.method)
-            self.cse.k_nn()
+            self.core_supports = self.cse.k_nn()
         elif self.method == 'a_shape':
             self.cse.set_boundary(self.method)
             self.cse.alpha_shape()
-            self.cse.a_shape_compaction()
-        elif self.method == 'QN_S3VM':
-            pass
+            self.core_supports = self.cse.a_shape_compaction()
 
     def set_data(self):
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        # import from dataset generation
-        # avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
-        #     '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
-        # print('The following datasets are available:\n' , avail_data_opts)
-        # user_data_input = input('Enter dataset:')
-        user_data_input = 'UnitTest'     # comment out whenever you can run it or determine if I want to run all sets
+        if not self.dataset:
+            avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
+                '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
+            print('The following datasets are available:\n' , avail_data_opts)
+            user_data_input = input('Enter dataset:')
+        
+        # user_data_input = 'UnitTest'     # comment out whenever you can run it or determine if I want to run all sets
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
         self.dataset = dataset_gen              
         print("Dataset:", user_data_input)
+        
 
         ## set a self.data dictionary for each time step 
         ## self.dataset[0][i] loop the arrays and append them to dictionary
-        for i in range(0, len(self.dataset[0][0])):
-            self.data[self.timestep] = self.dataset[0][i]
+        for i in range(0, len(self.dataset[0])):
             self.timestep += 1
+            self.data[self.timestep] = self.dataset[0][i]
+
         
         # filter out labeled and unlabeled from of each timestep
         for i in self.data:
@@ -265,15 +257,22 @@ class FastCOMPOSE:
                 concat_tuple = np.vstack(array_tuple)    
                 self.unlabeled[key] = concat_tuple 
 
- 
-
-
-
-
-                    
                 
         
     def classify(self):
+        """
+        Available classifiers : 'knn',  'QN_S3VM'
+
+        For QN_S3VM:  
+        Sets classifier by getting the classifier object from ssl module
+        loads classifier based on user input
+        The QN_S3VM options are the following:  
+        X_l -- patterns of labeled part of the data
+        L_l -- labels of labeled part of the data
+        X_u -- patterns of unlabeled part of the data
+        random_generator -- particular instance of a random_generator (default None)
+        kw -- additional parameters for the optimizer
+        """
         pass
 
     def run(self):

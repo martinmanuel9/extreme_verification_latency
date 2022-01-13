@@ -319,8 +319,9 @@ class CSE:
         numComponents = BIC.count(minBIC)                
         
         # need to calculate the Mahalanobis Distance for GMM
-        utility = util.Util(data=x_ul)
-        D = utility.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
+        get_MD = util.Util(data=x_ul)
+        D = get_MD.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
+        
         mahalDistance = np.array(D)
         minMahal = np.amin(mahalDistance)
         # I = np.where(minMahal)[0]
@@ -328,15 +329,16 @@ class CSE:
         sortMahal = np.sort(mahalDistance)
 
         IX = np.where(sortMahal)
-        support_indices = IX[:core_support_cutoff]
-        print(len(support_indices))
+        support_indices = sortMahal[:core_support_cutoff]
 
-        print("GMM MD: " , sortMahal)
+        # print("GMM MD: " , sortMahal)
 
         self.boundary_data['BIC'] = BIC
         self.boundary_data['num_components'] = numComponents + temp
         self.boundary_data['gmm'] = GM[numComponents+temp]
         self.boundary_data['gmm_timestep'] = GM[numComponents+temp] 
+        
+        return support_indices
     
     # Parzen Window Clustering
     def parzen(self):
@@ -371,7 +373,8 @@ class CSE:
             
         sortMahal = np.sort(scores)[::-1]       # sort in descending order
         IX = np.where(sortMahal)
-        support_indices = IX[:core_support_cutoff]
+        support_indices = sortMahal[:core_support_cutoff]
+        return support_indices
 
     ## KNN clustering
     def k_nn(self):
@@ -383,6 +386,7 @@ class CSE:
 
         neighbors_dist = np.array(neighbors_dist)
         sort_neighbors = np.sort(neighbors_dist)
+        return sort_neighbors
 
 
  ## unit tests        
