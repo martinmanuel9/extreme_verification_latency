@@ -309,7 +309,7 @@ class Datagen:
 
         if self.datatype == 'keystroke':           
             keystroke = pd.read_csv("keystroke.txt", delimiter=",", names=['feat1', 'feat2', 'feat3','feat4', 
-                                    'feat5', 'feat6', 'feat7', 'feat8', 'feat9', 'feat10'])                                                                                    
+                                    'feat5', 'feat6', 'feat7', 'feat8', 'feat9', 'feat10', 'feat11'])                                                                                    
             step = 200
             data = []
             self.data = keystroke 
@@ -318,7 +318,7 @@ class Datagen:
                     data.append(i) 
                 self.dataset.append(data)
             else:
-                self.data.drop('feat10', axis=1, inplace=True)
+                self.data.drop('feat11', axis=1, inplace=True)
                 self.data['label'] = 1 
                 for i in self.batch(self.data, step):
                     data.append(i)
@@ -326,7 +326,7 @@ class Datagen:
     
         if self.datatype == 'Unimodal5D':           
             UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3',
-                                    'feat4', 'feat5'])                                                                                      
+                                    'feat4', 'feat5', 'feat6'])                                                                                      
             step = 2000
             data = []
             self.data = UG_2C_5D
@@ -335,7 +335,7 @@ class Datagen:
                     data.append(i) 
                 self.dataset.append(data)
             else:
-                self.data.drop('feat5', axis=1, inplace=True)
+                self.data.drop('feat6', axis=1, inplace=True)
                 self.data['label'] = 1 
                 for i in self.batch(self.data, n=step):
                     data.append(i)
@@ -376,20 +376,20 @@ class Datagen:
         else:
             return False
 
-if __name__ == '__main__':
-    testData = Datagen()
-    # testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
-    #             '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D', 'UnitTest']
-    # for i in testArray:
-    #     test_dataset = testData.gen_dataset(i)
-    #     if len(test_dataset) == 0:
-    #         print(i, "is empty")
-    #     else: 
-    #         print(i, " dataset created with size ", np.shape(test_dataset))
+# if __name__ == '__main__':
+#     testData = Datagen()
+#     testArray = ['Unimodal', 'Multimodal', '1CDT', '2CDT','Unimodal3D', '1cht', '2cht', '4cr', '4crev1','4crev2','5cvt','1csurr','4ce1cf',
+#                 '4ce1cf','fg2c2d','gears2c2d','keystroke', 'Unimodal5D', 'UnitTest']
+#     for i in testArray:
+#         test_dataset = testData.gen_dataset(i)
+#         if len(test_dataset) == 0:
+#             print(i, "is empty")
+#         else: 
+#             print(i, " dataset created with size " ,  np.shape(test_dataset))
     
-    # testData = Datagen()
-    test = testData.gen_dataset('Unimodal5D')
-    print(test)
+#     # testData = Datagen()
+#     test = testData.gen_dataset('Unimodal5D')
+#     print(np.shape(test))
 #     # if test.empty:
 #     #     print("Unit Test dataset is empty")
 #     # else:
