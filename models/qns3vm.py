@@ -84,6 +84,7 @@ import scipy
 import warnings
 warnings.simplefilter('error')
 
+
 __author__ =  'Fabian Gieseke, Antti Airola, Tapio Pahikkala, Oliver Kramer'
 __version__=  '0.1'
 
@@ -124,7 +125,7 @@ class QN_S3VM:
             self.__data_type = "sparse"
             self.__model = QN_S3VM_Sparse(X_l, L_l, X_u, random_generator, ** kw)
         # Initiate model for dense data
-        elif (isinstance(X_l[0], list)) or (isinstance(X_l[0], np.ndarray)):
+        elif (isinstance(X_l[0], list)) or (isinstance(X_l[0], np.ndarray)):    
             self.__data_type = "dense"
             self.__model = QN_S3VM_Dense(X_l, L_l, X_u, random_generator, ** kw)
         # Data format unknown
@@ -223,7 +224,7 @@ class QN_S3VM_Dense:
         self.__X_l, self.__X_u, self.__L_l = X_l, X_u, L_l
         assert len(X_l) == len(L_l)
         self.__X = cp.deepcopy(self.__X_l)
-        self.__X.extend(cp.deepcopy(self.__X_u))
+        np.append(self.__X, cp.deepcopy(self.__X_u))
         self.__size_l, self.__size_u, self.__size_n = len(X_l), len(X_u), len(X_l) + len(X_u)
         self.__matrices_initialized = False
         self.__setParameters( ** kw)
@@ -317,11 +318,13 @@ class QN_S3VM_Dense:
             assert (self.__numR <= len(self.__X)) and (self.__numR > 0)
         else:
             self.__numR = len(self.__X)
-        self.__regressors_indices = sorted(self.__random_generator.sample( range(0,len(self.__X)), self.__numR ))
+       
+        self.__regressors_indices = sorted(self.__random_generator.sample(range(0,len(self.__X)), self.__numR ))
         self.__dim = self.__numR + 1 # add bias term b
         self.__minimum_labeled_patterns_for_estimate_r = float(self.parameters['minimum_labeled_patterns_for_estimate_r'])
         # If reliable estimate is available or can be estimated, use it, otherwise
         # assume classes to be balanced (i.e., estimate_r=0.0)
+
         if self.parameters['estimate_r'] != None:
             self.__estimate_r = float(self.parameters['estimate_r'])
         elif len(self.__L_l) >= self.__minimum_labeled_patterns_for_estimate_r:
@@ -378,7 +381,9 @@ class QN_S3VM_Dense:
             # Initialize labels
             x = arr.array('i')
             for l in self.__L_l:
-                x.append(l)
+                x = np.append(x, l) 
+            
+            print(x)
             self.__YL = mat(x, dtype=np.float64)
             self.__YL = self.__YL.transpose()
             # Initialize kernel matrices

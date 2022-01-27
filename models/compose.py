@@ -9,11 +9,12 @@ Creation:           08/05/2021
 The University of Arizona
 Department of Electrical and Computer Engineering
 College of Engineering
+PhD Advisor: Dr. Gregory Ditzler
 """
 
 # MIT License
 #
-# Copyright (c) 2021
+# Copyright (c) 2021 Martin M Lopez
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -34,13 +35,14 @@ College of Engineering
 # SOFTWARE.
 
 import numpy as np
-from numpy.lib.function_base import append
 import pandas as pd
 import cse 
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import qns3vm as ssl
 import benchmark_datagen as bmdg
+import random
+
 
 class FastCOMPOSE: 
     def __init__(self, 
@@ -193,12 +195,13 @@ class FastCOMPOSE:
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        if not self.dataset:
-            avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
-                '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
-            print('The following datasets are available:\n' , avail_data_opts)
-            user_data_input = input('Enter dataset:')
+        # if not self.dataset:
+        #     avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
+        #         '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
+        #     print('The following datasets are available:\n' , avail_data_opts)
+        #     user_data_input = input('Enter dataset:')
         
+        user_data_input = 'Unimodal'
         # user_data_input = 'UnitTest'     # comment out whenever you can run it or determine if I want to run all sets
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
@@ -258,8 +261,14 @@ class FastCOMPOSE:
                 self.unlabeled[key] = concat_tuple 
 
                 
-        
-    def classify(self):
+    def set_hypothesis(self, timestep):
+        # if labeled data exists set as hypthothesis 
+        if not self.labeled[timestep]:
+            pass
+        else:
+            self.hypothesis[timestep] = self.labeled[timestep]
+
+    def classify(self, X_train_l, L_train_l, X_test, L_test):
         """
         Available classifiers : 'knn',  'QN_S3VM'
 
@@ -273,19 +282,42 @@ class FastCOMPOSE:
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
-        pass
+        
 
+        # labeled_array = list(self.labeled.values())
+        # labels = []
+        # for key in range(0, len(labeled_array)):
+        #     for j in range(0, len(labeled_array[key])):
+        #         labels.append(labeled_array[key][j])
+        # labels = np.array(labels)
+        
+        # unlabeled_array = list(self.unlabeled.values()) 
+        # unlabeled = []
+        # for key in range(0, len(unlabeled_array)):
+        #     for j in range(0, len(unlabeled_array[key])):
+        #         unlabeled.append(unlabeled_array[key][j])
+        # unlabeled = np.array(unlabeled)
+
+        random_gen = random.Random()
+        random_gen.seed(0)
+
+        model = ssl.QN_S3VM(X_l= X_train_l , L_l=L_train_l, X_u= X_test, random_generator=random_gen)
+        model.train()
+        # preds = model.getPredictions(self.unlabeled[0])
+        # print(preds)
+        
     def run(self):
-        pass
+        
+        self.classify(X_train_l=self.labeled[1], L_train_l=self.labeled[1], X_test=self.unlabeled[1], L_test=self.labeled[2])
 
 
 if __name__ == '__main__':
     fastcompose_test = FastCOMPOSE(classifier="qns3vm", method="gmm")
     fastcompose_test.compose()
+    fastcompose_test.run()
     
     
     
-
     
     
 # class ComposeV2(): 
