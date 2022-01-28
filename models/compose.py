@@ -300,14 +300,13 @@ class FastCOMPOSE:
 
         random_gen = random.Random()
         random_gen.seed(0)
-
+        
         model = ssl.QN_S3VM(X_l= X_train_l , L_l=L_train_l, X_u= X_test, random_generator=random_gen)
         model.train()
         # preds = model.getPredictions(self.unlabeled[0])
         # print(preds)
         
     def run(self):
-        
         self.classify(X_train_l=self.labeled[1], L_train_l=self.labeled[1], X_test=self.unlabeled[1], L_test=self.labeled[2])
 
 

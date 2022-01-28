@@ -379,32 +379,42 @@ class QN_S3VM_Dense:
         if self.__matrices_initialized == False:
             logging.debug("Initializing matrices...")
             # Initialize labels
-            x = arr.array('i')
-            for l in self.__L_l:
-                x = np.append(x, l) 
-            
-            print(x)
-            self.__YL = mat(x, dtype=np.float64)
+            # x = arr.array('i') 
+            # for l in self.__L_l:
+            #     x.append(l)
+            # self.__YL = mat(x, dtype=np.float64)
+            self.__YL = self.__L_l
             self.__YL = self.__YL.transpose()
+            
             # Initialize kernel matrices
             if (self.__kernel_type == "Linear"):
                 self.__kernel = LinearKernel()
             elif (self.__kernel_type == "RBF"):
                 self.__kernel = RBFKernel(self.__sigma)
-            self.__Xreg = (mat(self.__X)[self.__regressors_indices,:].tolist())
+            
+            # self.__Xreg = (mat(self.__X)[self.__regressors_indices,:].tolist())
+            self.__Xreg = self.__X[self.__regressors_indices,:].tolist()
             self.__KLR = self.__kernel.computeKernelMatrix(self.__X_l,self.__Xreg, symmetric=False)
             self.__KUR = self.__kernel.computeKernelMatrix(self.__X_u,self.__Xreg, symmetric=False)
-            self.__KNR = cp.deepcopy(bmat([[self.__KLR], [self.__KUR]]))
+            # self.__KNR =  cp.deepcopy(np.bmat([[self.__KLR], [self.__KUR]]))
+            # self.__KNR = cp.deepcopy(list(zip(self.__KLR, self.__KUR)))
+            self.__KNR = cp.deepcopy(np.column_stack((self.__KLR, self.__KUR.T)))
+            print(self.__KNR)
             self.__KRR = self.__KNR[self.__regressors_indices,:]
             # Center patterns in feature space (with respect to approximated mean of unlabeled patterns in the feature space)
             subset_unlabled_indices = sorted(self.__random_generator.sample( range(0,len(self.__X_u)), min(self.__max_unlabeled_subset_size, len(self.__X_u)) ))
-            self.__X_u_subset = (mat(self.__X_u)[subset_unlabled_indices,:].tolist())
+            # self.__X_u_subset = (mat(self.__X_u)[subset_unlabled_indices,:].tolist())
+            self.__X_u_subset = self.__X_u[subset_unlabled_indices,:].tolist()
             self.__KNU_bar = self.__kernel.computeKernelMatrix(self.__X, self.__X_u_subset, symmetric=False)
             self.__KNU_bar_horizontal_sum = (1.0 / len(self.__X_u_subset)) * self.__KNU_bar.sum(axis=1)
             self.__KU_barR = self.__kernel.computeKernelMatrix(self.__X_u_subset, self.__Xreg, symmetric=False)
             self.__KU_barR_vertical_sum = (1.0 / len(self.__X_u_subset)) * self.__KU_barR.sum(axis=0)
             self.__KU_barU_bar = self.__kernel.computeKernelMatrix(self.__X_u_subset, self.__X_u_subset, symmetric=False)
             self.__KU_barU_bar_sum = (1.0 / (len(self.__X_u_subset)))**2 * self.__KU_barU_bar.sum()
+            print(np.shape(self.__KNR ))
+            print(np.shape(self.__KNU_bar_horizontal_sum))
+            print(np.shape(self.__KU_barR_vertical_sum))
+            print(np.shape(self.__KU_barU_bar_sum))
             self.__KNR = self.__KNR - self.__KNU_bar_horizontal_sum - self.__KU_barR_vertical_sum + self.__KU_barU_bar_sum
             self.__KRR = self.__KNR[self.__regressors_indices,:]
             self.__KLR = self.__KNR[range(0,len(self.__X_l)),:]
@@ -747,11 +757,15 @@ class LinearKernel():
         Computes the kernel matrix
         """
         logging.debug("Starting Linear Kernel Matrix Computation...")
-        self._data1 = mat(data1)
-        self._data2 = mat(data2)
+        
+        # self._data1 = mat(data1)
+        self._data1 = np.array(data1)
+        # self._data2 = mat(data2)
+        self._data2 = np.array(data2)
         assert self._data1.shape[1] == (self._data2.T).shape[0]
         try:
-            return self._data1 * self._data2.T
+            # return self._data1 * self._data2.T
+            return np.dot(self._data1, self._data2.T)
         except Exception as e:
             logging.error("Error while computing kernel matrix: " + str(e))
             import traceback
