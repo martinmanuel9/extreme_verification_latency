@@ -42,7 +42,7 @@ import multiprocessing
 import qns3vm as ssl
 import benchmark_datagen as bmdg
 import random
-
+import time 
 
 class FastCOMPOSE: 
     def __init__(self, 
@@ -55,7 +55,7 @@ class FastCOMPOSE:
         """
 
 
-        self.timestep = 0                   # The current timestep of the datase
+        self.timestep = 1                   # The current timestep of the datase
         self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  1                   # Level of feedback displayed during run {default}
         self.verbose = verbose              #    0  : No Information Displayed
@@ -130,7 +130,7 @@ class FastCOMPOSE:
         self.set_drift_window()
 
         # set core support 
-        # self.core_support = self.data     # load the dataset in the core support property this includes labeled and unlabeled data from set_data
+        self.core_supports = self.set_core_supports()
 
         # set core supports
         # self.set_core_supports()
@@ -173,9 +173,9 @@ class FastCOMPOSE:
 
         # construct cse if not done before
         if not self.cse:
-            self.cse= cse.CSE(data=self.data)
+            self.cse= cse.CSE(data=self.data[1])        # gets core support based on first timestep
 
-        self.cse = cse.CSE(data=self.data)
+        self.cse = cse.CSE(data=self.data[1])           # gets core support based on first timestep
 
         if self.method == 'gmm':
             self.cse.set_boundary(self.method)
@@ -183,9 +183,6 @@ class FastCOMPOSE:
         elif self.method == 'parzen':
             self.cse.set_boundary(self.method)
             self.core_supports = self.cse.parzen()
-        elif self.method == 'knn':
-            self.cse.set_boundary(self.method)
-            self.core_supports = self.cse.k_nn()
         elif self.method == 'a_shape':
             self.cse.set_boundary(self.method)
             self.cse.alpha_shape()
@@ -201,20 +198,19 @@ class FastCOMPOSE:
         #     print('The following datasets are available:\n' , avail_data_opts)
         #     user_data_input = input('Enter dataset:')
         
-        user_data_input = 'Unimodal'
-        # user_data_input = 'UnitTest'     # comment out whenever you can run it or determine if I want to run all sets
+        user_data_input = 'UnitTest'
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
         self.dataset = dataset_gen              
         print("Dataset:", user_data_input)
-        
+        ts = 0
 
         ## set a self.data dictionary for each time step 
         ## self.dataset[0][i] loop the arrays and append them to dictionary
         for i in range(0, len(self.dataset[0])):
-            self.timestep += 1
-            self.data[self.timestep] = self.dataset[0][i]
-
+            ts += 1
+            self.data[ts] = self.dataset[0][i]
+        
         
         # filter out labeled and unlabeled from of each timestep
         for i in self.data:
@@ -223,7 +219,6 @@ class FastCOMPOSE:
             unlabeled_batch = []            
             for j in range(0, len_of_batch - 1):
                 if self.data[i][j][2] == 1:
-                    # print(self.data[i][j])
                     label_batch.append(self.data[i][j])
                     self.labeled[i] = label_batch
                 else:
@@ -260,15 +255,7 @@ class FastCOMPOSE:
                 concat_tuple = np.vstack(array_tuple)    
                 self.unlabeled[key] = concat_tuple 
 
-                
-    def set_hypothesis(self, timestep):
-        # if labeled data exists set as hypthothesis 
-        if not self.labeled[timestep]:
-            pass
-        else:
-            self.hypothesis[timestep] = self.labeled[timestep]
-
-    def classify(self, X_train_l, L_train_l, X_test, L_test):
+    def classify(self, X_train_l, L_train_l, X_train_u, X_test, L_test):
         """
         Available classifiers : 'knn',  'QN_S3VM'
 
@@ -282,66 +269,75 @@ class FastCOMPOSE:
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
-        
 
-        # labeled_array = list(self.labeled.values())
-        # labels = []
-        # for key in range(0, len(labeled_array)):
-        #     for j in range(0, len(labeled_array[key])):
-        #         labels.append(labeled_array[key][j])
-        # labels = np.array(labels)
-        
-        # unlabeled_array = list(self.unlabeled.values()) 
-        # unlabeled = []
-        # for key in range(0, len(unlabeled_array)):
-        #     for j in range(0, len(unlabeled_array[key])):
-        #         unlabeled.append(unlabeled_array[key][j])
-        # unlabeled = np.array(unlabeled)
+        if self.classifier == 'QN_S3VM':
+            random_gen = random.Random()
+            random_gen.seed(0)
 
-        random_gen = random.Random()
-        random_gen.seed(0)
-        
-        model = ssl.QN_S3VM(X_l= X_train_l , L_l=L_train_l, X_u= X_test, random_generator=random_gen)
-        model.train()
-        # preds = model.getPredictions(self.unlabeled[0])
-        # print(preds)
-        
+            X_Train_L = []
+            for i in range(0, len(X_train_l)):
+                add = np.array(X_train_l[:,:-1][i])
+                X_Train_L.append(add)
+            X_train_l = X_Train_L
+
+            L_Train_L = []
+            for i in range(0, len(L_train_l)):
+                add = np.array(L_train_l[:,-1][i])
+                L_Train_L.append(add)
+            L_train_l = L_Train_L
+            
+            X_Train_U = []
+            for i in range(0, len(X_train_u)):
+                add = np.array(X_train_u[:,:-1][i])
+                X_Train_U.append(add)
+            X_train_u = X_Train_U
+            
+            X_Test = []
+            for i in range(0, len(X_test)):
+                add = np.array(X_test[:,:-1][i])
+                X_Test.append(add)
+            X_test = X_Test
+
+            L_Test = []
+            for i in range(0, len(L_test)):
+                add = np.array(L_test[:,-1][i])
+                L_Test.append(add)
+            L_test = L_Test
+
+            t_start = time.time()
+            model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
+            model.train()
+            t_end = time.time()
+            elapsed_time = t_end - t_start
+            preds = model.getPredictions(X_test)
+            error = self.classification_error(L_test, preds)
+            print("Time to compute: ", elapsed_time, " seconds")
+            print("Classification error of QN-S3VN: ", error, "%")
+        elif self.classifier == 'knn':
+            self.cse = cse.CSE(data=self.data)
+            self.cse.set_boundary('knn')
+            self.cse.k_nn()
+
+    def classification_error(self, actual, predicted):
+        correct = 0
+        for i in range(len(actual)):
+            if actual[i] == predicted[i]:
+                correct += 1
+        return correct / float(len(actual)) * 100.0
+          
     def run(self):
-        self.classify(X_train_l=self.labeled[1], L_train_l=self.labeled[1], X_test=self.unlabeled[1], L_test=self.labeled[2])
+        self.compose()
+        
+        
+        # start = self.timestep
+        # timesteps = self.data.keys()
+        # ts = 1
+        # for ts in timesteps:                        # iterate through all timesteps from the start to the end of the available data
+        #     self.timestep = ts                      # update the timestep parameter
+        #     self.hypothesis[ts] = self.labeled[ts]  # if there is labeled data then copy labeles to hypothesis
 
+            # self.classify(X_train_l=self.labeled[1], L_train_l=self.labeled[1], X_train_u = self.unlabeled[1], X_test=self.labeled[2], L_test=self.labeled[2])
 
 if __name__ == '__main__':
-    fastcompose_test = FastCOMPOSE(classifier="qns3vm", method="gmm")
-    fastcompose_test.compose()
+    fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")
     fastcompose_test.run()
-    
-    
-    
-    
-    
-# class ComposeV2(): 
-#     """
-#     """
-#     def __init__(self, 
-#                  classifier, 
-#                  method): 
-#         self.classifier = classifier 
-    
-#     def run(self, Xt, Yt, Ut): 
-#         """
-#         """
-#         self.classifier
-
-
-# class ComposeV1(): 
-#     """
-#     """
-#     def __init__(self, 
-#                  classifier, 
-#                  method): 
-#         self.classifier = classifier 
-
-#     def run(self, Xt, Yt, Ut): 
-#         """
-#         """
-#         self.classifier
