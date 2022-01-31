@@ -130,7 +130,7 @@ class FastCOMPOSE:
         self.set_drift_window()
 
         # set core support 
-        self.core_supports = self.set_core_supports()
+        # self.core_supports = self.set_core_supports()
 
         # set core supports
         # self.set_core_supports()
@@ -164,18 +164,18 @@ class FastCOMPOSE:
         print("Num of cores:", self.n_cores)
         # print("User selected the following cores to process:", self.n_cores)
 
-    def set_core_supports(self):
+    def get_core_supports(self, input_data = None):
         """
         Method provides core supports based on desired core support extraction.
         Available Core Support Extraction includes: 
         GMM, Parzen Window, KNN, and Alpha Shape Core Supports
         """
 
-        # construct cse if not done before
-        if not self.cse:
-            self.cse= cse.CSE(data=self.data[1])        # gets core support based on first timestep
+        # # construct cse if not done before
+        # if not self.cse:
+        #     self.cse= cse.CSE(data=input_data)        # gets core support based on first timestep
 
-        self.cse = cse.CSE(data=self.data[1])           # gets core support based on first timestep
+        self.cse = cse.CSE(data=input_data)           # gets core support based on first timestep
 
         if self.method == 'gmm':
             self.cse.set_boundary(self.method)
@@ -327,8 +327,8 @@ class FastCOMPOSE:
           
     def run(self):
         self.compose()
-        
-        
+        self.get_core_supports(self.data[1])
+        print(self.core_supports)
         # start = self.timestep
         # timesteps = self.data.keys()
         # ts = 1

@@ -62,10 +62,14 @@ class CSE:
 
         utility = util.Util()
 
-        if data is not None:
+        if type(data) is dict:
             self.data = utility.makeDataFrame(data)     
             self.N_Instances = np.shape(self.data)[0]
             self.N_features = np.shape(self.data)[1]
+        elif type(data) is np.ndarray:
+            self.data = data
+            self.N_Instances = np.shape(self.data)[0]
+            self.N_features = np.shape(self.data)[1] 
         else:
             print("Please ensure that you pass in data to extract core supports!") 
 
