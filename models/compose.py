@@ -65,8 +65,9 @@ class FastCOMPOSE:
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
-        self.hypothesis = []                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
-        self.core_supports = []            #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
+        self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
+        self.num_cs = []
         # self.learner = {}                 #  Object from the ssl 
 
         # self.cse_func = []                  # corresponding to function in cse class -- no longer needed method will takes it cse method place
@@ -179,14 +180,17 @@ class FastCOMPOSE:
 
         if self.method == 'gmm':
             self.cse.set_boundary(self.method)
-            self.core_supports = self.cse.gmm()
+            self.num_cs = len(self.cse.gmm())
+            self.core_supports[self.timestep] = self.cse.gmm()
         elif self.method == 'parzen':
             self.cse.set_boundary(self.method)
-            self.core_supports = self.cse.parzen()
+            self.num_cs = len(self.cse.parzen())
+            self.core_supports[self.timestep] = self.cse.parzen()
         elif self.method == 'a_shape':
             self.cse.set_boundary(self.method)
             self.cse.alpha_shape()
-            self.core_supports = self.cse.a_shape_compaction()
+            self.num_cs = len(self.cse.a_shape_compaction())
+            self.core_supports[self.timestep] = self.cse.a_shape_compaction()
 
     def set_data(self):
         """
@@ -327,14 +331,23 @@ class FastCOMPOSE:
           
     def run(self):
         self.compose()
-        self.get_core_supports(self.data[1])
-        print(self.core_supports)
-        # start = self.timestep
-        # timesteps = self.data.keys()
-        # ts = 1
-        # for ts in timesteps:                        # iterate through all timesteps from the start to the end of the available data
-        #     self.timestep = ts                      # update the timestep parameter
-        #     self.hypothesis[ts] = self.labeled[ts]  # if there is labeled data then copy labeles to hypothesis
+        start = self.timestep
+        timesteps = self.data.keys()
+        ts = 1
+        for ts in timesteps:                        # iterate through all timesteps from the start to the end of the available data
+            self.timestep = ts
+            # if there is labeled data then copy labeles to hypothesis
+            if ts in self.labeled:
+                self.hypothesis[ts] = self.labeled[ts]         # copy labele onto the hypthosis
+            
+            # add from core supports from previous timestep
+            if start != ts:                                           
+                self.get_core_supports(self.data[ts-1])             # find number of coresupports from previous timestep & get core supports
+                # self.data.append(self.core_supports[ts-1])
+                # self.hypothesis.append(self.hypothesis[ts-1])
+                # self.labeled.append(self.labeled[ts-1])
+
+            self.step = 1 
 
             # self.classify(X_train_l=self.labeled[1], L_train_l=self.labeled[1], X_train_u = self.unlabeled[1], X_test=self.labeled[2], L_test=self.labeled[2])
 
