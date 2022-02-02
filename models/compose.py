@@ -67,7 +67,7 @@ class FastCOMPOSE:
         self.unlabeled = {}
         self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        self.num_cs = []
+        self.num_cs = {}                    #  number of core supports 
         # self.learner = {}                 #  Object from the ssl 
 
         # self.cse_func = []                  # corresponding to function in cse class -- no longer needed method will takes it cse method place
@@ -130,12 +130,6 @@ class FastCOMPOSE:
         # set drift window
         self.set_drift_window()
 
-        # set core support 
-        # self.core_supports = self.set_core_supports()
-
-        # set core supports
-        # self.set_core_supports()
-   
     
     def set_drift_window(self):
         """
@@ -180,16 +174,16 @@ class FastCOMPOSE:
 
         if self.method == 'gmm':
             self.cse.set_boundary(self.method)
-            self.num_cs = len(self.cse.gmm())
+            self.num_cs[self.timestep] = len(self.cse.gmm())
             self.core_supports[self.timestep] = self.cse.gmm()
         elif self.method == 'parzen':
             self.cse.set_boundary(self.method)
-            self.num_cs = len(self.cse.parzen())
+            self.num_cs[self.timestep] = len(self.cse.parzen())
             self.core_supports[self.timestep] = self.cse.parzen()
         elif self.method == 'a_shape':
             self.cse.set_boundary(self.method)
             self.cse.alpha_shape()
-            self.num_cs = len(self.cse.a_shape_compaction())
+            self.num_cs[self.timestep] = len(self.cse.a_shape_compaction())
             self.core_supports[self.timestep] = self.cse.a_shape_compaction()
 
     def set_data(self):
@@ -202,7 +196,7 @@ class FastCOMPOSE:
         #     print('The following datasets are available:\n' , avail_data_opts)
         #     user_data_input = input('Enter dataset:')
         
-        user_data_input = 'UnitTest'
+        user_data_input = 'Unimodal'
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
         self.dataset = dataset_gen              
@@ -317,6 +311,7 @@ class FastCOMPOSE:
             error = self.classification_error(L_test, preds)
             print("Time to compute: ", elapsed_time, " seconds")
             print("Classification error of QN-S3VN: ", error, "%")
+            return preds
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
@@ -328,28 +323,60 @@ class FastCOMPOSE:
             if actual[i] == predicted[i]:
                 correct += 1
         return correct / float(len(actual)) * 100.0
+
+    def calculate_performance(self):
+        pass
           
     def run(self):
         self.compose()
         start = self.timestep
         timesteps = self.data.keys()
-        ts = 1
-        for ts in timesteps:                        # iterate through all timesteps from the start to the end of the available data
+        data_list = list(self.data.items())
+        last_key = data_list[-1][0]
+        
+        ts = start
+        for ts in range(1, len(timesteps)):                        # iterate through all timesteps from the start to the end of the available data
             self.timestep = ts
             # if there is labeled data then copy labeles to hypothesis
             if ts in self.labeled:
                 self.hypothesis[ts] = self.labeled[ts]         # copy labele onto the hypthosis
             
+            self.get_core_supports(self.data[ts])
             # add from core supports from previous timestep
             if start != ts:                                           
-                self.get_core_supports(self.data[ts-1])             # find number of coresupports from previous timestep & get core supports
-                # self.data.append(self.core_supports[ts-1])
-                # self.hypothesis.append(self.hypothesis[ts-1])
-                # self.labeled.append(self.labeled[ts-1])
+                n_cs = self.num_cs[ts]
+                last_key += 1
+                self.data[last_key] = self.core_supports[ts-1]
+                if ts-1 in self.labeled:
+                    self.labeled[last_key] = self.labeled[ts-1]
+                else:
+                    self.labeled[last_key] = self.labeled[ts-2]
+                if ts-1 in self.hypothesis:    
+                    self.hypothesis[last_key] = self.hypothesis[ts-1]
+                else:
+                    self.hypothesis[last_key] = self.hypothesis[ts-2]
 
-            self.step = 1 
+            self.step = 1
+            if ts+1 in self.labeled:
+                test_value = self.labeled[ts+1]
+            else:
+                test_value = self.labeled[ts+2]
+      
+            
+            # classifiy unlabeled
+            unlabeled_ind = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
+            
+            self.step = 2
+            
+            print(type(unlabeled_ind))
+            # get core supports from predicted
+            unlabeled_ind = self.get_core_supports(unlabeled_ind)
 
-            # self.classify(X_train_l=self.labeled[1], L_train_l=self.labeled[1], X_train_u = self.unlabeled[1], X_test=self.labeled[2], L_test=self.labeled[2])
+            self.step = 3
+
+            if start != ts:
+                pass
+
 
 if __name__ == '__main__':
     fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")

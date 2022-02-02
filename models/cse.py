@@ -69,7 +69,11 @@ class CSE:
         elif type(data) is np.ndarray:
             self.data = data
             self.N_Instances = np.shape(self.data)[0]
-            self.N_features = np.shape(self.data)[1] 
+            self.N_features = np.shape(self.data)[1]
+        # elif type(data) is list:
+        #     self.data = data
+        #     self.N_Instances = len(self.data)
+        #     self.N_features = 1 
         else:
             print("Please ensure that you pass in data to extract core supports!") 
 
