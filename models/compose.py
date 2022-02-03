@@ -83,6 +83,7 @@ class FastCOMPOSE:
         self.figure_ylim = []
         self.step = 0
         self.cse = cse.CSE()
+        self.unlabeled_ind = {}
         
         
         if self.classifier is None:
@@ -272,35 +273,41 @@ class FastCOMPOSE:
             random_gen = random.Random()
             random_gen.seed(0)
 
-            X_Train_L = []
+            X_L_train = []
             for i in range(0, len(X_train_l)):
-                add = np.array(X_train_l[:,:-1][i])
-                X_Train_L.append(add)
-            X_train_l = X_Train_L
-
-            L_Train_L = []
-            for i in range(0, len(L_train_l)):
-                add = np.array(L_train_l[:,-1][i])
-                L_Train_L.append(add)
-            L_train_l = L_Train_L
+                # add = np.array(X_train_l[:,:-1][i])
+                add = np.array(X_train_l[i])
+                X_L_train.append(add)
+            X_train_l = X_L_train
             
-            X_Train_U = []
+            if type(L_train_l) is np.ndarray:
+                L_l_train = []
+                for i in range(0, len(L_train_l)):
+                    add = np.array(L_train_l[:,-1][i]) 
+                    L_l_train.append(add)
+                L_train_l = L_l_train
+            
+            X_U_train = []
             for i in range(0, len(X_train_u)):
-                add = np.array(X_train_u[:,:-1][i])
-                X_Train_U.append(add)
-            X_train_u = X_Train_U
+                # add = np.array(X_train_u[:,:-1][i])
+                add = np.array(X_train_u[i])
+                X_U_train.append(add)
+            X_train_u = X_U_train
             
             X_Test = []
             for i in range(0, len(X_test)):
-                add = np.array(X_test[:,:-1][i])
+                # add = np.array(X_test[:,:-1][i])
+                add = np.array(X_test[i])
                 X_Test.append(add)
             X_test = X_Test
 
             L_Test = []
             for i in range(0, len(L_test)):
-                add = np.array(L_test[:,-1][i])
+                add = np.array(L_test[:,-1][i]) 
                 L_Test.append(add)
             L_test = L_Test
+
+            
 
             t_start = time.time()
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
@@ -308,7 +315,7 @@ class FastCOMPOSE:
             t_end = time.time()
             elapsed_time = t_end - t_start
             preds = model.getPredictions(X_test)
-            error = self.classification_error(L_test, preds)
+            error = self.classification_error(preds, L_test)
             print("Time to compute: ", elapsed_time, " seconds")
             print("Classification error of QN-S3VN: ", error, "%")
             return preds
@@ -317,12 +324,12 @@ class FastCOMPOSE:
             self.cse.set_boundary('knn')
             self.cse.k_nn()
 
-    def classification_error(self, actual, predicted):
-        correct = 0
-        for i in range(len(actual)):
-            if actual[i] == predicted[i]:
-                correct += 1
-        return correct / float(len(actual)) * 100.0
+    def classification_error(self, preds, L_test):
+        error = 0.0
+        for i in range(len(preds)):
+            error += float(abs(int(preds[i])-int(L_test[i]))) / 2.0
+        error /= len(preds)    
+        return error
 
     def calculate_performance(self):
         pass
@@ -362,20 +369,19 @@ class FastCOMPOSE:
             else:
                 test_value = self.labeled[ts+2]
       
-            
-            # classifiy unlabeled
-            unlabeled_ind = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
+
+            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
+
             
             self.step = 2
             
-            print(type(unlabeled_ind))
-            # get core supports from predicted
-            unlabeled_ind = self.get_core_supports(unlabeled_ind)
+            # # get core supports from predicted
+            # unlabeled_ind = self.get_core_supports(self.unlabeled_ind[ts])
 
-            self.step = 3
+            # self.step = 3
 
-            if start != ts:
-                pass
+            # if start != ts:
+            #     pass
 
 
 if __name__ == '__main__':
