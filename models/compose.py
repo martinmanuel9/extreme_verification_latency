@@ -191,13 +191,13 @@ class FastCOMPOSE:
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        # if not self.dataset:
-        #     avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
-        #         '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
-        #     print('The following datasets are available:\n' , avail_data_opts)
-        #     user_data_input = input('Enter dataset:')
+        if not self.dataset:
+            avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
+                '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
+            print('The following datasets are available:\n' , avail_data_opts)
+            user_data_input = input('Enter dataset:')
         
-        user_data_input = 'Unimodal'
+        # user_data_input = 'Unimodal'
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
         self.dataset = dataset_gen              
