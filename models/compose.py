@@ -166,7 +166,7 @@ class FastCOMPOSE:
         Available Core Support Extraction includes: 
         GMM, Parzen Window, KNN, and Alpha Shape Core Supports
         """
-
+        
         # # construct cse if not done before
         # if not self.cse:
         #     self.cse= cse.CSE(data=input_data)        # gets core support based on first timestep
