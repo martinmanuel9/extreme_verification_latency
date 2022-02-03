@@ -349,7 +349,7 @@ class CSE:
         # self.boundary_data['num_components'] = numComponents + temp
         # self.boundary_data['gmm'] = GM[numComponents+temp]
         # self.boundary_data['gmm_timestep'] = GM[numComponents+temp]
-        print(support_indices)
+        
         return support_indices
     
     # Parzen Window Clustering

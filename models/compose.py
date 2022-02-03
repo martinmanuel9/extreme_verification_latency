@@ -307,8 +307,6 @@ class FastCOMPOSE:
                 L_Test.append(add)
             L_test = L_Test
 
-            
-
             t_start = time.time()
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
             model.train()
@@ -369,19 +367,10 @@ class FastCOMPOSE:
             else:
                 test_value = self.labeled[ts+2]
       
-
             self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
 
-            
             self.step = 2
-            
-            # # get core supports from predicted
-            # unlabeled_ind = self.get_core_supports(self.unlabeled_ind[ts])
 
-            # self.step = 3
-
-            # if start != ts:
-            #     pass
 
 
 if __name__ == '__main__':
