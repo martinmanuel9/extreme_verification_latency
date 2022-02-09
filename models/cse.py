@@ -309,33 +309,33 @@ class CSE:
         x_ul = self.data
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
         BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)   # Bayesian Info Criterion
-        # GM = dict()
+        GM = {}
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
-        BIC = GMM(n_components=self.N_Instances).fit(x_ul) 
+        # BIC = GMM(n_components=2).fit(x_ul) 
         
-        # if self.boundary_opts['kl'] == self.boundary_opts['kh']:
-        #     gmm_range = self.boundary_opts['kl'] + 1
-        #     for i in range(1,gmm_range):
-        #         GM[i] = GMM(n_components = i).fit(x_ul)
-        #         BIC.append(GM[i].bic(x_ul))
-        # else:
-        #     upper_range = self.boundary_opts['kh'] + 1
-        #     for i in range(self.boundary_opts['kl'], upper_range):
-        #         GM[i] = GMM(n_components=i).fit(x_ul)
-        #         BIC.append(GM[i].bic(x_ul))
+        if self.boundary_opts['kl'] == self.boundary_opts['kh']:
+            gmm_range = self.boundary_opts['kl'] + 1
+            for i in range(1,gmm_range):
+                GM[i] = GMM(n_components = self.N_features).fit(x_ul)
+                BIC.append(GM[i].bic(x_ul))
+        else:
+            upper_range = self.boundary_opts['kh'] + 1
+            for i in range(self.boundary_opts['kl'], upper_range):
+                GM[i] = GMM(n_components=self.N_features).fit(x_ul)
+                BIC.append(GM[i].bic(x_ul))
         
         temp = self.boundary_opts['kl'] - 1
-        minBIC = np.amin(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
+        minBIC = np.min(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
 
-        # numComponents = BIC.count(minBIC)                
-        
+        numComponents = BIC.count(minBIC) 
+                      
         # need to calculate the Mahalanobis Distance for GMM
         get_MD = util.Util(data=x_ul)
         D = get_MD.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
         
         mahalDistance = np.array(D)
-        minMahal = np.amin(mahalDistance)
+        minMahal = np.min(mahalDistance)
         # I = np.where(minMahal)[0]
         
         sortMahal = np.sort(mahalDistance)
@@ -354,7 +354,6 @@ class CSE:
     
     # Parzen Window Clustering
     def parzen(self):
-        
         core_support_cutoff = math.floor(self.N_Instances * self.boundary_opts['p'])
         data = self.data
         r = data.shape[0]

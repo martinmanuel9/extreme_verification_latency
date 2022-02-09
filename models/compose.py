@@ -191,13 +191,13 @@ class FastCOMPOSE:
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        if not self.dataset:
-            avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
-                '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
-            print('The following datasets are available:\n' , avail_data_opts)
-            user_data_input = input('Enter dataset:')
+        # if not self.dataset:
+        #     avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
+        #         '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
+        #     print('The following datasets are available:\n' , avail_data_opts)
+        #     user_data_input = input('Enter dataset:')
         
-        # user_data_input = 'Unimodal'
+        user_data_input = 'Unimodal'
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(user_data_input)
         self.dataset = dataset_gen              
@@ -340,7 +340,7 @@ class FastCOMPOSE:
         last_key = data_list[-1][0]
         
         ts = start
-        for ts in range(1, len(timesteps)):                        # iterate through all timesteps from the start to the end of the available data
+        for ts in range(1, len(timesteps)):                      # iterate through all timesteps from the start to the end of the available data
             self.timestep = ts
             # if there is labeled data then copy labeles to hypothesis
             if ts in self.labeled:
@@ -370,8 +370,6 @@ class FastCOMPOSE:
             self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
 
             self.step = 2
-
-
 
 if __name__ == '__main__':
     fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")

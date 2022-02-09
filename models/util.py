@@ -78,6 +78,7 @@ class Util:
         # print(inv_covmat)
         left_term = np.dot(x_minus_mean, inv_cov)
         mahalDist = np.dot(left_term,x_minus_mean.T)
+        
         return mahalDist.diagonal()
 
     def quickMahal(self, x, mu, sig):
