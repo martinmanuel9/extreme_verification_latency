@@ -313,9 +313,9 @@ class FastCOMPOSE:
             t_end = time.time()
             elapsed_time = t_end - t_start
             preds = model.getPredictions(X_test)
-            error = self.classification_error(preds, L_test)
+            # error = self.classification_error(preds, L_test)
             print("Time to compute: ", elapsed_time, " seconds")
-            print("Classification error of QN-S3VN: ", error, "%")
+            # print("Classification error of QN-S3VN: ", error, "%")
             return preds
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
@@ -346,7 +346,7 @@ class FastCOMPOSE:
             if ts in self.labeled:
                 self.hypothesis[ts] = self.labeled[ts]         # copy labele onto the hypthosis
             
-            self.get_core_supports(self.data[ts])
+            self.get_core_supports(self.data[ts])              # create core supports at timestep
             # add from core supports from previous timestep
             if start != ts:                                           
                 n_cs = self.num_cs[ts]
@@ -368,6 +368,11 @@ class FastCOMPOSE:
                 test_value = self.labeled[ts+2]
       
             self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
+            
+           
+
+            error = self.classification_error(self.unlabeled_ind[ts], self.hypothesis[ts][:,2])
+            print("Classification error of QN-S3VN: ", error, "%")
 
             self.step = 2
 
