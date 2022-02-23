@@ -34,6 +34,9 @@ PhD Advisor: Dr. Gregory Ditzler
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from turtle import update
+from wsgiref.headers import tspecials
+from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
 import cse 
@@ -302,6 +305,7 @@ class FastCOMPOSE:
             X_test = X_Test
 
             L_Test = []
+            L_test = np.stack(L_test, axis=0)
             for i in range(0, len(L_test)):
                 add = np.array(L_test[:,-1][i]) 
                 L_Test.append(add)
@@ -321,11 +325,11 @@ class FastCOMPOSE:
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
             self.cse.k_nn()
-
+    #TODO: why am i getting 0% class error 
     def classification_error(self, preds, L_test):
         error = 0.0
-        for i in range(len(preds)):
-            error += float(abs(int(preds[i])-int(L_test[i]))) / 2.0
+        for i in range(len(L_test)):
+            error += float(abs(int(preds[i])-int(L_test[i][2]))) / 2.0
         error /= len(preds)    
         return error
 
@@ -366,12 +370,21 @@ class FastCOMPOSE:
                 test_value = self.labeled[ts+1]
             else:
                 test_value = self.labeled[ts+2]
-      
-            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=test_value, L_test=test_value)
-            
-           
 
-            error = self.classification_error(self.unlabeled_ind[ts], self.hypothesis[ts][:,2])
+            # first labeled data
+            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.data[ts+1], L_test=self.data[ts+1])          
+
+            # after first timestep 
+            if start != ts:
+                if np.shape(self.hypothesis[ts]) > np.shape(self.core_supports[ts-1]):
+                    h_values = int(np.shape(self.hypothesis[ts])[0] - np.shape(self.core_supports[ts-1])[0])
+                    hypoth_array = list(self.hypothesis[ts])
+                    for i in range(0,h_values):
+                        hypoth_array.pop()
+                    self.hypothesis[ts] = hypoth_array
+                self.unlabeled[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.hypothesis[ts], X_train_u=self.unlabeled[ts-1], X_test=self.data[ts+1], L_test=self.hypothesis[ts])
+           
+            error = self.classification_error(self.unlabeled_ind[ts], self.hypothesis[ts])
             print("Classification error of QN-S3VN: ", error, "%")
 
             self.step = 2
