@@ -380,6 +380,7 @@ class QN_S3VM_Dense:
             logging.debug("Initializing matrices...")
             # Initialize labels
             x = arr.array('i')
+            # print(self.__L_l)
             for l in self.__L_l:
                 x.append(l)
             self.__YL = mat(x, dtype=np.float64)

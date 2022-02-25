@@ -39,6 +39,7 @@ from wsgiref.headers import tspecials
 from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
+from sqlalchemy import null
 import cse 
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
@@ -277,11 +278,13 @@ class FastCOMPOSE:
             random_gen.seed(0)
 
             X_L_train = []
-            for i in range(0, len(X_train_l)):
-                # add = np.array(X_train_l[:,:-1][i])
-                add = np.array(X_train_l[i])
-                X_L_train.append(add)
-            X_train_l = X_L_train
+            if self.timestep == 1:
+                for i in range(0, len(X_train_l)):
+                    add = np.array(X_train_l[i])
+                    X_L_train.append(add)
+                X_train_l = X_L_train
+            else:
+                X_train_l = list(X_train_l)
             
             if type(L_train_l) is np.ndarray:
                 L_l_train = []
@@ -312,6 +315,7 @@ class FastCOMPOSE:
             L_test = L_Test
 
             t_start = time.time()
+            # print(type(X_train_l), type(L_train_l), type(X_train_u))
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
             model.train()
             t_end = time.time()
@@ -372,7 +376,7 @@ class FastCOMPOSE:
                 test_value = self.labeled[ts+2]
 
             # first labeled data
-            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.data[ts+1], L_test=self.data[ts+1])          
+            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.data[ts+1])          
 
             # after first timestep 
             if start != ts:
