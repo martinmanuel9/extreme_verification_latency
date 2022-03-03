@@ -73,6 +73,7 @@ class FastCOMPOSE:
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.num_cs = {}                    #  number of core supports 
         # self.learner = {}                 #  Object from the ssl 
+        self.performance = {}
 
         # self.cse_func = []                  # corresponding to function in cse class -- no longer needed method will takes it cse method place
         self.cse_opts = []                  # options for the selected cse function in cse class
@@ -321,24 +322,16 @@ class FastCOMPOSE:
             t_end = time.time()
             elapsed_time = t_end - t_start
             preds = model.getPredictions(X_test)
-            # error = self.classification_error(preds, L_test)
-            print("Time to compute: ", elapsed_time, " seconds")
-            # print("Classification error of QN-S3VN: ", error, "%")
+            print("Time to predict: ", elapsed_time, " seconds")
             return preds
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
             self.cse.k_nn()
-    #TODO: why am i getting 0% class error 
-    def classification_error(self, preds, L_test):
-        error = 0.0
-        for i in range(len(L_test)):
-            error += float(abs(int(preds[i])-int(L_test[i][2]))) / 2.0
-        error /= len(preds)    
-        return error
 
-    def calculate_performance(self):
-        pass
+    #TODO: why am i getting 0% class error 
+    def classification_error(self, preds, L_test):  
+        return np.sum(preds != L_test)/len(preds) 
           
     def run(self):
         self.compose()
@@ -355,6 +348,7 @@ class FastCOMPOSE:
                 self.hypothesis[ts] = self.labeled[ts]         # copy labele onto the hypthosis
             
             self.get_core_supports(self.data[ts])              # create core supports at timestep
+            
             # add from core supports from previous timestep
             if start != ts:                                           
                 n_cs = self.num_cs[ts]
@@ -375,20 +369,14 @@ class FastCOMPOSE:
             else:
                 test_value = self.labeled[ts+2]
 
-            # first labeled data
-            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.data[ts+1])          
+            # first round with labeled data
+            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=test_value, L_test=test_value)          
 
-            # after first timestep 
+            # after firststep
             if start != ts:
-                if np.shape(self.hypothesis[ts]) > np.shape(self.core_supports[ts-1]):
-                    h_values = int(np.shape(self.hypothesis[ts])[0] - np.shape(self.core_supports[ts-1])[0])
-                    hypoth_array = list(self.hypothesis[ts])
-                    for i in range(0,h_values):
-                        hypoth_array.pop()
-                    self.hypothesis[ts] = hypoth_array
-                self.unlabeled[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.hypothesis[ts], X_train_u=self.unlabeled[ts-1], X_test=self.data[ts+1], L_test=self.hypothesis[ts])
-           
-            error = self.classification_error(self.unlabeled_ind[ts], self.hypothesis[ts])
+                self.unlabeled[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=test_value, L_test=test_value) 
+ 
+            error = self.classification_error(list(self.unlabeled_ind[ts]), list(self.hypothesis[ts][:,2]))
             print("Classification error of QN-S3VN: ", error, "%")
 
             self.step = 2
