@@ -52,8 +52,7 @@ class FastCOMPOSE:
     def __init__(self, 
                  classifier = 'QN_S3VM', 
                  method= 'gmm',
-                 verbose = 1, 
-                 dataset = None): 
+                 verbose = 1): 
         """
         Initialization of Fast COMPOSE
         """
@@ -72,22 +71,15 @@ class FastCOMPOSE:
         self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.num_cs = {}                    #  number of core supports 
-        # self.learner = {}                 #  Object from the ssl 
         self.performance = {}
-
-        # self.cse_func = []                  # corresponding to function in cse class -- no longer needed method will takes it cse method place
         self.cse_opts = []                  # options for the selected cse function in cse class
-
-        # self.performance = []               # classifier performances at each timestep
-        # self.comp_time = []                 # matrix of computation time for column 1 : ssl classification, column 2 : cse extraction
 
         self.classifier = classifier
         self.method = method                # not sure what to use for method
         self.dataset = []
         self.figure_xlim = []
         self.figure_ylim = []
-        self.step = 0
-        self.cse = cse.CSE()
+        self.step = 0 
         self.unlabeled_ind = {}
         
         
@@ -284,15 +276,19 @@ class FastCOMPOSE:
                     add = np.array(X_train_l[i])
                     X_L_train.append(add)
                 X_train_l = X_L_train
-            else:
-                X_train_l = list(X_train_l)
             
-            if type(L_train_l) is np.ndarray:
-                L_l_train = []
-                for i in range(0, len(L_train_l)):
-                    add = np.array(L_train_l[:,-1][i]) 
-                    L_l_train.append(add)
-                L_train_l = L_l_train
+            else:
+                for i in range(0,len(X_train_l)):
+                    add = np.array(X_train_l[i])
+                    X_L_train.append(add)
+                X_train_l = X_L_train
+            
+            L_l_train = []
+            L_train_l = np.array(L_train_l)
+            for i in range(0, len(L_train_l)):
+                add = np.array(L_train_l[:,-1][i]) 
+                L_l_train.append(add)
+            L_train_l = L_l_train
             
             X_U_train = []
             for i in range(0, len(X_train_u)):
@@ -315,21 +311,17 @@ class FastCOMPOSE:
                 L_Test.append(add)
             L_test = L_Test
 
-            t_start = time.time()
-            # print(type(X_train_l), type(L_train_l), type(X_train_u))
+            
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
             model.train()
-            t_end = time.time()
-            elapsed_time = t_end - t_start
             preds = model.getPredictions(X_test)
-            print("Time to predict: ", elapsed_time, " seconds")
             return preds
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
             self.cse.k_nn()
 
-    #TODO: why am i getting 0% class error 
+    
     def classification_error(self, preds, L_test):  
         return np.sum(preds != L_test)/len(preds) 
           
@@ -370,12 +362,28 @@ class FastCOMPOSE:
                 test_value = self.labeled[ts+2]
 
             # first round with labeled data
-            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=test_value, L_test=test_value)          
+            t_start = time.time()
+            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts], L_test=self.labeled[ts+1])          
+            t_end = time.time()
+            elapsed_time = t_end - t_start
+            print("Time to predict: ", elapsed_time, " seconds")
 
             # after firststep
             if start != ts:
-                self.unlabeled[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=test_value, L_test=test_value) 
- 
+                t_start = time.time()
+                if np.shape(self.labeled[ts-1]) > np.shape(self.core_supports[ts-1]):
+                    l_values = int(np.shape(self.labeled[ts])[0] - np.shape(self.core_supports[ts-1])[0])
+                    l_array = list(self.labeled[ts])
+                    for i in range(0,l_values):
+                        l_array.pop()
+                    self.labeled[ts] = l_array
+                # TODO: fix this
+                self.unlabeled[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.labeled[ts], X_train_u=self.data[ts], X_test=self.data[ts+1], L_test=self.labeled[ts+1])
+                t_end = time.time()
+                elapsed_time = t_end - t_start
+                print("Time to predict: ", elapsed_time, " seconds")  
+                print(self.unlabeled_ind[ts], "\n Learned at timestep 2")
+            
             error = self.classification_error(list(self.unlabeled_ind[ts]), list(self.hypothesis[ts][:,2]))
             print("Classification error of QN-S3VN: ", error, "%")
 

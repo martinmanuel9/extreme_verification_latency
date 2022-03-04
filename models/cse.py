@@ -76,7 +76,8 @@ class CSE:
             self.N_Instances = len(self.data)
             self.N_features = 1 
         else:
-            print("Please ensure that you pass in data to extract core supports!") 
+            print("Please ensure that you pass in data to extract core supports!")
+            exit() 
 
             
 
