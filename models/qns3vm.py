@@ -225,7 +225,7 @@ class QN_S3VM_Dense:
         self.__X_l, self.__X_u, self.__L_l = X_l, X_u, L_l
         assert len(X_l) == len(L_l)
         self.__X = cp.deepcopy(self.__X_l)
-        self.__X.extend(cp.deepcopy(self.__X_u))
+        self.__X.extend(cp.deepcopy(self.__X_u)) 
         self.__size_l, self.__size_u, self.__size_n = len(X_l), len(X_u), len(X_l) + len(X_u)
         self.__matrices_initialized = False
         self.__setParameters( ** kw)
@@ -390,6 +390,7 @@ class QN_S3VM_Dense:
                 self.__kernel = LinearKernel()
             elif (self.__kernel_type == "RBF"):
                 self.__kernel = RBFKernel(self.__sigma)
+           
             self.__Xreg = (mat(self.__X)[self.__regressors_indices,:].tolist())
             self.__KLR = self.__kernel.computeKernelMatrix(self.__X_l,self.__Xreg, symmetric=False)
             self.__KUR = self.__kernel.computeKernelMatrix(self.__X_u,self.__Xreg, symmetric=False)

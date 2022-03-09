@@ -39,6 +39,7 @@ from wsgiref.headers import tspecials
 from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
+from sklearn.manifold import TSNE
 from sqlalchemy import null
 import cse 
 from concurrent.futures import ProcessPoolExecutor
@@ -80,7 +81,7 @@ class FastCOMPOSE:
         self.figure_xlim = []
         self.figure_ylim = []
         self.step = 0 
-        self.unlabeled_ind = {}
+        self.learner = {}
         
         
         if self.classifier is None:
@@ -271,17 +272,12 @@ class FastCOMPOSE:
             random_gen.seed(0)
 
             X_L_train = []
-            if self.timestep == 1:
-                for i in range(0, len(X_train_l)):
-                    add = np.array(X_train_l[i])
-                    X_L_train.append(add)
-                X_train_l = X_L_train
-            
-            else:
-                for i in range(0,len(X_train_l)):
-                    add = np.array(X_train_l[i])
-                    X_L_train.append(add)
-                X_train_l = X_L_train
+            X_train_l = np.array(X_train_l)
+
+            for i in range(0, len(X_train_l)):
+                add = np.array(X_train_l[i])
+                X_L_train.append(add)
+            X_train_l = X_L_train
             
             L_l_train = []
             L_train_l = np.array(L_train_l)
@@ -289,33 +285,12 @@ class FastCOMPOSE:
                 add = np.array(L_train_l[:,-1][i]) 
                 L_l_train.append(add)
             L_train_l = L_l_train
-            
-            X_U_train = []
-            for i in range(0, len(X_train_u)):
-                # add = np.array(X_train_u[:,:-1][i])
-                add = np.array(X_train_u[i])
-                X_U_train.append(add)
-            X_train_u = X_U_train
-            
-            X_Test = []
-            for i in range(0, len(X_test)):
-                # add = np.array(X_test[:,:-1][i])
-                add = np.array(X_test[i])
-                X_Test.append(add)
-            X_test = X_Test
 
-            L_Test = []
-            L_test = np.stack(L_test, axis=0)
-            for i in range(0, len(L_test)):
-                add = np.array(L_test[:,-1][i]) 
-                L_Test.append(add)
-            L_test = L_Test
-
-            
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
             model.train()
             preds = model.getPredictions(X_test)
             return preds
+
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
@@ -324,68 +299,69 @@ class FastCOMPOSE:
     
     def classification_error(self, preds, L_test):  
         return np.sum(preds != L_test)/len(preds) 
-          
+
     def run(self):
         self.compose()
         start = self.timestep
         timesteps = self.data.keys()
-        data_list = list(self.data.items())
-        last_key = data_list[-1][0]
-        
+        # data_list = list(self.data.items())
+        # last_key = data_list[-1][0]
+
         ts = start
-        for ts in range(1, len(timesteps)):                      # iterate through all timesteps from the start to the end of the available data
+        for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
             self.timestep = ts
+            # add core supports to hypothesis
+            self.get_core_supports(self.data[ts])              # create core supports at timestep
+
             # if there is labeled data then copy labeles to hypothesis
             if ts in self.labeled:
-                self.hypothesis[ts] = self.labeled[ts]         # copy labele onto the hypthosis
-            
-            self.get_core_supports(self.data[ts])              # create core supports at timestep
-            
-            # add from core supports from previous timestep
-            if start != ts:                                           
-                n_cs = self.num_cs[ts]
-                last_key += 1
-                self.data[last_key] = self.core_supports[ts-1]
-                if ts-1 in self.labeled:
-                    self.labeled[last_key] = self.labeled[ts-1]
-                else:
-                    self.labeled[last_key] = self.labeled[ts-2]
-                if ts-1 in self.hypothesis:    
-                    self.hypothesis[last_key] = self.hypothesis[ts-1]
-                else:
-                    self.hypothesis[last_key] = self.hypothesis[ts-2]
-
-            self.step = 1
-            if ts+1 in self.labeled:
-                test_value = self.labeled[ts+1]
+                self.hypothesis[ts] = self.labeled[ts]         # copy labels onto the hypthosis if they exist
             else:
-                test_value = self.labeled[ts+2]
+                self.hypothesis[ts] = self.labeled[ts-1]
+            
+            print("Timestep:",ts)
+            self.step = 1
 
+            # Using QN-S3VM as Classifier 
             # first round with labeled data
-            t_start = time.time()
-            self.unlabeled_ind[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts], L_test=self.labeled[ts+1])          
-            t_end = time.time()
-            elapsed_time = t_end - t_start
-            print("Time to predict: ", elapsed_time, " seconds")
-
+            if ts == 1:
+                t_start = time.time()
+                
+                if np.shape(self.data[ts]) > np.shape(self.labeled[ts]):
+                    data_val = int(np.shape(self.data[ts])[0] - np.shape(self.labeled[ts])[0])
+                    data_array = list(self.data[ts])
+                    for i in range(0, data_val):
+                        data_array.pop()
+                    self.data[ts] = np.array(data_array)
+                
+                self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])          
+                t_end = time.time()
+                elapsed_time = t_end - t_start
+                print("Time to predict: ", elapsed_time, " seconds")
+            
             # after firststep
             if start != ts:
+                # append core supports to hypothesis 
+                to_cs = np.zeros((len(self.core_supports[ts]),2))
+
+                # add labeled and hypothesis with core supports 
+                self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
+                self.hypothesis[ts] = np.append(self.hypothesis[ts-1],self.core_supports[ts-1], axis=0)
+                self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
+
                 t_start = time.time()
-                if np.shape(self.labeled[ts-1]) > np.shape(self.core_supports[ts-1]):
-                    l_values = int(np.shape(self.labeled[ts])[0] - np.shape(self.core_supports[ts-1])[0])
-                    l_array = list(self.labeled[ts])
-                    for i in range(0,l_values):
-                        l_array.pop()
-                    self.labeled[ts] = l_array
-                # TODO: fix this
-                self.unlabeled[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.labeled[ts], X_train_u=self.data[ts], X_test=self.data[ts+1], L_test=self.labeled[ts+1])
+                
+                if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
+                    rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
+                    self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
+
+                self.learner[ts] = self.classify(X_train_l=self.labeled[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])
                 t_end = time.time()
                 elapsed_time = t_end - t_start
                 print("Time to predict: ", elapsed_time, " seconds")  
-                print(self.unlabeled_ind[ts], "\n Learned at timestep 2")
             
-            error = self.classification_error(list(self.unlabeled_ind[ts]), list(self.hypothesis[ts][:,2]))
-            print("Classification error of QN-S3VN: ", error, "%")
+            error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,2]))
+            print("Classification error of QN-S3VN: ", error)
 
             self.step = 2
 
