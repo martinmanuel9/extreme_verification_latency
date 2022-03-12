@@ -290,7 +290,9 @@ class FastCOMPOSE:
             model.train()
             preds = model.getPredictions(X_test)
             return preds
-
+            
+        elif self.classifier == 'label_propagation':
+            pass
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
@@ -304,8 +306,6 @@ class FastCOMPOSE:
         self.compose()
         start = self.timestep
         timesteps = self.data.keys()
-        # data_list = list(self.data.items())
-        # last_key = data_list[-1][0]
 
         ts = start
         for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
@@ -322,7 +322,7 @@ class FastCOMPOSE:
             print("Timestep:",ts)
             self.step = 1
 
-            # Using QN-S3VM as Classifier 
+        
             # first round with labeled data
             if ts == 1:
                 t_start = time.time()
@@ -362,8 +362,10 @@ class FastCOMPOSE:
             
             error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,2]))
             print("Classification error of QN-S3VN: ", error)
+            print("Accuracy: ", 1 - error)
 
             self.step = 2
+            
 
 if __name__ == '__main__':
     fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")
