@@ -55,7 +55,8 @@ class FastCOMPOSE:
     def __init__(self, 
                  classifier = 'QN_S3VM', 
                  method= 'gmm',
-                 verbose = 1): 
+                 verbose = 1, 
+                 selected_dataset = 'UG_2C_2D'): 
         """
         Initialization of Fast COMPOSE
         """
@@ -79,7 +80,7 @@ class FastCOMPOSE:
 
         self.classifier = classifier
         self.method = method                # not sure what to use for method
-        self.dataset = []
+        self.dataset = selected_dataset
         self.figure_xlim = []
         self.figure_ylim = []
         self.step = 0 
@@ -87,6 +88,8 @@ class FastCOMPOSE:
         self.classifier_accuracy = {}
         self.classifier_error = {}
         self.time_to_predict = {}
+        self.user_data_input = {}
+        
         
         
         if self.classifier is None:
@@ -195,17 +198,18 @@ class FastCOMPOSE:
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        # if not self.dataset:
-        #     avail_data_opts = ['Unimodal','Multimodal','1CDT', '2CDT', 'Unimodal3D','1cht','2cht','4cr','4crev1','4crev2','5cvt','1csurr',
-        #         '4ce1cf','fg2c2d','gears2c2d', 'keystroke', 'Unimodal5D', 'UnitTest']
-        #     print('The following datasets are available:\n' , avail_data_opts)
-        #     user_data_input = input('Enter dataset:')
+        if not self.dataset:
+            avail_data_opts = ['UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D','1CHT','2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR',
+                '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
+            print('The following datasets are available:\n' , avail_data_opts)
+            self.dataset = input('Enter dataset:')
         
-        user_data_input = 'Unimodal'
+        print("Dataset:", self.dataset)
+        self.user_data_input = self.dataset
         data_gen = bmdg.Datagen()
-        dataset_gen = data_gen.gen_dataset(user_data_input)
+        dataset_gen = data_gen.gen_dataset(self.dataset)
         self.dataset = dataset_gen              
-        print("Dataset:", user_data_input)
+        
         ts = 0
 
         ## set a self.data dictionary for each time step 
@@ -311,20 +315,21 @@ class FastCOMPOSE:
         return np.sum(preds != L_test)/len(preds)
 
     def results_logs(self):
+        
         avg_error = sum(self.classifier_error.values()) / len(self.classifier_error)
         avg_accuracy = sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy)
         avg_exec_time = sum(self.time_to_predict.values()) / len(self.time_to_predict)
+        print('Execition Time:', self.performance[self.user_data_input], "seconds")
         print('Average error:', avg_error)
         print('Average Accuracy:', avg_accuracy)
-        print('Average Execution Time:', avg_exec_time)
-
+        print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
 
     def run(self):
         self.compose()
         start = self.timestep
         timesteps = self.data.keys()
         print('SSL Classifier:', self.classifier)
-
+        total_time_start = time.time() 
         ts = start
         for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
             self.timestep = ts
@@ -394,13 +399,16 @@ class FastCOMPOSE:
 
 
             self.step = 2 
-        
+        total_time_end = time.time()
+        self.performance[self.user_data_input] = total_time_end - total_time_start
+        if self.verbose == 1:
+            print('Performance', self.performance[self.user_data_input])
         ## Report out
         self.results_logs()
 
 
 if __name__ == '__main__':
-    # fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")
+    # fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm", selected_dataset='UG_2C_2D')
     # fastcompose_test.run()
-    fastcompose_test = FastCOMPOSE(classifier="label_propagation", method="gmm", verbose=0)
+    fastcompose_test = FastCOMPOSE(classifier="label_propagation", method="gmm", verbose=0, selected_dataset='UG_2C_2D')
     fastcompose_test.run()

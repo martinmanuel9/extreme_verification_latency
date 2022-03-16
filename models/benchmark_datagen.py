@@ -58,7 +58,7 @@ class Datagen:
         cwd = cwd + '/extreme_verification_latency/data/files/' 
         os.chdir(cwd)
         self.datatype = datatype
-        if self.datatype == 'Unimodal':
+        if self.datatype == 'UG_2C_2D':
             # Unimodal option
             UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['feat1', 'feat2', 'feat3'])                                                                                        
             step = 1000
@@ -77,7 +77,7 @@ class Datagen:
 
 
     
-        if self.datatype == 'Multimodal':           
+        if self.datatype == 'MG_2C_2D':           
             # multimodal option
             MG_2C_2D = pd.read_csv("MG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 2000
@@ -127,7 +127,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data) 
         
-        if self.datatype == 'Unimodal3D':           
+        if self.datatype == 'UG_2C_3D':           
             UG_2C_3D = pd.read_csv("UG_2C_3D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3', 'feat4'])                                                                                    
             step = 2000
             data = []
@@ -143,7 +143,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data) 
         
-        if self.datatype == '1cht':           
+        if self.datatype == '1CHT':           
             X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 400
             data = []
@@ -159,8 +159,8 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data) 
         
-        if self.datatype == '2cht':           
-            X2CHT = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                      
+        if self.datatype == '2CHT':           
+            X2CHT = pd.read_csv("2CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                      
             step = 400
             data = []
             self.data = X2CHT 
@@ -175,7 +175,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)  
 
-        if self.datatype == '4cr':           
+        if self.datatype == '4CR':           
             X4CR = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 400
             data = []
@@ -191,7 +191,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
 
-        if self.datatype == '4crev1':           
+        if self.datatype == '4CREV1':           
             X4CRE_V1 = pd.read_csv("4CRE-V1.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 1000
             data = []
@@ -207,7 +207,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
 
-        if self.datatype == '4crev2':           
+        if self.datatype == '4CREV2':           
             X4CRE_V2 = pd.read_csv("4CRE-V2.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 1000
             data = []
@@ -223,7 +223,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
 
-        if self.datatype == '5cvt':           
+        if self.datatype == '5CVT':           
             X5CVT = pd.read_csv("5CVT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 1000
             data = []
@@ -240,7 +240,7 @@ class Datagen:
                 self.dataset.append(data)    
        
 
-        if self.datatype == '1csurr':           
+        if self.datatype == '1CSURR':           
             X1Csurr = pd.read_csv("1Csurr.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])
             num = 600 * math.floor(len(X1Csurr)/600)
             X1Csurr = X1Csurr[0:num]                                                                              
@@ -258,7 +258,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
 
-        if self.datatype == '4ce1cf':           
+        if self.datatype == '4CE1CF':           
             X4CE1CF = pd.read_csv("4CE1CF.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])
             drift_no = 750
             num = drift_no * math.floor(len(X4CE1CF)/drift_no)
@@ -276,7 +276,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
 
-        if self.datatype == 'fg2c2d':           
+        if self.datatype == 'FG_2C_2D':           
             FG_2C_2D = pd.read_csv("FG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
             step = 2000
             data = []
@@ -292,7 +292,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
 
-        if self.datatype == 'gears2c2d':           
+        if self.datatype == 'GEARS_2C_2D':           
             GEARS_2C_2D = pd.read_csv("GEARS_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
             step = 2000
             data = []
@@ -326,7 +326,7 @@ class Datagen:
                     data.append(i)
                 self.dataset.append(data)
     
-        if self.datatype == 'Unimodal5D':           
+        if self.datatype == 'UG_2C_5D':           
             UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3',
                                     'feat4', 'feat5', 'feat6'])                                                                                      
             step = 2000
