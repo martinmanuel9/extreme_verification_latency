@@ -84,6 +84,9 @@ class FastCOMPOSE:
         self.figure_ylim = []
         self.step = 0 
         self.learner = {}
+        self.classifier_accuracy = {}
+        self.classifier_error = {}
+        self.time_to_predict = {}
         
         
         if self.classifier is None:
@@ -139,6 +142,7 @@ class FastCOMPOSE:
         """
         self.figure_xlim = np.amin(self.dataset)
         self.figure_ylim = np.amax(self.dataset)
+
         print("Drift window:" , [self.figure_xlim, self.figure_ylim])
 
     def set_cores(self):
@@ -304,7 +308,16 @@ class FastCOMPOSE:
 
     
     def classification_error(self, preds, L_test):  
-        return np.sum(preds != L_test)/len(preds) 
+        return np.sum(preds != L_test)/len(preds)
+
+    def results_logs(self):
+        avg_error = sum(self.classifier_error.values()) / len(self.classifier_error)
+        avg_accuracy = sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy)
+        avg_exec_time = sum(self.time_to_predict.values()) / len(self.time_to_predict)
+        print('Average error:', avg_error)
+        print('Average Accuracy:', avg_accuracy)
+        print('Average Execution Time:', avg_exec_time)
+
 
     def run(self):
         self.compose()
@@ -323,8 +336,8 @@ class FastCOMPOSE:
                 self.hypothesis[ts] = self.labeled[ts]         # copy labels onto the hypthosis if they exist
             else:
                 self.hypothesis[ts] = self.labeled[ts-1]
-            
-            print("Timestep:",ts)
+            if self.verbose == 1:
+                print("Timestep:",ts)
             self.step = 1
 
             # first round with labeled data
@@ -343,7 +356,9 @@ class FastCOMPOSE:
                     self.learner[ts] = self.classify(X_train_l=self.data[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
                 t_end = time.time()
                 elapsed_time = t_end - t_start
-                print("Time to predict: ", elapsed_time, " seconds")
+                self.time_to_predict[ts] = elapsed_time
+                if self.verbose == 1:
+                    print("Time to predict: ", elapsed_time, " seconds")
             
             # after firststep
             if start != ts:
@@ -364,17 +379,28 @@ class FastCOMPOSE:
                 self.learner[ts] = self.classify(X_train_l=self.labeled[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])
                 t_end = time.time()
                 elapsed_time = t_end - t_start
-                print("Time to predict: ", elapsed_time, " seconds")  
+                self.time_to_predict[ts] = elapsed_time
+
+                if self.verbose == 1:
+                    print("Time to predict: ", elapsed_time, " seconds")  
             hypoth_label = np.shape(self.hypothesis[ts])[1]-1
             error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,hypoth_label]))
-            print("Classification error: ", error)
-            print("Accuracy: ", 1 - error)
+            self.classifier_accuracy[ts] = 1-error
+            self.classifier_error[ts] = error
+            
+            if self.verbose == 1:
+                print("Classification error: ", error)
+                print("Accuracy: ", 1 - error)
+
 
             self.step = 2 
-            
+        
+        ## Report out
+        self.results_logs()
+
 
 if __name__ == '__main__':
     # fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")
     # fastcompose_test.run()
-    fastcompose_test = FastCOMPOSE(classifier="label_propagation", method="gmm")
+    fastcompose_test = FastCOMPOSE(classifier="label_propagation", method="gmm", verbose=0)
     fastcompose_test.run()

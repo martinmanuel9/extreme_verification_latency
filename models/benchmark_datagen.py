@@ -54,7 +54,9 @@ class Datagen:
 
     def gen_dataset(self, datatype):
         # change the directory to your particular files location
-        os.chdir('/Users/martinlopez/extreme_verification_latency_lopez/extreme_verification_latency/data/files/')
+        cwd = os.getcwd()
+        cwd = cwd + '/extreme_verification_latency/data/files/' 
+        os.chdir(cwd)
         self.datatype = datatype
         if self.datatype == 'Unimodal':
             # Unimodal option
