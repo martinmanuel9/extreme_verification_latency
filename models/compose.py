@@ -36,6 +36,7 @@ PhD Advisor: Dr. Gregory Ditzler
 
 from turtle import update
 from wsgiref.headers import tspecials
+
 from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
@@ -48,6 +49,7 @@ import qns3vm as ssl
 import benchmark_datagen as bmdg
 import random
 import time 
+import label_propagation as lbl_prop
 
 class FastCOMPOSE: 
     def __init__(self, 
@@ -236,7 +238,7 @@ class FastCOMPOSE:
                     arr_to_list = []
                 concat_tuple = np.vstack(array_tuple)
                 self.labeled[key] = concat_tuple
-       
+        
         # convert unlabeled data to match self.data data structure
         unlabeled_keys = self.unlabeled.keys()
         for key in unlabeled_keys:        
@@ -292,7 +294,9 @@ class FastCOMPOSE:
             return preds
             
         elif self.classifier == 'label_propagation':
-            pass
+            ssl_label_propagation = lbl_prop.Label_Propagation(X_train_l, L_train_l, X_train_u)
+            preds = ssl_label_propagation.ssl()
+            return preds
         elif self.classifier == 'knn':
             self.cse = cse.CSE(data=self.data)
             self.cse.set_boundary('knn')
@@ -306,6 +310,7 @@ class FastCOMPOSE:
         self.compose()
         start = self.timestep
         timesteps = self.data.keys()
+        print('SSL Classifier:', self.classifier)
 
         ts = start
         for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
@@ -322,7 +327,6 @@ class FastCOMPOSE:
             print("Timestep:",ts)
             self.step = 1
 
-        
             # first round with labeled data
             if ts == 1:
                 t_start = time.time()
@@ -333,8 +337,10 @@ class FastCOMPOSE:
                     for i in range(0, data_val):
                         data_array.pop()
                     self.data[ts] = np.array(data_array)
-                
-                self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])          
+                if self.classifier == 'QN_S3VM':
+                    self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts]) 
+                elif self.classifier == 'label_propagation':
+                    self.learner[ts] = self.classify(X_train_l=self.data[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
                 t_end = time.time()
                 elapsed_time = t_end - t_start
                 print("Time to predict: ", elapsed_time, " seconds")
@@ -354,19 +360,21 @@ class FastCOMPOSE:
                 if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
                     rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
                     self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
-
+                
                 self.learner[ts] = self.classify(X_train_l=self.labeled[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])
                 t_end = time.time()
                 elapsed_time = t_end - t_start
                 print("Time to predict: ", elapsed_time, " seconds")  
-            
-            error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,2]))
-            print("Classification error of QN-S3VN: ", error)
+            hypoth_label = np.shape(self.hypothesis[ts])[1]-1
+            error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,hypoth_label]))
+            print("Classification error: ", error)
             print("Accuracy: ", 1 - error)
 
-            self.step = 2
+            self.step = 2 
             
 
 if __name__ == '__main__':
-    fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")
+    # fastcompose_test = FastCOMPOSE(classifier="QN_S3VM", method="gmm")
+    # fastcompose_test.run()
+    fastcompose_test = FastCOMPOSE(classifier="label_propagation", method="gmm")
     fastcompose_test.run()
