@@ -1,6 +1,6 @@
 # Extreme Verification Latency
 
-<<<<<<< HEAD
+
 Python libaray for implementing extreme verification latency algorithms.
 
 To run COMPOSE you will need to instantiate the COMPOSE class: 
@@ -16,8 +16,4 @@ The following parameters need to be passed in:
 4. num_cores: percent in which you wish to operate 0.8 = 80% of available cores 
 5. selected dataset : options available :
     ['UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D','1CHT','2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR', '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
-=======
-Python libaray for implementing extreme verification latency algorithms. 
 
-To run COMPOSE Experiments open Jupyter notebook RunCOMPOSE
->>>>>>> ae1a9a0f9595b4f839a4564413644d7321428ef0
