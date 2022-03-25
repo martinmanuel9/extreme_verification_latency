@@ -272,46 +272,62 @@ class CSE:
         
         ## Compaction - shrinking of alpha shapes -- referred to as ONION Method -- peels layers
         self.ashape['N_start_instances'] = np.shape(self.data)[0] 
-        print("N_Instances:" , self.ashape['N_start_instances'])
-        self.ashape['N_core_supports'] = math.ceil((np.shape(self.data)[0])*self.boundary_opts['p'])  # deseired core supports
-        print("Desired of core supports:", self.ashape['N_core_supports'])       
-        self.ashape['core_support'] = np.ones(np.shape(self.data)[0])  # binary vector indicating instance of core support is or not
+        self.ashape['N_core_supports'] = math.ceil((np.shape(self.data)[0]) * self.boundary_opts['p'])  # deseired core supports   
+        self.ashape['core_support'] = np.ones(self.ashape['N_start_instances'])  # binary vector indicating instance of core support is or not
         too_many_core_supports = True                                  # Flag denoting if the target number of coresupports has been obtained
 
         # self.ashape_includes[1] = 1       # can delete this after testing
+        
         # Remove layers and compactions
         while sum(self.ashape['core_support']) >= self.ashape['N_core_supports'] and too_many_core_supports == True:
             # find d-1 simplexes 
-            keys_ashape_includes = [key for (key, value) in self.ashape_includes.items() if value == 1]
+            items_ashape_includes = [value for (key, value) in self.ashape_includes.items() if value == 1]
+
+            Tid = np.tile(items_ashape_includes, (np.shape(self.ashape['simplexes'])[1],1))
             
-            Tid = np.tile(keys_ashape_includes, (np.shape(self.ashape['simplexes'])[1],1))
             edges = []
             nums = []
             for i in range(np.shape(self.ashape['simplexes'])[1]):
                 nums.append(i)
-            
-            #TODO: Work edges 
-            for ic in range(0, np.shape(self.ashape['simplexes'])[1]):  
-                edges = [edges, self.ashape['simplexes'][keys_ashape_includes, (np.shape(self.ashape['simplexes'])[1]-1)]] # need to test this
-                nums = pd.DataFrame(nums).iloc[0, :].shift()        # shifts each row to the right
-            print(edges)
-            edges = np.sort(edges)                                  # sort the d-1 simplexes so small node is on left in each row
-            Sid = edges.ravel().argsort()                           # sort by rows placing copies of d-1 simplexes in adjacent row
-            Tid = Tid(Sid)                                          # sort the simplex identifiers to match
 
-            consec_edges = np.sum(diff(edges), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
-            edge_single_vector = np.ravel(consec_edges)
-            non_zero_edge = np.nonzero(edge_single_vector)
-            consec_edges[non_zero_edge] = 0                         # throw a zero mark on the subsequent row (N+1) as well
-            self.ashape_includes[Tid[consec_edges!=0]] = 0   
-            points_remaining = np.unique(self.ashape['simplexes'][self.ashape_includes==1])
+            for ic in range(np.shape(self.ashape['simplexes'])[1]):
+                if len(items_ashape_includes) < len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])):
+                    dif_len = int(len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])) - len(items_ashape_includes))
+                    items_ashape_includes = np.hstack((items_ashape_includes, np.ones(dif_len)))
+                    edges.append(self.ashape['simplexes'][np.array(items_ashape_includes).astype(int), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
+                else:
+                    edges.append(self.ashape['simplexes'][np.array(items_ashape_includes).astype(int), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])]) 
+                nums = nums[-1:] + nums[:-1]                        # shifts each row to the right
+            
+            edges = np.array(edges)
+            edges = np.sort(edges)                                  # sort the d-1 simplexes so small node is on left in each row
+            edges = np.sort(edges, axis=0)                          # sort rows of d-1 simplexes in adjacent row 
+            Sid = []
+            for i in range(np.shape(edges)[0]):
+                Sid.append(i)
+            Tid = Tid[Sid]                                                      # sort the simplex identifiers to match 
+            consec_edges = np.sum(diff(edges,n=1, axis=0), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
+            
+            consec_edges = np.insert(consec_edges, np.where(consec_edges == 0)[0], 0)   # throw a zero mark on the subsequent row (N+1) as well
+            # print(consec_edges)
+            items_ashape_includes[items_ashape_includes==1] = 0
+
+            points_remaining = np.unique(self.ashape['simplexes'][items_ashape_includes.astype(int)])
+            # print(points_remaining)
+            N_instance_index = []
+
             if len(points_remaining) >= self.ashape['N_core_supports']:
-                set_diff = self.ashape['N_start_instances'].difference(points_remaining)
-                for i in range(set_diff):
-                    self.ashape['core_support'] = 0
+                for i in range(self.ashape['N_start_instances']):
+                    N_instance_index.append(i)
+                set_diff = np.setdiff1d(np.array(N_instance_index),np.array(points_remaining))
+                self.ashape['core_support'][set_diff] = 0
             else:
                 too_many_core_supports = False
-
+        # return core supports 
+        # print(self.ashape['core_support'][np.where(self.ashape['core_support']==1)[0]])
+        support_indices = self.ashape['core_support'][np.where(self.ashape['core_support']==1)[0]]
+        return support_indices
+        
     ## GMM Clustering
     def gmm(self):
         x_ul = self.data

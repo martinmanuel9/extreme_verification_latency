@@ -121,9 +121,9 @@ class COMPOSE:
         Check if the input parameters are not empty for compose
         This checks if the dataset is empty and checks what option of feedback you want
         Gets dataset and verbose (the command to display options as COMPOSE processes)
-        Verbose: 0 : no info is displayed
-                 1 : Command Line progress updates
-                 2 : Plots when possible and Command Line progress updates
+        Verbose:    0 : no info is displayed
+                    1 : Command Line progress updates
+                    2 : Plots when possible and Command Line progress updates
         """
 
         # set cores
