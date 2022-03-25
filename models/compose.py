@@ -48,13 +48,15 @@ import time
 import label_propagation as lbl_prop
 import util as ut
 import matplotlib.animation as animation
+import math
 
 class COMPOSE: 
     def __init__(self, 
-                 classifier = 'QN_S3VM', 
-                 method= 'gmm',
-                 verbose = 1, 
-                 selected_dataset = 'UG_2C_2D'): 
+                classifier = 'QN_S3VM', 
+                method= 'gmm',
+                verbose = 1,
+                num_cores = 0.8, 
+                selected_dataset = 'UG_2C_2D'): 
         """
         Initialization of Fast COMPOSE
         """
@@ -62,7 +64,7 @@ class COMPOSE:
 
         self.timestep = 1                   # The current timestep of the datase
         self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
-        self.n_cores =  1                   # Level of feedback displayed during run {default}
+        self.n_cores =  num_cores                   # Level of feedback displayed during run {default}
         self.verbose = verbose              #    0  : No Information Displayed
                                             #    1  : Command line progress updates - {default}
                                             #    2  : Plots when possible and Command line progress updates
@@ -126,8 +128,7 @@ class COMPOSE:
                     2 : Plots when possible and Command Line progress updates
         """
 
-        # set cores
-        self.set_cores()
+
 
         # set labels and unlabeles and dataset to process
         self.set_data()
@@ -151,19 +152,15 @@ class COMPOSE:
         Establishes number of cores to conduct parallel processing
         """
         num_cores = multiprocessing.cpu_count()         # determines number of cores
-
-        if self.n_cores > num_cores:
+        print("Available cores:", num_cores)
+        percent_cores = math.ceil(self.n_cores * num_cores)
+        if percent_cores > num_cores:
             print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
-            self.n_cores = num_cores                   # sets number of cores to available 
+            self.n_cores = int(num_cores)                   # sets number of cores to available 
         else:
-            self.n_cores = num_cores                   # original number of cores to 1
+            self.n_cores = int(percent_cores)                   # original number of cores to 1
         
-        # print("Available number of cores:", self.n_cores)
-        # user_input = input("Enter the amount of cores you wish to begin processing: ")
-        user_input = self.n_cores
-        self.n_cores = user_input
-        print("Num of cores:", self.n_cores)
-        # print("User selected the following cores to process:", self.n_cores)
+        print("Number of cores executing:", self.n_cores)
 
     def get_core_supports(self, input_data = None):
         """
@@ -348,90 +345,93 @@ class COMPOSE:
         plt.show()
 
     def run(self):
-        self.compose()
-        start = self.timestep
-        timesteps = self.data.keys()
-        print('SSL Classifier:', self.classifier)
-        total_time_start = time.time() 
-        ts = start
+        # set cores
+        self.set_cores()
+        with ProcessPoolExecutor(max_workers=self.n_cores):
+            self.compose()
+            start = self.timestep
+            timesteps = self.data.keys()
+            print('SSL Classifier:', self.classifier)
+            total_time_start = time.time() 
+            ts = start
 
-        for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
-            self.timestep = ts
-            # add core supports to hypothesis
-            self.get_core_supports(self.data[ts])              # create core supports at timestep
+            for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
+                self.timestep = ts
+                # add core supports to hypothesis
+                self.get_core_supports(self.data[ts])              # create core supports at timestep
 
-            # if there is labeled data then copy labeles to hypothesis
-            if ts in self.labeled:
-                self.hypothesis[ts] = self.labeled[ts]         # copy labels onto the hypthosis if they exist
-            else:
-                self.hypothesis[ts] = self.labeled[ts-1]
-            if self.verbose == 1:
-                print("Timestep:",ts)
-            self.step = 1
-
-            # first round with labeled data
-            if ts == 1:
-                t_start = time.time()
-                
-                if np.shape(self.data[ts]) > np.shape(self.labeled[ts]):
-                    data_val = int(np.shape(self.data[ts])[0] - np.shape(self.labeled[ts])[0])
-                    data_array = list(self.data[ts])
-                    for i in range(0, data_val):
-                        data_array.pop()
-                    self.data[ts] = np.array(data_array)
-                if self.classifier == 'QN_S3VM':
-                    self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts]) 
-                elif self.classifier == 'label_propagation':
-                    self.learner[ts] = self.classify(X_train_l=self.data[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
-                t_end = time.time()
-                elapsed_time = t_end - t_start
-                self.time_to_predict[ts] = elapsed_time
+                # if there is labeled data then copy labeles to hypothesis
+                if ts in self.labeled:
+                    self.hypothesis[ts] = self.labeled[ts]         # copy labels onto the hypthosis if they exist
+                else:
+                    self.hypothesis[ts] = self.labeled[ts-1]
                 if self.verbose == 1:
-                    print("Time to predict: ", elapsed_time, " seconds")
-            
-            # after firststep
-            if start != ts:
-                # append core supports to hypothesis 
-                to_cs = np.zeros((len(self.core_supports[ts]),2))
+                    print("Timestep:",ts)
+                self.step = 1
 
-                # add labeled and hypothesis with core supports 
-                self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
-                self.hypothesis[ts] = np.append(self.hypothesis[ts-1],self.core_supports[ts-1], axis=0)
-                self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
+                # first round with labeled data
+                if ts == 1:
+                    t_start = time.time()
+                    
+                    if np.shape(self.data[ts]) > np.shape(self.labeled[ts]):
+                        data_val = int(np.shape(self.data[ts])[0] - np.shape(self.labeled[ts])[0])
+                        data_array = list(self.data[ts])
+                        for i in range(0, data_val):
+                            data_array.pop()
+                        self.data[ts] = np.array(data_array)
+                    if self.classifier == 'QN_S3VM':
+                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts]) 
+                    elif self.classifier == 'label_propagation':
+                        self.learner[ts] = self.classify(X_train_l=self.data[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
+                    t_end = time.time()
+                    elapsed_time = t_end - t_start
+                    self.time_to_predict[ts] = elapsed_time
+                    if self.verbose == 1:
+                        print("Time to predict: ", elapsed_time, " seconds")
+                
+                # after firststep
+                if start != ts:
+                    # append core supports to hypothesis 
+                    to_cs = np.zeros((len(self.core_supports[ts]),2))
 
-                t_start = time.time()
+                    # add labeled and hypothesis with core supports 
+                    self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
+                    self.hypothesis[ts] = np.append(self.hypothesis[ts-1],self.core_supports[ts-1], axis=0)
+                    self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
+
+                    t_start = time.time()
+                    
+                    if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
+                        rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
+                        self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
+                    
+                    self.learner[ts] = self.classify(X_train_l=self.labeled[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])
+                    t_end = time.time()
+                    elapsed_time = t_end - t_start
+                    self.time_to_predict[ts] = elapsed_time
+                    if self.verbose == 1:
+                        print("Time to predict: ", elapsed_time, " seconds")  
+                hypoth_label = np.shape(self.hypothesis[ts])[1]-1
+                error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,hypoth_label]))
+                self.classifier_accuracy[ts] = 1-error * 100
+                self.classifier_error[ts] = error
                 
-                if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
-                    rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
-                    self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
-                
-                self.learner[ts] = self.classify(X_train_l=self.labeled[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])
-                t_end = time.time()
-                elapsed_time = t_end - t_start
-                self.time_to_predict[ts] = elapsed_time
                 if self.verbose == 1:
-                    print("Time to predict: ", elapsed_time, " seconds")  
-            hypoth_label = np.shape(self.hypothesis[ts])[1]-1
-            error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,hypoth_label]))
-            self.classifier_accuracy[ts] = 1-error * 100
-            self.classifier_error[ts] = error
-            
+                    print("Classification error: ", error)
+                    print("Accuracy: ", 1 - error)
+                    # self.plotter()
+                    
+                self.step = 2 
+            total_time_end = time.time()
+            self.total_time[self.user_data_input] = total_time_end - total_time_start
             if self.verbose == 1:
-                print("Classification error: ", error)
-                print("Accuracy: ", 1 - error)
-                # self.plotter()
-                
-            self.step = 2 
-        total_time_end = time.time()
-        self.total_time[self.user_data_input] = total_time_end - total_time_start
-        if self.verbose == 1:
-            print('Performance', self.total_time[self.user_data_input])
-        ## Report out
-        self.results_logs()
+                print('Performance', self.total_time[self.user_data_input])
+            ## Report out
+            self.results_logs()
 
 
 if __name__ == '__main__':
     # fast_compose = COMPOSE(classifier="QN_S3VM", method="gmm", verbose = 1, selected_dataset='UG_2C_2D')
     # fast_compose.run()
-    compose_alpha = COMPOSE(classifier = "label_propagation", method = "a_shape", verbose = 1, selected_dataset='UnitTest')
+    compose_alpha = COMPOSE(classifier = "label_propagation", method = "a_shape", verbose = 1, num_cores=0.8, selected_dataset='UnitTest')
     compose_alpha.run()
