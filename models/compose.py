@@ -330,6 +330,8 @@ class COMPOSE:
         plt.title('Correct Classification [%]')
         plt.plot(x,y,'o', color='black')
         plt.show()
+        
+        return df
 
     # TODO: fix dynamic plotting
     def plotter(self):
