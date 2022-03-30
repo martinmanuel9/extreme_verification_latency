@@ -38,12 +38,13 @@ import compose
 
 class RunExperiment:
 
-    def __init__(self, experiements = [], classifier = [], verbose =[], datasets=[]):
+    def __init__(self, experiements = [], classifier = [], verbose =[], datasets=[], num_cores= 0.8):
         self.experiments = experiements
         self.classifier = classifier
         self.verbose = verbose
         self.datasets = datasets
         self.results = {}
+        self.num_cores = num_cores
 
     def plot_results(self):
         pass
@@ -53,14 +54,14 @@ class RunExperiment:
             for j in self.classifier:
                 for dataset in self.datasets:
                     if i == 'fast_compose' and j == 'QN_S3VM':
-                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = 0, num_cores=0.8, selected_dataset = dataset)
+                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['fast_compose_QN_S3VM']= fast_compose_QNS3VM.run()
                     elif i == 'fast_compose' and j == 'label_propagation':
-                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = 0, num_cores=0.8, selected_dataset = dataset)
+                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['fast_compose_label_propagation'] = fast_compose_label_prop.run()
                     elif i == 'compose' and j == 'QN_S3VM':
-                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = 0, num_cores=0.8, selected_dataset = dataset)
+                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_QNS3VM'] = reg_compose_label_prop.run()
                     elif i == 'compose' and j == 'label_propagation':
-                        reg_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = 0 ,num_cores=0.8, selected_dataset = dataset)
+                        reg_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = 0 ,num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_label_propagation'] = reg_compose_QNS3VM.run()

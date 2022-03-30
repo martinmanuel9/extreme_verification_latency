@@ -127,14 +127,12 @@ class COMPOSE:
                     1 : Command Line progress updates
                     2 : Plots when possible and Command Line progress updates
         """
-
-
-
         # set labels and unlabeles and dataset to process
         self.set_data()
 
         # set drift window
         self.set_drift_window()
+        
 
     
     def set_drift_window(self):
@@ -185,9 +183,6 @@ class COMPOSE:
             self.core_supports[self.timestep] = self.cse.parzen()
         elif self.method == 'a_shape':
             self.cse.set_boundary(self.method)
-            simplices = self.cse.a_shape_compaction()
-            print(simplices)
-            # self.num_cs[self.timestep] = len(self.cse.a_shape_compaction())
             self.core_supports[self.timestep] = self.cse.a_shape_compaction()
 
     def set_data(self):
@@ -201,6 +196,7 @@ class COMPOSE:
             self.dataset = input('Enter dataset:')
         
         print("Dataset:", self.dataset)
+        print("Method:", self.method)
         self.user_data_input = self.dataset
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(self.dataset)
@@ -330,7 +326,7 @@ class COMPOSE:
         plt.title('Correct Classification [%]')
         plt.plot(x,y,'o', color='black')
         plt.show()
-        
+
         return df
 
     # TODO: fix dynamic plotting
@@ -356,12 +352,10 @@ class COMPOSE:
             print('SSL Classifier:', self.classifier)
             total_time_start = time.time() 
             ts = start
-
             for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
                 # add core supports to hypothesis
                 self.get_core_supports(self.data[ts])              # create core supports at timestep
-
                 # if there is labeled data then copy labeles to hypothesis
                 if ts in self.labeled:
                     self.hypothesis[ts] = self.labeled[ts]         # copy labels onto the hypthosis if they exist
@@ -370,11 +364,9 @@ class COMPOSE:
                 if self.verbose == 1:
                     print("Timestep:",ts)
                 self.step = 1
-
                 # first round with labeled data
                 if ts == 1:
                     t_start = time.time()
-                    
                     if np.shape(self.data[ts]) > np.shape(self.labeled[ts]):
                         data_val = int(np.shape(self.data[ts])[0] - np.shape(self.labeled[ts])[0])
                         data_array = list(self.data[ts])
@@ -384,7 +376,7 @@ class COMPOSE:
                     if self.classifier == 'QN_S3VM':
                         self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts]) 
                     elif self.classifier == 'label_propagation':
-                        self.learner[ts] = self.classify(X_train_l=self.data[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
+                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
                     t_end = time.time()
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
@@ -394,13 +386,38 @@ class COMPOSE:
                 # after firststep
                 if start != ts:
                     # append core supports to hypothesis 
-                    to_cs = np.zeros((len(self.core_supports[ts]),2))
+                    # add labeled and hypothesis with core supports
+                    if self.method == 'gmm': 
+                        self.core_supports[ts-1] = np.reshape(self.core_supports[ts-1], (np.shape(self.core_supports[ts-1])[0], 1))
+                        self.core_supports[ts] = np.reshape(self.core_supports[ts], (np.shape(self.core_supports[ts])[0], 1))
+                    
+                    if np.shape(self.core_supports[ts-1])[1] <= np.shape(self.core_supports[ts])[1]:
+                        to_cs = np.zeros((len(self.core_supports[ts]),(np.shape(self.hypothesis[ts-1])[1] - 1)))
+                        self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
 
-                    # add labeled and hypothesis with core supports 
-                    self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
-                    self.hypothesis[ts] = np.append(self.hypothesis[ts-1],self.core_supports[ts-1], axis=0)
+                    if np.shape(self.hypothesis[ts-1])[1] < np.shape(self.core_supports[ts-1])[1]:
+                        to_hs = np.zeros((len(self.hypothesis[ts-1]),(np.shape(self.core_supports[ts-1])[1] - np.shape(self.hypothesis[ts-1])[1])))
+                        self.hypothesis[ts-1] = np.column_stack((to_hs, self.hypothesis[ts-1]))
+                    self.hypothesis[ts] = np.append(self.hypothesis[ts-1], self.core_supports[ts-1], axis=0)
+
+                    if np.shape(self.labeled[ts-1])[1] < np.shape(self.core_supports[ts-1])[1]:
+                        to_ls = np.zeros((len(self.labeled[ts-1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts-1])[1])))
+                        self.labeled[ts-1] = np.column_stack((to_ls, self.labeled[ts-1]))
                     self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
 
+                    if np.shape(self.labeled[ts+1])[1] < np.shape(self.core_supports[ts-1])[1]:
+                        to_ls = np.zeros((len(self.labeled[ts+1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts+1])[1])))
+                        self.labeled[ts+1] = np.column_stack((to_ls, self.labeled[ts+1]))
+                    
+                    if np.shape(self.unlabeled[ts-1])[1] < np.shape(self.labeled[ts-1])[1]:
+                        to_uls = np.zeros((len(self.unlabeled[ts-1]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts-1])[1])))
+                        self.unlabeled[ts-1] = np.column_stack((to_uls, self.unlabeled[ts-1]))
+                    # self.unlabeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
+
+                    if np.shape(self.unlabeled[ts])[1] < np.shape(self.labeled[ts-1])[1]:
+                        to_uls = np.zeros((len(self.unlabeled[ts]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts])[1])))
+                        self.unlabeled[ts] = np.column_stack((to_uls, self.unlabeled[ts]))
+                    
                     t_start = time.time()
                     
                     if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
@@ -431,3 +448,8 @@ class COMPOSE:
             ## Report out
             self.results_logs()
 
+if __name__ == '__main__':
+    # fast_compose = COMPOSE(classifier="QN_S3VM", method="gmm", verbose = 1, selected_dataset='UG_2C_2D')
+    # fast_compose.run()
+    compose_alpha = COMPOSE(classifier = "QN_S3VM", method = "a_shape", verbose = 1, num_cores=0.8, selected_dataset='UG_2C_2D')
+    compose_alpha.run()

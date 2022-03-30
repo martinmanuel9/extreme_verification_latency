@@ -79,35 +79,22 @@ from sklearn import utils
 
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
-        self.X = X_train
-        self.labels= X_labeled
-        self.unlabeled = X_unlabeled
+        self.X = np.array(X_train)
+        self.labels= np.array(X_labeled)
+        self.unlabeled = np.array(X_unlabeled)
         self.actual_label = np.shape(X_labeled)[1]-1
-    def ssl(self):        
+    def ssl(self): 
         labels = self.labels[:,self.actual_label]
         labels_orig = np.copy(self.labels[:,self.actual_label])
-
         labels = np.floor(labels)
         labels_orig = np.floor(labels_orig)
         X = self.X
-        tot_unlabled = self.unlabeled
         
-        # print(f"Total Records in dataset is {len(X)} and unlabeled records is  {len(tot_unlabled)}")
-
         # define model
-        model = LabelPropagation(kernel='knn',n_neighbors=5, gamma=30, max_iter=2000)
+        model = LabelPropagation(kernel='knn', n_neighbors=5, gamma=30, max_iter=2000)
         # fit model on training dataset
         model.fit(X, labels)
         # make predictions
         predicted_labels = model.predict(X)
-        true_labels = labels_orig
 
-        #print the classification report and confusion matrix
-        # cm = confusion_matrix(true_labels, predicted_labels, labels=model.classes_)
-        # print("Label propagation model: %d labeled & %d unlabeled points (%d total)" %
-        #     (len(labels), len(tot_unlabled) , len(X)))
-
-        # print(classification_report(true_labels, predicted_labels))
-        # print("Confusion matrix")
-        # print(cm)
         return predicted_labels

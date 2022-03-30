@@ -96,7 +96,7 @@ class CSE:
             if opts:                                            # if user passes in options
                 self.set_user_opts(opts)                        # sets user options
         else:
-           print(boundary_selection, " not in valid boundary.", boundary_selection,
+            print(boundary_selection, " not in valid boundary.", boundary_selection,
                 "is an invalid boundary construction method - choose from:  ", self.valid_boundary) 
 
     # Extract Core Supports using the boundary selected
@@ -126,27 +126,17 @@ class CSE:
         Sets classifier default options
         """    
         if self.boundary == "a_shape":
-            # alpha = 2
-            # p = 2
             self.boundary_opts["alpha"] = 2             # alpha parameter of alpha shape
             self.boundary_opts["p"] = 0.30              # set the percentage of points to be used for core supports 
         if self.boundary == "gmm":
-            # kl = 10
-            # kh = 10
-            # p = 0.4
             self.boundary_opts['kl'] = 10               # number of centers to find
             self.boundary_opts['kh'] = 10               
             self.boundary_opts['p'] = 0.4               # set percentage of points to be used for core supports 
             self.boundary_opts.update
         if self.boundary == "knn":
-            # k = 10
-            # p = 0.4
             self.boundary_opts['k'] = 10                # set number of k neighbors to compare
             self.boundary_opts['p'] = 0.4               # set percentage of points to be used for core supports 
         if self.boundary == "parzen":
-            # win = np.ones((np.shape(self.N_features)))
-            # p = 0.4
-            # noise_thr = 0
             self.boundary_opts['win'] = np.ones(self.N_features)
             self.boundary_opts['p'] = 0.4
             self.boundary_opts['noise_thr'] = 0
@@ -163,38 +153,6 @@ class CSE:
         else:
             print("Options must be entered as list: [options]")
 
-    # TODO: Update plotting: Create in util.py
-    # def plot_cse(self, indices=None):
-    #     if not indices:                 # if no indices are specified
-    #         indices = self.data
-    #         color = 'r.'                # red dot marker
-    #     else:
-    #         color = 'k.'                # black dot marker
-        
-    #     # need to update this to match correct data format
-    #     df = pd.DataFrame(self.data)
-        
-    #     print(self.N_features)
-    #     if self.N_features == 2: 
-    #         print(self.data)              # command line progress
-    #         plt.plot(self.data["column1"], self.data["column2"], color)
-    #         plt.xlabel("Feature 1")
-    #         plt.ylabel("Feature 2")
-    #         plt.title("Boundary Constructor:" + self.boundary)
-    #         plt.show()
-    #     if self.N_features == 3:
-    #         print(self.data)
-    #         fig = plt.figure()
-    #         ax = fig.add_subplot(projection='3d')
-    #         xs = self._data["column1"]
-    #         ys = self._data["column2"]
-    #         zs = self._data["column2"]
-    #         ax.scatter(xs, ys, zs, marker = '.')
-    #         ax.set_xlabel('Feature 1')
-    #         ax.set_ylabel('Feature 2')
-    #         ax.set_zlabel('Feature 3')
-    #         ax.set_title('Boundary Constructor: ' , self.boundary)
-    #         plt.show()
     
     ## Alpha shape and Dependencies Onion method
     def alpha_shape(self):  
@@ -275,28 +233,31 @@ class CSE:
         self.ashape['N_core_supports'] = math.ceil((np.shape(self.data)[0]) * self.boundary_opts['p'])  # deseired core supports   
         self.ashape['core_support'] = np.ones(self.ashape['N_start_instances'])  # binary vector indicating instance of core support is or not
         too_many_core_supports = True                                  # Flag denoting if the target number of coresupports has been obtained
-
-        # self.ashape_includes[1] = 1       # can delete this after testing
         
         # Remove layers and compactions
         while sum(self.ashape['core_support']) >= self.ashape['N_core_supports'] and too_many_core_supports == True:
-            # find d-1 simplexes 
-            items_ashape_includes = [value for (key, value) in self.ashape_includes.items() if value == 1]
-
-            Tid = np.tile(items_ashape_includes, (np.shape(self.ashape['simplexes'])[1],1))
+            # find d-1 simplexes
+            if not list(self.ashape_includes.values()):
+                self.ashape_includes[0] = 1 
+            
+            Tid = np.tile(np.array(list(self.ashape_includes.values())), (np.shape(self.ashape['simplexes'])[1],1))
             
             edges = []
             nums = []
             for i in range(np.shape(self.ashape['simplexes'])[1]):
                 nums.append(i)
-
+            
             for ic in range(np.shape(self.ashape['simplexes'])[1]):
-                if len(items_ashape_includes) < len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])):
-                    dif_len = int(len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])) - len(items_ashape_includes))
-                    items_ashape_includes = np.hstack((items_ashape_includes, np.ones(dif_len)))
-                    edges.append(self.ashape['simplexes'][np.array(items_ashape_includes).astype(int), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
+                if len(self.ashape_includes) < len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])):
+                    dif_len = int(len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])) - len(self.ashape_includes))
+                    lastKey = list(self.ashape_includes.keys())[-1]
+                    for k in range(lastKey, (lastKey+dif_len+1)):
+                        self.ashape_includes[k] = 1
+                    edges.append(self.ashape['simplexes'][np.array(list(self.ashape_includes.values())), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
                 else:
-                    edges.append(self.ashape['simplexes'][np.array(items_ashape_includes).astype(int), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])]) 
+                    edges.append(self.ashape['simplexes'][np.array(list(self.ashape_includes.values())), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
+
+                
                 nums = nums[-1:] + nums[:-1]                        # shifts each row to the right
             
             edges = np.array(edges)
@@ -305,17 +266,25 @@ class CSE:
             Sid = []
             for i in range(np.shape(edges)[0]):
                 Sid.append(i)
-            Tid = Tid[Sid]                                                      # sort the simplex identifiers to match 
-            consec_edges = np.sum(diff(edges,n=1, axis=0), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
             
+            Sid.sort(reverse=True)
+            Tid = Tid[Sid]                                                      # sort the simplex identifiers to match  
+            consec_edges = np.sum(diff(edges,n=1, axis=0), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
+            consec_edges[1] = 0
             consec_edges = np.insert(consec_edges, np.where(consec_edges == 0)[0], 0)   # throw a zero mark on the subsequent row (N+1) as well
-            # print(consec_edges)
-            items_ashape_includes[items_ashape_includes==1] = 0
-
-            points_remaining = np.unique(self.ashape['simplexes'][items_ashape_includes.astype(int)])
-            # print(points_remaining)
+            ashape_includes = np.array(list(self.ashape_includes.values()))
+            ashape_includes[Tid[np.where(consec_edges!=0)]] = 0
+            for u in (np.where(ashape_includes==0)[0]):
+                self.ashape_includes[u]= 0
+            
+            ashape_includes = np.array(list(self.ashape_includes.values()))
+            # determine how many points are remaining 
+            points_remaining = []
+            for d in range(len(self.ashape['simplexes'][np.where(ashape_includes == 1)[0]])):
+                points_remaining = np.append(points_remaining, self.ashape['simplexes'][np.where(ashape_includes == 1)[0]][d][0]) 
+            points_remaining = np.unique(points_remaining)
+            
             N_instance_index = []
-
             if len(points_remaining) >= self.ashape['N_core_supports']:
                 for i in range(self.ashape['N_start_instances']):
                     N_instance_index.append(i)
@@ -323,9 +292,9 @@ class CSE:
                 self.ashape['core_support'][set_diff] = 0
             else:
                 too_many_core_supports = False
+        
         # return core supports 
-        # print(self.ashape['core_support'][np.where(self.ashape['core_support']==1)[0]])
-        support_indices = self.ashape['core_support'][np.where(self.ashape['core_support']==1)[0]]
+        support_indices = self.ashape['simplexes'][np.where(self.ashape['core_support']==1)[0]]
         return support_indices
         
     ## GMM Clustering
@@ -363,16 +332,9 @@ class CSE:
         # I = np.where(minMahal)[0]
         
         sortMahal = np.sort(mahalDistance)
-
         IX = np.where(sortMahal)
         support_indices = sortMahal[:core_support_cutoff]
-
-        # print("GMM MD: " , sortMahal)
-
         self.boundary_data['BIC'] = BIC
-        # self.boundary_data['num_components'] = numComponents + temp
-        # self.boundary_data['gmm'] = GM[numComponents+temp]
-        # self.boundary_data['gmm_timestep'] = GM[numComponents+temp]
         
         return support_indices
     
@@ -422,58 +384,3 @@ class CSE:
         neighbors_dist = np.array(neighbors_dist)
         sort_neighbors = np.sort(neighbors_dist)
         return sort_neighbors
-
-
- ## unit tests        
-# if __name__ == '__main__':
-#     gen_data = bm_gen_data.Datagen()
-  
-    # test set_boundary
-    # test_set_boundary = CSE()
-    # check_set_boundary = test_set_boundary.set_boundary('gmm', ["gmm", 1, [1, 1, 1]])
-
-    # # test extract 
-    # test_inds = CSE()
-    # check_test_inds = test_inds.inds(gen_data,"",1)
-
-    # # test default options
-    # test_defualt_opts = CSE()
-    # check_default = test_defualt_opts.set_defualt_opts("knn", gen_data)
-    # print(check_default)
-
-    # # test set user opts
-    # test_set_user_opts = CSE()
-    # check_set_usr_opts = test_set_user_opts.set_user_opts(["fake"])  ## ["fake", 1, [gen_data]] , ["gmm", 1, [gen_data]] 
-
-    # # test plot and indices
-    # test_plot_ind = CSE()
-    # test_plot_ind.set_verbose(2)
-    # test_plot_ind.set_data(gen_data)
-    # test_plot_ind.set_boundary("a_shape", ["a_shape"])
-    # test_plot_ind.indices()
-    
-    ## test the compaction and alpha shape
-    # test_alpha = CSE(gen_data)
-    # test_alpha.set_data(gen_data)
-    # test_alpha.alpha_shape()
-    # test_alpha.a_shape_compaction()
-
-    # test GMM 
-    # unitTestData = gen_data.gen_dataset('UnitTest')
-    # testGMM = CSE(unitTestData)
-    # print("Instances:", testGMM.N_Instances)
-    # print("Features:", testGMM.N_features)
-    # testGMM.set_boundary('gmm')
-    # testGMM.gmm()
-
-    ## test Parzen 
-    # testParzen = CSE(gen_data)
-    # testParzen.set_data(gen_data)
-    # testParzen.set_boundary('parzen')
-    # testParzen.parzen()
-
-    ## test KNN
-    # testKNN = CSE(gen_data)
-    # testKNN.set_data(gen_data)
-    # testKNN.set_boundary('knn')
-    # testKNN.k_nn()
