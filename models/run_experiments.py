@@ -65,3 +65,8 @@ class RunExperiment:
                     elif i == 'compose' and j == 'label_propagation':
                         reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = 0 ,num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_label_propagation'] = reg_compose_QNS3VM.run()
+
+if __name__ == '__main__':
+    run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['QN_S3VM', 'label_propagation'], 
+                                            verbose=0, datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.8)
+    run_experiment.run()
