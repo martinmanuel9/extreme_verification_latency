@@ -34,6 +34,7 @@ PhD Advisor: Dr. Gregory Ditzler
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from cProfile import run
 from socketserver import ThreadingUnixDatagramServer
 from matplotlib import pyplot as plt
 import numpy as np
@@ -77,7 +78,7 @@ class COMPOSE:
         self.num_cs = {}                    #  number of core supports 
         self.total_time = {}
         self.cse_opts = []                  # options for the selected cse function in cse class
-
+        self.selected_dataset = selected_dataset
         self.classifier = classifier
         self.method = method                # not sure what to use for method
         self.dataset = selected_dataset
@@ -89,6 +90,7 @@ class COMPOSE:
         self.classifier_error = {}
         self.time_to_predict = {}
         self.user_data_input = {}
+        self.avg_results = {}
         
 
 
@@ -109,13 +111,13 @@ class COMPOSE:
             self.verbose = verbose_input
 
         if self.verbose >= 0 and self.verbose <=2:
-            print("Run method: ", self.verbose)
+            if self.verbose == 1:
+                print("Run method: ", self.verbose)
         else:
             print("Only 3 options to display information: \n", 
             "0 - No Info ;\n", 
             "1 - Command Line Progress Updates;\n",
             "2 - Plots when possilbe and Command Line Progress")
-
 
     def compose(self):
         """
@@ -132,8 +134,6 @@ class COMPOSE:
 
         # set drift window
         self.set_drift_window()
-        
-
     
     def set_drift_window(self):
         """
@@ -142,23 +142,24 @@ class COMPOSE:
         """
         self.figure_xlim = np.amin(self.dataset)
         self.figure_ylim = np.amax(self.dataset)
-
-        print("Drift window:" , [self.figure_xlim, self.figure_ylim])
+        if self.verbose == 1:
+            print("Drift window:" , [self.figure_xlim, self.figure_ylim])
 
     def set_cores(self):
         """
         Establishes number of cores to conduct parallel processing
         """
         num_cores = multiprocessing.cpu_count()         # determines number of cores
-        print("Available cores:", num_cores)
+        if self.verbose == 1: 
+            print("Available cores:", num_cores)
         percent_cores = math.ceil(self.n_cores * num_cores)
         if percent_cores > num_cores:
             print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
             self.n_cores = int(num_cores)                   # sets number of cores to available 
         else:
             self.n_cores = int(percent_cores)                   # original number of cores to 1
-        
-        print("Number of cores executing:", self.n_cores)
+        if self.verbose == 1:
+            print("Number of cores executing:", self.n_cores)
 
     def get_core_supports(self, input_data = None):
         """
@@ -166,10 +167,6 @@ class COMPOSE:
         Available Core Support Extraction includes: 
         GMM, Parzen Window, KNN, and Alpha Shape Core Supports
         """
-        
-        # # construct cse if not done before
-        # if not self.cse:
-        #     self.cse= cse.CSE(data=input_data)        # gets core support based on first timestep
 
         self.cse = cse.CSE(data=input_data)           # gets core support based on first timestep
 
@@ -194,9 +191,9 @@ class COMPOSE:
                 '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
             print('The following datasets are available:\n' , avail_data_opts)
             self.dataset = input('Enter dataset:')
-        
-        print("Dataset:", self.dataset)
-        print("Method:", self.method)
+        if self.verbose == 1 :
+            print("Dataset:", self.dataset)
+            print("Method:", self.method)
         self.user_data_input = self.dataset
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(self.dataset)
@@ -307,40 +304,41 @@ class COMPOSE:
         return np.sum(preds != L_test)/len(preds)
 
     def results_logs(self):
-        avg_error = sum(self.classifier_error.values()) / len(self.classifier_error)
-        avg_accuracy = sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy)
-        avg_exec_time = sum(self.time_to_predict.values()) / len(self.time_to_predict)
-        print('Execition Time:', self.total_time[self.user_data_input], "seconds")
-        print('Average error:', avg_error)
-        print('Average Accuracy:', avg_accuracy)
-        print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
-
-        df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
-        accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
-        x = accuracy_scores['Timesteps']
-        y = accuracy_scores['Accuracy'] 
-        figure = plt.subplots(figsize=(8,6))
+        avg_results_dict = {}
+        avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
+        avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
+        avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
+        avg_results_df = pd.DataFrame({'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method], 'Avg_Error': [avg_error], 'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_time': [avg_exec_time]}, 
+                            columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
+        # avg_results_dict['Dataset'] = self.selected_dataset
+        # avg_results_dict['Classifier'] = self.classifier
+        # avg_results_dict['Method'] = self.method
+        # avg_results_dict['Avg_Error'] = avg_error
+        # avg_results_dict['Avg_Accuracy'] = avg_accuracy
+        # avg_results_dict['Avg_Exec_Time'] = avg_exec_time
+        run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
+        self.avg_results[run_method] = avg_results_df
         
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy [%]')
-        plt.title('Correct Classification [%]')
-        plt.plot(x,y,'o', color='black')
-        plt.show()
+        if self.verbose == 1:
+            print('Execition Time:', self.total_time[self.user_data_input], "seconds")
+            print('Average error:', avg_error)
+            print('Average Accuracy:', avg_accuracy)
+            print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
 
-        return df
-
-    # TODO: fix dynamic plotting
-    def plotter(self):
         df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
         accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
         x = accuracy_scores['Timesteps']
         y = accuracy_scores['Accuracy']
-        figure = plt.figure()
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy [%]')
-        plt.title('Correct Classification [%]')
-        plt.plot(x,y, 'o', color='black')
-        plt.show()
+        
+
+        if self.verbose == 1:
+            plt.xlabel('Timesteps')
+            plt.ylabel('Accuracy [%]')
+            plt.title('Correct Classification [%]')
+            plt.plot(x,y,'o', color='black')
+            plt.show()
+
+        return accuracy_scores
 
     def run(self):
         # set cores
@@ -349,7 +347,8 @@ class COMPOSE:
             self.compose()
             start = self.timestep
             timesteps = self.data.keys()
-            print('SSL Classifier:', self.classifier)
+            if self.verbose == 1:
+                print('SSL Classifier:', self.classifier)
             total_time_start = time.time() 
             ts = start
             for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
@@ -446,4 +445,4 @@ class COMPOSE:
             if self.verbose == 1:
                 print('Performance', self.total_time[self.user_data_input])
             ## Report out
-            self.results_logs()
+            return self.results_logs()

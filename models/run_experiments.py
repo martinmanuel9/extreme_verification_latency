@@ -35,6 +35,8 @@ PhD Advisor: Dr. Gregory Ditzler
 # SOFTWARE.
 
 import compose
+from matplotlib import pyplot as plt
+import pandas as pd
 
 class RunExperiment:
 
@@ -45,28 +47,43 @@ class RunExperiment:
         self.datasets = datasets
         self.results = {}
         self.num_cores = num_cores
+        
 
     def plot_results(self):
-        pass
+        plt.plot(self.results['fast_compose_QN_S3VM'], label='FastCOMPOSE - QNS3VM', color = 'green')
+        plt.plot(self.results['fast_compose_label_propagation'], label='FastCOMPOSE - Label Propagation', color='blue')
+        plt.plot(self.results['COMPOSE_QNS3VM'], label='COMPOSE - QNS3VM', color='purple')
+        plt.plot(self.results['COMPOSE_label_propagation'], label='COMPOSE - Label Propagation', color= 'red')
+
+        plt.xlabel("Timesteps")
+        plt.ylabel('Accuracy [%]')
+        plt.title('Correct Classification [%]')
+
+        plt.show()
 
     def run(self): 
         for i in self.experiments:
             for j in self.classifier:
                 for dataset in self.datasets:
                     if i == 'fast_compose' and j == 'QN_S3VM':
-                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results['fast_compose_QN_S3VM']= fast_compose_QNS3VM.run()
+                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        self.results['fast_compose_QN_S3VM'] = fast_compose_QNS3VM.run()
+                        print(fast_compose_QNS3VM.avg_results) 
                     elif i == 'fast_compose' and j == 'label_propagation':
-                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
+                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['fast_compose_label_propagation'] = fast_compose_label_prop.run()
+                        print(fast_compose_label_prop.avg_results)
                     elif i == 'compose' and j == 'QN_S3VM':
-                        reg_compose_label_prop = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_label_prop = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_QNS3VM'] = reg_compose_label_prop.run()
+                        print(reg_compose_QNS3VM.avg_results)
                     elif i == 'compose' and j == 'label_propagation':
-                        reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = 0 ,num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_label_propagation'] = reg_compose_QNS3VM.run()
+                        print(reg_compose_QNS3VM.avg_results)
 
 if __name__ == '__main__':
-    run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['QN_S3VM', 'label_propagation'], 
+    run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], 
                                             verbose=0, datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.8)
     run_experiment.run()
+    run_experiment.plot_results()

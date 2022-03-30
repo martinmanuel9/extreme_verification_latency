@@ -41,6 +41,12 @@ import numpy as np
 import os
 import math
 
+# change the directory to your particular files location
+cwd = os.getcwd()
+# path_parent = os.path.dirname(os.getcwd())
+# print(path_parent)
+cwd = cwd + '/data/files/' 
+os.chdir(cwd)
 class Datagen:
     def __init__(self) -> None:
         # Unimodal, Multimodal, 1cdt, 2cdt, Unimodal3D,  1cht, 2cht, 4cr, 4crev1,4crev2
@@ -51,14 +57,7 @@ class Datagen:
         self.data = []
         self.dataset = []
 
-
     def gen_dataset(self, datatype):
-        # change the directory to your particular files location
-        cwd = os.getcwd()
-        # path_parent = os.path.dirname(os.getcwd())
-        # print(path_parent)
-        cwd = cwd + '/data/files/' 
-        os.chdir(cwd)
         self.datatype = datatype
         if self.datatype == 'UG_2C_2D':
             # Unimodal option
