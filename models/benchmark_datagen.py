@@ -55,9 +55,9 @@ class Datagen:
     def gen_dataset(self, datatype):
         # change the directory to your particular files location
         cwd = os.getcwd()
-        # path_parent = os.path.dirname(os.getcwd())
+        path_parent = os.path.dirname(os.getcwd())
         # print(path_parent)
-        cwd = cwd + '/data/files/' 
+        cwd = path_parent + '/data/files/' 
         os.chdir(cwd)
         self.datatype = datatype
         if self.datatype == 'UG_2C_2D':
