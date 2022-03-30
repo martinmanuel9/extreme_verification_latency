@@ -60,8 +60,8 @@ class RunExperiment:
                         fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['fast_compose_label_propagation'] = fast_compose_label_prop.run()
                     elif i == 'compose' and j == 'QN_S3VM':
-                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_label_prop = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = 0, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_QNS3VM'] = reg_compose_label_prop.run()
                     elif i == 'compose' and j == 'label_propagation':
-                        reg_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = 0 ,num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = 0 ,num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_label_propagation'] = reg_compose_QNS3VM.run()

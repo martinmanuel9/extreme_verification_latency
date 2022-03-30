@@ -447,9 +447,3 @@ class COMPOSE:
                 print('Performance', self.total_time[self.user_data_input])
             ## Report out
             self.results_logs()
-
-if __name__ == '__main__':
-    # fast_compose = COMPOSE(classifier="QN_S3VM", method="gmm", verbose = 1, selected_dataset='UG_2C_2D')
-    # fast_compose.run()
-    compose_alpha = COMPOSE(classifier = "QN_S3VM", method = "a_shape", verbose = 1, num_cores=0.8, selected_dataset='UG_2C_2D')
-    compose_alpha.run()
