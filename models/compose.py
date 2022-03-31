@@ -91,6 +91,7 @@ class COMPOSE:
         self.time_to_predict = {}
         self.user_data_input = {}
         self.avg_results = {}
+        self.avg_results_dict = {}
         
 
 
@@ -304,18 +305,18 @@ class COMPOSE:
         return np.sum(preds != L_test)/len(preds)
 
     def results_logs(self):
-        avg_results_dict = {}
+        
         avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
         avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
         avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
         avg_results_df = pd.DataFrame({'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method], 'Avg_Error': [avg_error], 'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_time': [avg_exec_time]}, 
                             columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
-        # avg_results_dict['Dataset'] = self.selected_dataset
-        # avg_results_dict['Classifier'] = self.classifier
-        # avg_results_dict['Method'] = self.method
-        # avg_results_dict['Avg_Error'] = avg_error
-        # avg_results_dict['Avg_Accuracy'] = avg_accuracy
-        # avg_results_dict['Avg_Exec_Time'] = avg_exec_time
+        self.avg_results_dict['Dataset'] = self.selected_dataset
+        self.avg_results_dict['Classifier'] = self.classifier
+        self.avg_results_dict['Method'] = self.method
+        self.avg_results_dict['Avg_Error'] = avg_error
+        self.avg_results_dict['Avg_Accuracy'] = avg_accuracy
+        self.avg_results_dict['Avg_Exec_Time'] = avg_exec_time
         run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
         self.avg_results[run_method] = avg_results_df
         

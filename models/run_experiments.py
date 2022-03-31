@@ -68,22 +68,36 @@ class RunExperiment:
                     if i == 'fast_compose' and j == 'QN_S3VM':
                         fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['fast_compose_QN_S3VM'] = fast_compose_QNS3VM.run()
+                        results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
+                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
+                        print(avg_results)
                         print(fast_compose_QNS3VM.avg_results) 
                     elif i == 'fast_compose' and j == 'label_propagation':
                         fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['fast_compose_label_propagation'] = fast_compose_label_prop.run()
+                        results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
+                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
+                        print(avg_results)
                         print(fast_compose_label_prop.avg_results)
                     elif i == 'compose' and j == 'QN_S3VM':
                         reg_compose_label_prop = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_QNS3VM'] = reg_compose_label_prop.run()
+                        results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
+                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
+                        print(avg_results)
                         print(reg_compose_QNS3VM.avg_results)
                     elif i == 'compose' and j == 'label_propagation':
                         reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
                         self.results['COMPOSE_label_propagation'] = reg_compose_QNS3VM.run()
+                        results_df = pd.DataFrame.from_dict((reg_compose_QNS3VM.avg_results_dict.keys(), reg_compose_QNS3VM.avg_results_dict.values())).T
+                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
+                        print(avg_results)
                         print(reg_compose_QNS3VM.avg_results)
 
 if __name__ == '__main__':
-    run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], 
-                                            verbose=0, datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.8)
+    run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['QN_S3VM','label_propagation'], 
+                                            verbose=0, datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT','UG_2C_3D','1CHT',
+                                            '2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR','4CE1CF','FG_2C_2D','GEARS_2C_2D', 
+                                            'keystroke', 'UG_2C_5D'], num_cores=0.8)
     run_experiment.run()
     run_experiment.plot_results()
