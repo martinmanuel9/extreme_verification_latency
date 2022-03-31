@@ -42,10 +42,10 @@ import os
 import math
 
 # change the directory to your particular files location
-cwd = os.getcwd()
-# path_parent = os.path.dirname(os.getcwd())
+# cwd = os.getcwd()
+path_parent = os.path.dirname(os.getcwd())
 # print(path_parent)
-cwd = cwd + '/data/files/' 
+cwd = path_parent + '/data/files/' 
 os.chdir(cwd)
 class Datagen:
     def __init__(self) -> None:
