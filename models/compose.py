@@ -280,12 +280,15 @@ class COMPOSE:
             X_train_l = X_L_train
             
             L_l_train = []
+            
             L_train_l = np.array(L_train_l)
             for i in range(0, len(L_train_l)):
                 add = np.array(L_train_l[:,-1][i]) 
-                L_l_train.append(add)
+                L_l_train.append(add.astype(int))
             L_train_l = L_l_train
-
+            
+            L_train_l = np.array(L_train_l)
+            
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
             model.train()
             preds = model.getPredictions(X_test)

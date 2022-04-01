@@ -37,6 +37,9 @@ PhD Advisor: Dr. Gregory Ditzler
 import compose
 from matplotlib import pyplot as plt
 import pandas as pd
+from matplotlib.patches import Patch
+import math
+import seaborn as sns 
 
 class RunExperiment:
 
@@ -50,54 +53,55 @@ class RunExperiment:
         
 
     def plot_results(self):
-        plt.plot(self.results['fast_compose_QN_S3VM'], label='FastCOMPOSE - QNS3VM', color = 'green')
-        plt.plot(self.results['fast_compose_label_propagation'], label='FastCOMPOSE - Label Propagation', color='blue')
-        plt.plot(self.results['COMPOSE_QNS3VM'], label='COMPOSE - QNS3VM', color='purple')
-        plt.plot(self.results['COMPOSE_label_propagation'], label='COMPOSE - Label Propagation', color= 'red')
+        experiments = self.results.keys()
+        colors = sns.color_pallette('husl', n_colors=len(experiments))
+        cmap = dict(zip(experiments, colors))
 
-        plt.xlabel("Timesteps")
-        plt.ylabel('Accuracy [%]')
-        plt.title('Correct Classification [%]')
+        col_nums = 3 
+        row_nums = math.ceil(len(experiments) / col_nums)
+        plt.figure(fig_size = (10,4))
+        for i, (k,v) in enumerate(self.results.items(), 1):
+            plt.subplot(row_nums, col_nums, i)
+            p = sns.scatterplot(data=v , x='Timesteps' , y='Accuracy', pallete=cmap)
+            plt.title(f'Experiement: {k}')
+        
+        plt.tight_layout()
 
+        patches = [Patch(color=v, label=k) for k, v in cmap.items()]
+        
+        plt.legend(handles=patches, bbox_to_anchor=(1.04, 0.5), loc='center left', borderaxespad=0)
         plt.show()
 
-    def run(self): 
+
+    def run(self):
+        
         for i in self.experiments:
             for j in self.classifier:
                 for dataset in self.datasets:
+                    experiment = dataset + '_' + j + '_' + i
                     if i == 'fast_compose' and j == 'QN_S3VM':
                         fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results['fast_compose_QN_S3VM'] = fast_compose_QNS3VM.run()
+                        self.results[experiment] = fast_compose_QNS3VM.run()
                         results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
-                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
-                        print(avg_results)
-                        print(fast_compose_QNS3VM.avg_results) 
+                        print(results_df)
                     elif i == 'fast_compose' and j == 'label_propagation':
                         fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results['fast_compose_label_propagation'] = fast_compose_label_prop.run()
+                        self.results[experiment] = fast_compose_label_prop.run()
                         results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
-                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
-                        print(avg_results)
-                        print(fast_compose_label_prop.avg_results)
+                        print(results_df)
                     elif i == 'compose' and j == 'QN_S3VM':
                         reg_compose_label_prop = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results['COMPOSE_QNS3VM'] = reg_compose_label_prop.run()
+                        self.results[experiment] = reg_compose_label_prop.run()
                         results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
-                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
-                        print(avg_results)
-                        print(reg_compose_QNS3VM.avg_results)
+                        print(results_df)
                     elif i == 'compose' and j == 'label_propagation':
                         reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results['COMPOSE_label_propagation'] = reg_compose_QNS3VM.run()
+                        self.results[experiment] = reg_compose_QNS3VM.run()
                         results_df = pd.DataFrame.from_dict((reg_compose_QNS3VM.avg_results_dict.keys(), reg_compose_QNS3VM.avg_results_dict.values())).T
-                        avg_results = pd.DataFrame(results_df, columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
-                        print(avg_results)
-                        print(reg_compose_QNS3VM.avg_results)
+                        print(results_df)
+        
+        self.plot_results()
 
-if __name__ == '__main__':
-    run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['QN_S3VM','label_propagation'], 
-                                            verbose=0, datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT','UG_2C_3D','1CHT',
-                                            '2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR','4CE1CF','FG_2C_2D','GEARS_2C_2D', 
-                                            'keystroke', 'UG_2C_5D'], num_cores=0.8)
-    run_experiment.run()
-    run_experiment.plot_results()
+run_experiment = RunExperiment(experiements=['fast_compose','compose'], classifier=['label_propagation', 'QN_S3VM'], 
+                                            verbose=0, datasets=[ 'UG_2C_2D' ,'2CDT', 'MG_2C_2D','1CDT'], num_cores=0.8)
+run_experiment.run()

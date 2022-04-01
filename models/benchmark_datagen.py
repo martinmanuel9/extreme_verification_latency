@@ -42,7 +42,7 @@ import os
 import math
 
 # change the directory to your particular files location
-# cwd = os.getcwd()
+cwd = os.getcwd()
 path_parent = os.path.dirname(os.getcwd())
 # print(path_parent)
 cwd = path_parent + '/data/files/' 

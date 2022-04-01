@@ -254,9 +254,14 @@ class CSE:
                     for k in range(lastKey, (lastKey+dif_len+1)):
                         self.ashape_includes[k] = 1
                     edges.append(self.ashape['simplexes'][np.array(list(self.ashape_includes.values())), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
+                elif  len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])) < len(self.ashape_includes):
+                    needed = len(self.ashape_includes) 
+                    numbers = []
+                    for k in range(0, needed):
+                        numbers.append(k)
+                    edges.append(self.ashape['simplexes'][ np.array(numbers) , np.array(list(self.ashape_includes.values())) ])
                 else:
                     edges.append(self.ashape['simplexes'][np.array(list(self.ashape_includes.values())), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
-
                 
                 nums = nums[-1:] + nums[:-1]                        # shifts each row to the right
             

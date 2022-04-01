@@ -78,7 +78,7 @@ import operator
 from time import time
 import sys
 from scipy import optimize
-import scipy.sparse.csc as csc
+import scipy.sparse as csc
 from scipy import sparse
 import scipy
 import warnings
