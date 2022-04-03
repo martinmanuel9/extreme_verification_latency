@@ -323,6 +323,7 @@ class COMPOSE:
         run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
         self.avg_results[run_method] = avg_results_df
         
+        
         if self.verbose == 1:
             print('Execition Time:', self.total_time[self.user_data_input], "seconds")
             print('Average error:', avg_error)

@@ -39,7 +39,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from matplotlib.patches import Patch
 import math
-import seaborn as sns 
+import seaborn as sns
 
 class RunExperiment:
 
@@ -63,6 +63,7 @@ class RunExperiment:
         for i, (k,v) in enumerate(self.results.items(), 1):
             plt.subplot(row_nums, col_nums, i)
             p = sns.scatterplot(data=v , x='Timesteps' , y='Accuracy', pallete=cmap)
+            p.legend_.remove()
             plt.title(f'Experiement: {k}')
         
         plt.tight_layout()
@@ -102,6 +103,9 @@ class RunExperiment:
         
         self.plot_results()
 
+
 run_experiment = RunExperiment(experiements=['fast_compose','compose'], classifier=['label_propagation', 'QN_S3VM'], 
                                             verbose=0, datasets=[ 'UG_2C_2D' ,'2CDT', 'MG_2C_2D','1CDT'], num_cores=0.8)
 run_experiment.run()
+
+
