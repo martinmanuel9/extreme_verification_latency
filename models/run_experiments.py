@@ -34,12 +34,15 @@ PhD Advisor: Dr. Gregory Ditzler
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from tkinter import E
 import compose
 from matplotlib import pyplot as plt
 import pandas as pd
 from matplotlib.patches import Patch
 import math
-import seaborn as sns
+import pickle5 as pickle 
+import time
+
 
 class RunExperiment:
 
@@ -54,25 +57,18 @@ class RunExperiment:
 
     def plot_results(self):
         experiments = self.results.keys()
-        colors = sns.color_pallette('husl', n_colors=len(experiments))
-        cmap = dict(zip(experiments, colors))
-
-        col_nums = 3 
-        row_nums = math.ceil(len(experiments) / col_nums)
-        plt.figure(fig_size = (10,4))
-        for i, (k,v) in enumerate(self.results.items(), 1):
-            plt.subplot(row_nums, col_nums, i)
-            p = sns.scatterplot(data=v , x='Timesteps' , y='Accuracy', pallete=cmap)
-            p.legend_.remove()
-            plt.title(f'Experiement: {k}')
-        
-        plt.tight_layout()
-
-        patches = [Patch(color=v, label=k) for k, v in cmap.items()]
-        
-        plt.legend(handles=patches, bbox_to_anchor=(1.04, 0.5), loc='center left', borderaxespad=0)
+        fig_handle = plt.figure()
+        for experiment in experiments:
+            df = pd.DataFrame(self.results[experiment])
+            df.plot(label=experiment, x='Timesteps', y='Accuracy')
+        plt.title('Accuracy over timesteps')
+        plt.xlabel('Timesteps')
+        plt.legend
+        plt.ylabel('% Accuracy')
         plt.show()
-
+        
+        with open('results_plot.pkl', 'wb') as result_plot:
+            pickle.dump(fig_handle, result_plot)
 
     def run(self):
         
@@ -82,30 +78,72 @@ class RunExperiment:
                     experiment = dataset + '_' + j + '_' + i
                     if i == 'fast_compose' and j == 'QN_S3VM':
                         fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        start_time = time.time()
                         self.results[experiment] = fast_compose_QNS3VM.run()
+                        end_time = time.time()
+                        total_time = end_time - start_time
                         results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
-                        print(results_df)
+                        results_df.to_pickle('results_fast_compose_QN_S3VM.pkl')
+                        with open('total_time_fast_compose_QN_S3VM.pkl', 'wb') as f:
+                            total_time_pkl = pickle.dump(total_time,f)
+                        with open('total_time_fast_compose_QN_S3VM.pkl', 'rb') as file:
+                            loaded_total_time_pkl = pickle.load(file)
+                        results_pkl = pd.read_pickle('results_fast_compose_QN_S3VM.pkl')
+                        print("time pickle: ", loaded_total_time_pkl )
+                        print("results pickle:" , results_pkl )
+
                     elif i == 'fast_compose' and j == 'label_propagation':
                         fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        start_time = time.time()
                         self.results[experiment] = fast_compose_label_prop.run()
+                        end_time = time.time()
+                        total_time = end_time - start_time    
                         results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
-                        print(results_df)
+                        results_df.to_pickle('results_fast_compose_label_prop.pkl')
+                        with open('total_time_fast_compose_label_prop.pkl', 'wb') as f:
+                            total_time_pkl = pickle.dump(total_time,f)
+                        with open('total_time_fast_compose_label_prop.pkl', 'rb') as file:
+                            loaded_total_time_pkl = pickle.load(file)
+                        results_pkl = pd.read_pickle('results_fast_compose_label_prop.pkl')
+                        print("time pickle: ", loaded_total_time_pkl )
+                        print("results pickle:" , results_pkl )
+                        
                     elif i == 'compose' and j == 'QN_S3VM':
-                        reg_compose_label_prop = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results[experiment] = reg_compose_label_prop.run()
-                        results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
-                        print(results_df)
+                        reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        start_time = time.time()
+                        self.results[experiment] = reg_compose_label_QN_S3VM.run()
+                        end_time = time.time()
+                        total_time = end_time - start_time
+                        results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_results_dict.keys(), reg_compose_label_QN_S3VM.avg_results_dict.values())).T
+                        results_df.to_pickle('results_compose_QN_S3VM.pkl')
+                        with open('total_time_compose_QN_S3VM.pkl', 'wb') as f:
+                            total_time_pkl = pickle.dump(total_time,f)
+                        with open('total_time_compose_QN_S3VM.pkl', 'rb') as file:
+                            loaded_total_time_pkl = pickle.load(file)
+                        results_pkl = pd.read_pickle('results_compose_QN_S3VM.pkl')
+                        print("Total Time : ", loaded_total_time_pkl )
+                        print("Result:" , results_pkl )
+
                     elif i == 'compose' and j == 'label_propagation':
-                        reg_compose_QNS3VM = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
-                        self.results[experiment] = reg_compose_QNS3VM.run()
-                        results_df = pd.DataFrame.from_dict((reg_compose_QNS3VM.avg_results_dict.keys(), reg_compose_QNS3VM.avg_results_dict.values())).T
-                        print(results_df)
+                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
+                        start_time = time.time()
+                        self.results[experiment] = reg_compose_label_prop.run()
+                        end_time = time.time()
+                        total_time = end_time - start_time            
+                        results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
+                        results_df.to_pickle('results_compose_label_propagation.pkl')
+                        with open('total_time_fast_compose_label_prop.pkl', 'wb') as f:
+                            total_time_pkl = pickle.dump(total_time,f)
+                        with open('total_time_fast_compose_QN_S3VM.pkl', 'rb') as file:
+                            loaded_total_time_pkl = pickle.load(file)
+                        results_pkl = pd.read_pickle('results_fast_compose_QN_S3VM.pkl')
+                        print("Total Time : ", loaded_total_time_pkl )
+                        print("Result:" , results_pkl )
         
         self.plot_results()
 
 
-run_experiment = RunExperiment(experiements=['fast_compose','compose'], classifier=['label_propagation', 'QN_S3VM'], 
-                                            verbose=0, datasets=[ 'UG_2C_2D' ,'2CDT', 'MG_2C_2D','1CDT'], num_cores=0.8)
+run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D'], num_cores=0.8)
 run_experiment.run()
 
 
