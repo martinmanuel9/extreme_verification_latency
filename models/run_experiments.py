@@ -99,12 +99,12 @@ class RunExperiment:
                         end_time = time.time()
                         total_time = end_time - start_time    
                         results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
-                        results_df.to_pickle('results_fast_compose_label_prop.pkl')
-                        with open('total_time_fast_compose_label_prop.pkl', 'wb') as f:
+                        results_df.to_pickle('results_fast_compose_label_propagation.pkl')
+                        with open('total_time_fast_compose_label_propagation.pkl', 'wb') as f:
                             total_time_pkl = pickle.dump(total_time,f)
-                        with open('total_time_fast_compose_label_prop.pkl', 'rb') as file:
+                        with open('total_time_fast_compose_label_propagation.pkl', 'rb') as file:
                             loaded_total_time_pkl = pickle.load(file)
-                        results_pkl = pd.read_pickle('results_fast_compose_label_prop.pkl')
+                        results_pkl = pd.read_pickle('results_fast_compose_label_propagation.pkl')
                         print("time pickle: ", loaded_total_time_pkl )
                         print("results pickle:" , results_pkl )
                         
@@ -132,18 +132,18 @@ class RunExperiment:
                         total_time = end_time - start_time            
                         results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
                         results_df.to_pickle('results_compose_label_propagation.pkl')
-                        with open('total_time_fast_compose_label_prop.pkl', 'wb') as f:
+                        with open('total_time_fast_compose_label_propagation.pkl', 'wb') as f:
                             total_time_pkl = pickle.dump(total_time,f)
-                        with open('total_time_fast_compose_QN_S3VM.pkl', 'rb') as file:
+                        with open('total_time_fast_compose_label_propagation.pkl', 'rb') as file:
                             loaded_total_time_pkl = pickle.load(file)
-                        results_pkl = pd.read_pickle('results_fast_compose_QN_S3VM.pkl')
+                        results_pkl = pd.read_pickle('results_compose_label_propagation.pkl')
                         print("Total Time : ", loaded_total_time_pkl )
                         print("Result:" , results_pkl )
         
         self.plot_results()
 
 
-run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D'], num_cores=0.8)
+run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.8)
 run_experiment.run()
 
 
