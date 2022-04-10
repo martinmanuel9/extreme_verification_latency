@@ -58,11 +58,15 @@ class RunExperiment:
     def plot_results(self):
         experiments = self.results.keys()
         fig_handle = plt.figure()
+
+        fig, ax = plt.subplots()
         for experiment in experiments:
             df = pd.DataFrame(self.results[experiment])
-            df.plot(label=experiment, x='Timesteps', y='Accuracy')
+            df.plot(ax=ax, label=experiment, x='Timesteps', y='Accuracy')
+        
         plt.title('Accuracy over timesteps')
         plt.xlabel('Timesteps')
+        plt.tight_layout()
         plt.legend
         plt.ylabel('% Accuracy')
         plt.show()
@@ -127,7 +131,7 @@ class RunExperiment:
         self.plot_results()
 
 
-run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.8)
+run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 run_experiment.run()
 
 
