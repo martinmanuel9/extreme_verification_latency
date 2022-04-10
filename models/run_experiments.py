@@ -82,6 +82,7 @@ class RunExperiment:
                         self.results[experiment] = fast_compose_QNS3VM.run()
                         end_time = time.time()
                         total_time = end_time - start_time
+                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time
                         results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
                         results_df.to_pickle('results_fast_compose_QN_S3VM.pkl')
                         with open('total_time_fast_compose_QN_S3VM.pkl', 'wb') as f:
@@ -89,15 +90,16 @@ class RunExperiment:
                         with open('total_time_fast_compose_QN_S3VM.pkl', 'rb') as file:
                             loaded_total_time_pkl = pickle.load(file)
                         results_pkl = pd.read_pickle('results_fast_compose_QN_S3VM.pkl')
-                        print("time pickle: ", loaded_total_time_pkl )
-                        print("results pickle:" , results_pkl )
+                        print("time pickle: \n", loaded_total_time_pkl )
+                        print("results pickle:\n " , results_pkl )
 
                     elif i == 'fast_compose' and j == 'label_propagation':
                         fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="gmm", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
                         start_time = time.time()
                         self.results[experiment] = fast_compose_label_prop.run()
                         end_time = time.time()
-                        total_time = end_time - start_time    
+                        total_time = end_time - start_time 
+                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time
                         results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
                         results_df.to_pickle('results_fast_compose_label_propagation.pkl')
                         with open('total_time_fast_compose_label_propagation.pkl', 'wb') as f:
@@ -105,8 +107,8 @@ class RunExperiment:
                         with open('total_time_fast_compose_label_propagation.pkl', 'rb') as file:
                             loaded_total_time_pkl = pickle.load(file)
                         results_pkl = pd.read_pickle('results_fast_compose_label_propagation.pkl')
-                        print("time pickle: ", loaded_total_time_pkl )
-                        print("results pickle:" , results_pkl )
+                        print("time pickle: \n", loaded_total_time_pkl )
+                        print("results pickle:\n" , results_pkl )
                         
                     elif i == 'compose' and j == 'QN_S3VM':
                         reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
@@ -114,6 +116,7 @@ class RunExperiment:
                         self.results[experiment] = reg_compose_label_QN_S3VM.run()
                         end_time = time.time()
                         total_time = end_time - start_time
+                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time
                         results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_results_dict.keys(), reg_compose_label_QN_S3VM.avg_results_dict.values())).T
                         results_df.to_pickle('results_compose_QN_S3VM.pkl')
                         with open('total_time_compose_QN_S3VM.pkl', 'wb') as f:
@@ -121,15 +124,16 @@ class RunExperiment:
                         with open('total_time_compose_QN_S3VM.pkl', 'rb') as file:
                             loaded_total_time_pkl = pickle.load(file)
                         results_pkl = pd.read_pickle('results_compose_QN_S3VM.pkl')
-                        print("Total Time : ", loaded_total_time_pkl )
-                        print("Result:" , results_pkl )
+                        print("Total Time : \n", loaded_total_time_pkl )
+                        print("Result:\n" , results_pkl )
 
                     elif i == 'compose' and j == 'label_propagation':
                         reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
                         start_time = time.time()
                         self.results[experiment] = reg_compose_label_prop.run()
                         end_time = time.time()
-                        total_time = end_time - start_time            
+                        total_time = end_time - start_time     
+                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time       
                         results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
                         results_df.to_pickle('results_compose_label_propagation.pkl')
                         with open('total_time_fast_compose_label_propagation.pkl', 'wb') as f:
@@ -137,8 +141,8 @@ class RunExperiment:
                         with open('total_time_fast_compose_label_propagation.pkl', 'rb') as file:
                             loaded_total_time_pkl = pickle.load(file)
                         results_pkl = pd.read_pickle('results_compose_label_propagation.pkl')
-                        print("Total Time : ", loaded_total_time_pkl )
-                        print("Result:" , results_pkl )
+                        print("Total Time : \n", loaded_total_time_pkl )
+                        print("Result:\n" , results_pkl )
         
         self.plot_results()
 
