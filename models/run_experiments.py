@@ -86,7 +86,7 @@ class RunExperiment:
                         self.results[experiment] = fast_compose_QNS3VM.run()
                         end_time = time.time()
                         total_time = end_time - start_time
-                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time
+                        fast_compose_QNS3VM.avg_results_dict['Total_Time'] = total_time
                         results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
                         results_df.to_pickle('results_fast_compose_QN_S3VM.pkl')
                         results_pkl = pd.read_pickle('results_fast_compose_QN_S3VM.pkl')
@@ -110,7 +110,7 @@ class RunExperiment:
                         self.results[experiment] = reg_compose_label_QN_S3VM.run()
                         end_time = time.time()
                         total_time = end_time - start_time
-                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time
+                        reg_compose_label_QN_S3VM.avg_results_dict['Total_Time'] = total_time
                         results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_results_dict.keys(), reg_compose_label_QN_S3VM.avg_results_dict.values())).T
                         results_df.to_pickle('results_compose_QN_S3VM.pkl')
                         results_pkl = pd.read_pickle('results_compose_QN_S3VM.pkl')
@@ -122,7 +122,7 @@ class RunExperiment:
                         self.results[experiment] = reg_compose_label_prop.run()
                         end_time = time.time()
                         total_time = end_time - start_time     
-                        fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time       
+                        reg_compose_label_prop.avg_results_dict['Total_Time'] = total_time       
                         results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
                         results_df.to_pickle('results_compose_label_propagation.pkl')
                         results_pkl = pd.read_pickle('results_compose_label_propagation.pkl')
@@ -131,7 +131,7 @@ class RunExperiment:
         self.plot_results()
 
 
-run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
+run_experiment = RunExperiment(experiements=['fast_compose', 'compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 run_experiment.run()
 
 
