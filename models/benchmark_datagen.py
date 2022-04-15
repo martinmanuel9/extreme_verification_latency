@@ -45,7 +45,7 @@ import math
 cwd = os.getcwd()
 path_parent = os.path.dirname(os.getcwd())
 # print(path_parent)
-cwd = path_parent + '/data/files/' 
+cwd = cwd + '/data/files/' 
 os.chdir(cwd)
 class Datagen:
     def __init__(self) -> None:
