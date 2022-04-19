@@ -40,7 +40,7 @@ from sklearn import preprocessing
 from tqdm import tqdm
 import benchmark_datagen as bdg
 from sklearn.cluster import KMeans
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
 
 class SCARGC: 
@@ -106,22 +106,20 @@ class SCARGC:
             if self.resample: 
                 ii = np.random.randint(0, N, N)
                 Xt, Yt = Xt[ii], Yt[ii]
-
             for n in range(len(Xt)): 
                 # make the prediction
                 if self.classifier == '1nn': 
                     # one nearest neighbor classifier
-                    knn = KNeighborsClassifier(n_neighbors=2).fit(self.X, self.Y)
-                    predicted_label = knn.predict([Xt[n]])[0]
-                    
+                    knn = KNeighborsRegressor(n_neighbors=1).fit(self.X, self.Y)
+                    predicted_label = knn.predict([Xt])
                 else: 
                     ValueError('The classifier %s is not implemented. ' % (self.classifier))
                 
                 if n == 0: 
-                    pool_data = Xt[n]
+                    pool_data = Xt
                     pool_label = np.array([predicted_label])
                 else:
-                    pool_data = np.vstack((pool_data, Xt[n]))
+                    pool_data = np.vstack((pool_data, Xt))
                     pool_label = np.concatenate((pool_label, np.array([predicted_label])))
 
                 if len(pool_label) == self.maxpool: 
