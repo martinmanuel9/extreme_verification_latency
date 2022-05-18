@@ -33,25 +33,97 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 from cProfile import label
+import statistics
+from turtle import position
 import numpy as np 
 from scipy import stats
 from sklearn import preprocessing
 from tqdm import tqdm
+import math
 import benchmark_datagen as bdg
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
+class SetData:
+    def __init__(self, dataset = 'UG_2C_2D'):
+        self.dataset = dataset
+        self._initialize()
+
+    def _initialize(self):
+        set_data = bdg.Datagen()
+        data_gen = set_data.gen_dataset(self.dataset)
+        data ={}
+        labeled = {}
+        unlabeled = {}
+        ts = 0
+
+        ## set a self.data dictionary for each time step 
+        ## self.dataset[0][i] loop the arrays and append them to dictionary
+        for i in range(0, len(data_gen[0])):
+            data[ts] = data_gen[0][i]
+            ts += 1
+
+        # filter out labeled and unlabeled from of each timestep
+        for i in data:
+            len_of_batch = len(data[i])
+            label_batch = []
+            unlabeled_batch = []            
+            for j in range(0, len_of_batch - 1):
+                if data[i][j][2] == 1:
+                    label_batch.append(data[i][j])
+                    labeled[i] = label_batch
+                else:
+                    unlabeled_batch.append(data[i][j])
+                    unlabeled[i] = unlabeled_batch
+
+        # convert labeled data to match self.data data structure
+        labeled_keys = labeled.keys()
+        for key in labeled_keys:        
+            if len(labeled[key]) > 1:
+                len_of_components = len(labeled[key])
+                array_tuple = []
+                for j in range(0, len_of_components):
+                    array = np.array(labeled[key][j])
+                    arr_to_list = array.tolist()
+                    array_tuple.append(arr_to_list)
+                    array = []
+                    arr_to_list = []
+                concat_tuple = np.vstack(array_tuple)
+                labeled[key] = concat_tuple
+        
+        self.X = labeled    # set of all labels as a dict per timestep
+        
+        # X_temp = list(self.X.values())
+        # self.X = np.array(X_temp) 
+        # tempX = np.zeros(np.shape(self.X[0])[1])
+        # for k in range(len(self.X)):
+        #     tempX = np.vstack((tempX,self.X[k]))
+        # tempX = list(tempX)
+        # tempX.pop(0)
+        # self.X = np.array(tempX)
+        
+        self.Y = data       # data stream
+        
+        # Y_temp = list(self.Y.values())
+        # self.Y = np.array(Y_temp) 
+        # tempY = np.zeros(np.shape(Y_temp[0])[1])
+        # for k in range(len(self.Y)):
+        #     tempY = np.vstack((tempY,self.Y[k]))
+        # tempY = list(tempY)
+        # tempY.pop(0)
+        # self.Y = np.array(tempY)
 
 class SCARGC: 
     def __init__(self, 
-                 Xinit, 
-                 Yinit, 
-                 Kclusters:int=10,
-                 maxpool:int=25, 
-                 resample:bool=True, 
-                 T:int=100,
-                 classifier:str='1nn'): 
+                Xinit,
+                Yinit,
+                Kclusters:int=10,
+                maxpool:int=25, 
+                resample:bool=True, 
+                T:int=100,
+                classifier:str='1nn'): 
         """
         """
         # set the classifier that is used [eg 1nn or svm]
@@ -63,153 +135,124 @@ class SCARGC:
         # this will associate a cluster to a class in the data 
         # self.class_cluster = np.zeros((self.Kclusters,))
         self.class_cluster = {}
-        # set the data [these will be the labeled data]
+        # set the data 
         self.X = Xinit
         self.Y = Yinit
         # set resample 
         self.resample = resample
         # set max pool size 
         self.maxpool = maxpool
-        # initialize the cluster model 
+        # initialize the cluster model
         self._initialize()
         self.T = 0
-
 
     def _initialize(self): 
         """
         """
         # run the clustering algorithm on the training data then find the cluster 
-        # assignment for each of the samples in the training data 
+        # assignment for each of the samples in the training data         
         self.cluster = KMeans(n_clusters=self.Kclusters).fit(self.X)
         labels = self.cluster.predict(self.X)
-
+        
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class. 
-        for i in range(self.Kclusters): 
-            yhat = self.Y[labels==i]
+        for i in range(self.Kclusters):
+            yhat = self.Y[i][labels]
             mode_val,_ = stats.mode(yhat)
-            self.class_cluster[i] = mode_val[0]
+            self.class_cluster[i] = mode_val
         
-    
+    def classification_error(self, preds, L_test):  
+        return np.sum(preds != L_test)/len(preds)
+
     def run(self, Xts, Yts): 
         '''
+        Xts = Initial Training data
+        Yts = Data stream
         '''
-        self.T = len(Xts)
-        N = len(Xts[0])
-        
+        # Build Classifier 
+        if self.classifier == '1nn':
+            if len(Xts[0]) < len(Xts[1]):
+                dif = int(len(Xts[1]) - len(Xts[0]))
+                xts_array = list(Xts[1])
+                for i in range(dif):
+                    xts_array.pop()
+                Xts[1] = np.array(xts_array)
+            elif len(Xts[0]) > len(Xts[1]):
+                dif = int(len(Xts[0]) - len(Xts[1]))
+                xts_array = list(Xts[0])
+                for i in range(dif):
+                    xts_array.pop()
+                Xts[0] = np.array(xts_array)
+            knn = KNeighborsRegressor(n_neighbors=1).fit(Xts[0], Xts[1]) # KNN.fit(train_data, train label)
+            predicted_label = knn.predict(Yts[0])
+            
+        self.T = len(Yts)      
+
+        # empty sets for pool and labels
+        pool_data = []
+        pool_label = []
+        pool_index = 0
+        past_centroid = self.cluster.cluster_centers_
         # run the experiment 
-        for t in tqdm(range(self.T-1)):
-            # get the data from time T and resample if required 
-            Xt, Yt = Xts[t], Yts[t]
-            Xe, Ye = Xts[t+1], Yts[t+1]
+        for t in tqdm(range(self.T-1), position=0, leave=True): 
+            # get the data from time T and resample if required
+            Xt, Yt = np.array(Xts[t]), np.array(Yts[t])             # Xt = train labels ; Yt = train data
+            Xe, Ye = Xts[t+1], Yts[t+1]                             # Xe = test labels ; Ye = test data
+            
             if self.resample: 
+                N = len(Xt)
                 ii = np.random.randint(0, N, N)
                 Xt, Yt = Xt[ii], Yt[ii]
-            for n in range(len(Xt)): 
-                # make the prediction
-                if self.classifier == '1nn': 
-                    # one nearest neighbor classifier
-                    knn = KNeighborsRegressor(n_neighbors=1).fit(self.X, self.Y)
-                    predicted_label = knn.predict([Xt])
-                else: 
-                    ValueError('The classifier %s is not implemented. ' % (self.classifier))
+            
+            if t == 0:
+                pool_data = Ye
+                pool_label = np.array([predicted_label])
+                pool_index += 1
+            else:
+                if self.classifier == '1nn':
+                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt) # .fit(train_data, train_label)
+                    predicted_label = knn_mdl.predict(Ye)
+                pool_data = np.vstack([pool_data, Ye])
+                pool_label = np.concatenate((pool_label, np.array([predicted_label])))
+                pool_index += 1
+            concordant_label_count = 0
+            # if |pool| == maxpoolsize
+            if len(pool_label) > self.maxpool:
+                # C <- Clustering(pool, k)
+                temp_current_centroids = KMeans(n_clusters=self.Kclusters, init=past_centroid, n_init=1).fit(pool_data).cluster_centers_
+                # find the label for the current centroids                
+                # new labeled data
+                for k in range(self.Kclusters):
+                    if self.classifier == '1nn':
+                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid, temp_current_centroids)
+                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0]
+                        _,new_label_data = nearestData.kneighbors([temp_current_centroids[k]])
+                        new_label_data = new_label_data[0][0]
+
+                # concordant data 
+                for l in range(0, len(pool_data)):
+                    if pool_data[l][-1] == 1:
+                        concordant_label_count += 1
                 
-                if n == 0: 
-                    pool_data = Xt
-                    pool_label = np.array([predicted_label])
-                else:
-                    pool_data = np.vstack((pool_data, Xt))
-                    pool_label = np.concatenate((pool_label, np.array([predicted_label])))
+                if concordant_label_count/self.maxpool < 1:
+                    labeled_data = pool_data
+                    labeled_data_labels = new_label_data
+                    past_centroid = temp_current_centroids
 
-                if len(pool_label) == self.maxpool: 
-                    # mex 
-                    centroids_cur = KMeans(n_clusters=self.Kclusters, 
-                                           init=self.cluster.cluster_centers_).fit(pool_data).cluster_centers_
+                # get prediction score 
 
-                    for k in range(self.Kclusters):
-                        if self.classifier == '1nn': 
-                            mdl = KNeighborsClassifier(n_neighbors=1).fit(self.X, self.Y)
-                            yhat = mdl.predict([centroids_cur[k]])[0]
-                            _,nn = mdl.kneighbors([centroids_cur[k]])
-                            nn = nn[0][0]
+                
+                # reset 
+                pool_data = np.zeros(np.shape(pool_data)[1])
+                pool_label = np.zeros(np.shape(pool_label))
+                pool_index = 0
 
 
-        self.classifier
 
 if __name__ == '__main__':
-    set_data = bdg.Datagen()
-    data_gen = set_data.gen_dataset('UG_2C_2D')
-
-    data ={}
-    labeled = {}
-    unlabeled = {}
-    ts = 0
-
-    ## set a self.data dictionary for each time step 
-    ## self.dataset[0][i] loop the arrays and append them to dictionary
-    for i in range(0, len(data_gen[0])):
-        ts += 1
-        data[ts] = data_gen[0][i]
-
-
-    # filter out labeled and unlabeled from of each timestep
-    for i in data:
-        len_of_batch = len(data[i])
-        label_batch = []
-        unlabeled_batch = []            
-        for j in range(0, len_of_batch - 1):
-            if data[i][j][2] == 1:
-                label_batch.append(data[i][j])
-                labeled[i] = label_batch
-            else:
-                unlabeled_batch.append(data[i][j])
-                unlabeled[i] = unlabeled_batch
-
-    # convert labeled data to match self.data data structure
-    labeled_keys = labeled.keys()
-    for key in labeled_keys:        
-        if len(labeled[key]) > 1:
-            len_of_components = len(labeled[key])
-            array_tuple = []
-            for j in range(0, len_of_components):
-                array = np.array(labeled[key][j])
-                arr_to_list = array.tolist()
-                array_tuple.append(arr_to_list)
-                array = []
-                arr_to_list = []
-            concat_tuple = np.vstack(array_tuple)
-            labeled[key] = concat_tuple
-    
-    
-    labeled = labeled[1]
-    ds = data[1]
-
-    # unlabeled = np.array(list(unlabeled.values()))
-    
-    # X_train = np.array(labeled[0])
-    
-
-    # X_test = np.array(unlabeled[0])
-
-    # if len(X_train) < len(X_test):
-    #     dif = int(len(X_test) - len(X_train))
-    #     X_test = list(X_test)
-    #     for i in range(0,dif):
-    #         X_test.pop()
-    #     X_test = np.array(X_test)
-    # elif len(X_train) > len(X_test):
-    #     dif = int(len(X_train) - len(X_test))
-    #     X_train = list(X_train)
-    #     for i in range(0,dif):
-    #         X_train.pop()
-    #     X_train = np.array(X_train)
-    
-    # dataset = np.array(list(data.values()))
-    # dataset = np.array(dataset[0])
-    
-    init_ds = ds[:len(labeled)]
-
-    run_scargc = SCARGC(labeled, init_ds)
-    run_scargc.run(labeled, ds)
+    dataset = SetData()
+    run_scargc = SCARGC(Xinit = dataset.X[0], Yinit = dataset.Y)
+    # DS = Yts ; T = Xts
+    run_scargc.run(Xts = dataset.X, Yts = dataset.Y )
 

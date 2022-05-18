@@ -146,7 +146,7 @@ class Datagen:
         
         if self.datatype == '1CHT':           
             X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
-            step = 400
+            step = 160
             data = []
             self.data = X1CHT 
             if self.label_check() is True:
@@ -162,7 +162,7 @@ class Datagen:
         
         if self.datatype == '2CHT':           
             X2CHT = pd.read_csv("2CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                      
-            step = 400
+            step = 160
             data = []
             self.data = X2CHT 
             if self.label_check() is True:
