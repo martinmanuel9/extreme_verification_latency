@@ -34,7 +34,6 @@ College of Engineering
 # SOFTWARE.
 
 
-from cProfile import label
 import statistics
 from turtle import position
 import numpy as np 
@@ -102,7 +101,7 @@ class SetData:
         #     tempX = np.vstack((tempX,self.X[k]))
         # tempX = list(tempX)
         # tempX.pop(0)
-        # self.X = np.array(tempX)
+        # self.X = np.array(tempX
         
         self.Y = data       # data stream
         
@@ -218,6 +217,7 @@ class SCARGC:
                 pool_data = np.vstack([pool_data, Ye])
                 pool_label = np.concatenate((pool_label, np.array([predicted_label])))
                 pool_index += 1
+            
             concordant_label_count = 0
             # if |pool| == maxpoolsize
             if len(pool_label) > self.maxpool:
@@ -247,7 +247,7 @@ class SCARGC:
                 pool_label = np.zeros(np.shape(pool_label))
                 pool_index = 0    
             # get prediction score 
-            self.class_error[t] = self.classification_error(preds=pool_label, L_test= Ye)
+            self.class_error[t] = self.classification_error(preds=list(predicted_label), L_test= list(Xe))
             self.accuracy[t] = 1 - self.class_error[t]            
 
 if __name__ == '__main__':
