@@ -145,6 +145,8 @@ class SCARGC:
         # initialize the cluster model
         self._initialize()
         self.T = 0
+        self.class_error = {}
+        self.accuracy = {}
 
     def _initialize(self): 
         """
@@ -239,20 +241,20 @@ class SCARGC:
                     labeled_data = pool_data
                     labeled_data_labels = new_label_data
                     past_centroid = temp_current_centroids
-
-                # get prediction score 
-
                 
                 # reset 
                 pool_data = np.zeros(np.shape(pool_data)[1])
                 pool_label = np.zeros(np.shape(pool_label))
-                pool_index = 0
-
-
+                pool_index = 0    
+            # get prediction score 
+            self.class_error[t] = self.classification_error(preds=pool_label, L_test= Ye)
+            self.accuracy[t] = 1 - self.class_error[t]            
 
 if __name__ == '__main__':
     dataset = SetData()
     run_scargc = SCARGC(Xinit = dataset.X[0], Yinit = dataset.Y)
     # DS = Yts ; T = Xts
     run_scargc.run(Xts = dataset.X, Yts = dataset.Y )
+    print('error:\n' , run_scargc.class_error, '\n')
+    print('accuracy:\n', run_scargc.accuracy)
 
