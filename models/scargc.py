@@ -34,16 +34,19 @@ College of Engineering
 # SOFTWARE.
 
 
+from multiprocessing import pool
 import statistics
 from turtle import position
 import numpy as np 
 from scipy import stats
 from sklearn import preprocessing
+from sklearn.svm import SVC, SVR
 from tqdm import tqdm
 import math
 import benchmark_datagen as bdg
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+import time
 
 class SetData:
     def __init__(self, dataset = 'UG_2C_2D'):
@@ -146,6 +149,9 @@ class SCARGC:
         self.T = 0
         self.class_error = {}
         self.accuracy = {}
+        self.total_time = {}
+        self.avg_results = {}
+        self.time_to_predict = {}
 
     def _initialize(self): 
         """
@@ -163,7 +169,7 @@ class SCARGC:
             mode_val,_ = stats.mode(yhat)
             self.class_cluster[i] = mode_val
         
-    def classification_error(self, preds, L_test):  
+    def classification_error(self, preds, L_test):
         return np.sum(preds != L_test)/len(preds)
 
     def run(self, Xts, Yts): 
@@ -171,6 +177,8 @@ class SCARGC:
         Xts = Initial Training data
         Yts = Data stream
         '''
+        total_time_start = time.time()
+
         # Build Classifier 
         if self.classifier == '1nn':
             if len(Xts[0]) < len(Xts[1]):
@@ -187,6 +195,22 @@ class SCARGC:
                 Xts[0] = np.array(xts_array)
             knn = KNeighborsRegressor(n_neighbors=1).fit(Xts[0], Xts[1]) # KNN.fit(train_data, train label)
             predicted_label = knn.predict(Yts[0])
+        elif self.classifier == 'svm':
+            if len(Xts[0]) < len(Yts[0]):
+                dif = int(len(Yts[0]) - len(Xts[0]))
+                yts_array = list(Yts[0])
+                for i in range(dif):
+                    yts_array.pop()
+                Yts[0] = np.array(yts_array)
+            elif len(Xts[0]) > len(Yts[0]):
+                dif = int(len(Xts[0]) - len(Xts[1]))
+                xts_array = list(Xts[0])
+                for i in range(dif):
+                    xts_array.pop()
+                Xts[0] = np.array(xts_array)
+            
+            svn_clf = SVC(gamma='auto').fit(Xts[0][:,:-1], Yts[0][:,-1])
+            predicted_label = svn_clf.predict(Xts[1][:,:-1])
             
         self.T = len(Yts)      
 
@@ -200,7 +224,7 @@ class SCARGC:
             # get the data from time T and resample if required
             Xt, Yt = np.array(Xts[t]), np.array(Yts[t])             # Xt = train labels ; Yt = train data
             Xe, Ye = Xts[t+1], Yts[t+1]                             # Xe = test labels ; Ye = test data
-            
+            time_to_predict_start = time.time()
             if self.resample: 
                 N = len(Xt)
                 ii = np.random.randint(0, N, N)
@@ -212,12 +236,20 @@ class SCARGC:
                 pool_index += 1
             else:
                 if self.classifier == '1nn':
-                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt) # .fit(train_data, train_label)
+                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt) # fit(train_data, train_label)
                     predicted_label = knn_mdl.predict(Ye)
+                elif self.classifier == 'svm':
+                    svn_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])    # fit(Xtrain, X_label_train)
+                    predicted_label = svn_mdl.predict(Ye[:,:-1])
+                
                 pool_data = np.vstack([pool_data, Ye])
-                pool_label = np.concatenate((pool_label, np.array([predicted_label])))
+
+                # remove extra dimensions from pool label if svm 
+                if self.classifier == 'svm':
+                    pool_label = np.squeeze(pool_label)
+                    
+                pool_label = np.concatenate((np.array(pool_label), np.array(predicted_label)))
                 pool_index += 1
-            
             concordant_label_count = 0
             # if |pool| == maxpoolsize
             if len(pool_label) > self.maxpool:
@@ -231,6 +263,10 @@ class SCARGC:
                         centroid_label = nearestData.predict([temp_current_centroids[k]])[0]
                         _,new_label_data = nearestData.kneighbors([temp_current_centroids[k]])
                         new_label_data = new_label_data[0][0]
+                    elif self.classifier == 'svm':
+                        nearestData = SVR(gamma='auto').fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
+                        new_label_data = centroid_label
 
                 # concordant data 
                 for l in range(0, len(pool_data)):
@@ -247,14 +283,33 @@ class SCARGC:
                 pool_label = np.zeros(np.shape(pool_label))
                 pool_index = 0    
             # get prediction score 
-            self.class_error[t] = self.classification_error(preds=list(predicted_label), L_test= list(Xe))
-            self.accuracy[t] = 1 - self.class_error[t]            
+            if self.classifier == 'svm': 
+                Xe = list(Xe[:,-1]) 
+            else: 
+                Xe = list(Xe)
+            self.class_error[t] = self.classification_error(preds=list(predicted_label), L_test= Xe)
+            self.accuracy[t] = 1 - self.class_error[t] 
+            time_to_predict_end = time.time() 
+            self.time_to_predict[t] = time_to_predict_end - time_to_predict_start
+        total_time_end = time.time()
+        self.total_time = total_time_end - total_time_start
+    
+    def results_logs(self):
+        avg_error = np.array(sum(self.class_error.values()) / len(self.class_error))
+        avg_accuracy = np.array(sum(self.accuracy.values()) / len(self.accuracy))
+        avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
+        self.avg_results['Classifier'] = self.classifier
+        self.avg_results['average_error'] = avg_error
+        self.avg_results['average_accuracy'] = avg_accuracy
+        self.avg_results['avg_exec_time'] = avg_exec_time
+        self.avg_results['total_exec_time'] = self.total_time
+        print(self.avg_results)
+
 
 if __name__ == '__main__':
     dataset = SetData()
-    run_scargc = SCARGC(Xinit = dataset.X[0], Yinit = dataset.Y)
+    run_scargc = SCARGC(Xinit = dataset.X[0], Yinit = dataset.Y, classifier='svm')
     # DS = Yts ; T = Xts
     run_scargc.run(Xts = dataset.X, Yts = dataset.Y )
-    print('error:\n' , run_scargc.class_error, '\n')
-    print('accuracy:\n', run_scargc.accuracy)
+    run_scargc.results_logs()
 
