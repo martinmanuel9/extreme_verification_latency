@@ -231,8 +231,6 @@ class SCARGC:
 
                 # remove extra dimensions from pool label if svm 
                 pool_label = np.squeeze(pool_label)
-                # concat_zero_to_pl = np.zeros((len(predicted_label), np.shape(pool_label)[1] - 1))
-                # predicted_label = np.column_stack((predicted_label, concat_zero_to_pl))
                 
                 pool_label = np.concatenate((np.array(pool_label), np.array(predicted_label)))
                 pool_index += 1
@@ -266,11 +264,12 @@ class SCARGC:
                     past_centroid = temp_current_centroids
                 
                 # get prediction score 
+                #TODO: need to figure out why I get - 2.5 error for KNN 
                 if self.classifier == 'svm': 
-                    Yt = list(Yt[:,-1]) 
+                    Ye = np.array(Ye[:,-1]) 
                 else: 
-                    Yt = list(Yt)
-                self.class_error[t] = self.classification_error(preds=list(predicted_label), L_test= Yt)
+                    Ye = np.array(Ye)
+                self.class_error[t] = self.classification_error(preds=np.array(predicted_label), L_test= Ye)
                 self.accuracy[t] = 1 - self.class_error[t] 
                 # reset 
                 pool_data = np.zeros(np.shape(pool_data)[1])
