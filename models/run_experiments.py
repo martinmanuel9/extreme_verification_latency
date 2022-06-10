@@ -147,8 +147,6 @@ class RunExperiment:
                         results_df.to_pickle('results_scargc_svm.pkl')
                         results_pkl = pd.read_pickle('results_scargc_svm.pkl')
                         print("Results:\n", results_df)
-
-
         
         self.plot_results()
 
