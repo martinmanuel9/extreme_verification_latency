@@ -33,6 +33,9 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import warnings
+warnings.filterwarnings('always')  # "error", "ignore", "always", "default", "module" or "once"
+
 
 from multiprocessing import pool
 import statistics
@@ -40,7 +43,6 @@ from turtle import position
 import numpy as np 
 from scipy import stats
 from sklearn import preprocessing
-from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC, SVR
 from tqdm import tqdm
 import math
@@ -49,6 +51,9 @@ from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 import time
 import pandas as pd
+from sklearn import metrics
+from sklearn import preprocessing
+
 
 class SetData:
     def __init__(self, dataset):
@@ -135,6 +140,10 @@ class SCARGC:
         self.dataset = dataset
         self.class_error = {}
         self.accuracy = {}
+        self.roc_auc_score = {}
+        self.auc_score = {}
+        self.f1_score = {}
+        self.mathews_correlation_coeff = {}
         self.total_time = {}
         self.avg_results = {}
         self.time_to_predict = {}
@@ -144,16 +153,29 @@ class SCARGC:
         """
         # run the clustering algorithm on the training data then find the cluster 
         # assignment for each of the samples in the training data         
-        self.cluster = KMeans(n_clusters=self.Kclusters).fit(self.X)
-        labels = self.cluster.predict(self.X)
-        
-        # for each of the clusters, find the labels of the data samples in the clusters
-        # then look at the labels from the initially labeled data that are in the same
-        # cluster. assign the cluster the label of the most frequent class. 
-        for i in range(self.Kclusters):
-            yhat = self.Y[i][labels]
-            mode_val,_ = stats.mode(yhat)
-            self.class_cluster[i] = mode_val
+        if self.classifier == '1nn':
+            self.cluster = KMeans(n_clusters=self.Kclusters).fit(self.X[0])
+            labels = self.cluster.predict(self.X[1])
+            
+            # for each of the clusters, find the labels of the data samples in the clusters
+            # then look at the labels from the initially labeled data that are in the same
+            # cluster. assign the cluster the label of the most frequent class. 
+            for i in range(self.Kclusters):
+                yhat = self.Y[i][labels]
+                mode_val,_ = stats.mode(yhat)
+                self.class_cluster[i] = mode_val
+        elif self.classifier == 'svm':
+            self.cluster = KMeans(n_clusters=self.Kclusters).fit(self.X)
+            labels = self.cluster.predict(self.X)
+            
+            # for each of the clusters, find the labels of the data samples in the clusters
+            # then look at the labels from the initially labeled data that are in the same
+            # cluster. assign the cluster the label of the most frequent class. 
+            for i in range(self.Kclusters):
+                yhat = self.Y[i][labels]
+                mode_val,_ = stats.mode(yhat)
+                self.class_cluster[i] = mode_val
+
         
     def classification_error(self, preds, L_test):
         return np.sum(preds != L_test)/len(preds)
@@ -166,20 +188,21 @@ class SCARGC:
         total_time_start = time.time()
         # Build Classifier 
         if self.classifier == '1nn':
-            if len(Yts[0]) < len(Xts):
-                dif = int(len(Xts) - len(Yts[0]))
-                xts_array = list(Xts)
+            if len(Yts[0]) < len(Xts[0]):
+                dif = int(len(Xts[0]) - len(Yts[0]))
+                xts_array = list(Xts[0])
                 for i in range(dif):
                     xts_array.pop()
                 Xts = np.array(xts_array)
-            elif len(Yts[0]) > len(Xts):
-                dif = int(len(Yts[0]) - len(Xts))
+            elif len(Yts[0]) > len(Xts[0]):
+                dif = int(len(Yts[0]) - len(Xts[0]))
                 xts_array = list(Yts[0])
                 for i in range(dif):
                     xts_array.pop()
                 Yts[0] = np.array(xts_array)
-            knn = KNeighborsClassifier(n_neighbors=1).fit(Yts[0][:,:-1], Xts[:,-1])           # KNN.fit(train_data, train label)
-            predicted_label = knn.predict(Yts[1][:,:-1])
+            knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
+            predicted_label = knn.predict(Yts[1])
+            
             
         elif self.classifier == 'svm':
             if len(Yts[0]) < len(Xts):
@@ -213,27 +236,28 @@ class SCARGC:
 
             # it seems that the algo takes in the labeled data labels and the labeled data as inputs 
             if self.classifier == '1nn':
-                Xt, Yt = np.array(labeled_data_labels), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
-                Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                   # Xe = test labels ; Ye = test data
+                Xt, Yt = np.array(Xts[t]), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
+                Xe, Ye = np.array(Xts[t+1]), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
             elif self.classifier == 'svm': 
                 Xt, Yt = np.array(Xts), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
                 Xe, Ye = np.array(Xts), np.array(Yts[t+1])                   # Xe = test labels ; Ye = test data
             
             time_to_predict_start = time.time()
 
-            if self.resample: 
+            if self.resample:
                 N = len(Xt)
                 ii = np.random.randint(0, N, N)
                 Xt, Yt = Xt[ii], Yt[ii]
             
             if t == 0:
                 pool_data = Ye
-                pool_label = np.array([predicted_label])
+                pool_label = np.array(predicted_label)
                 pool_index += 1
             else:
                 if self.classifier == '1nn':
-                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt[:,:-1], Xt[:,-1])        # fit(train_data, train_label)
-                    predicted_label = knn_mdl.predict(Ye[:,:-1])
+                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)                      # fit(train_data, train_label)
+                    predicted_label = knn_mdl.predict(Ye)
+
                 elif self.classifier == 'svm':
                     svm_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])                          # fit(Xtrain, X_label_train)
                     predicted_label = svm_mdl.predict(Ye[:,:-1])
@@ -250,12 +274,14 @@ class SCARGC:
             if len(pool_label) > self.maxpool:
                 # C <- Clustering(pool, k)
                 temp_current_centroids = KMeans(n_clusters=self.Kclusters, init=past_centroid, n_init=1).fit(pool_data).cluster_centers_
+                
                 # find the label for the current centroids                
                 # new labeled data
                 for k in range(self.Kclusters):
                     if self.classifier == '1nn':
-                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
-                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1]) 
+
+                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid, temp_current_centroids)
+                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0] 
                         new_label_data = np.vstack(centroid_label)
 
                         # not sure why I need to find the nearest neighbor here
@@ -280,14 +306,19 @@ class SCARGC:
                 
                     
                 # get prediction score 
-                #TODO: need to figure out why I get - 2.5 error for KNN 
-                if self.classifier == 'svm': 
-                    Ye = np.array(Ye[:,-1]) 
-                else: 
+                if self.classifier == '1nn': 
+                    Ye = np.array(Ye[:,-1])
+                    predicted_label = predicted_label[:,-1]
+                elif self.classifier == 'svm': 
                     Ye = np.array(Ye[:,-1])
                 
                 self.class_error[t] = self.classification_error(preds= np.array(predicted_label) , L_test= Ye )
                 self.accuracy[t] = 1 - self.class_error[t] 
+                
+                self.roc_auc_score[t] = metrics.roc_auc_score(Ye, predicted_label)
+            
+                # self.f1_score[t] = metrics.f1_score(np.array(Ye), np.array(predicted_label))
+                
                 # reset 
                 pool_data = np.zeros(np.shape(pool_data)[1])
                 pool_label = np.zeros(np.shape(pool_label))
@@ -304,12 +335,18 @@ class SCARGC:
         avg_error = np.array(sum(self.class_error.values()) / len(self.class_error))
         avg_accuracy = np.array(sum(self.accuracy.values()) / len(self.accuracy))
         avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
+        avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
+        # avg_f1_score = np.array(sum(self.f1_score.values()) / len(self.f1_score))
+
         self.avg_results['Classifier'] = 'SCARGC_' + self.classifier
         self.avg_results['Dataset'] = self.dataset
         self.avg_results['average_error'] = avg_error
         self.avg_results['average_accuracy'] = avg_accuracy
+        self.avg_results['roc_auc_score'] = avg_roc_auc_score
+        # self.avg_results['f1_score'] = avg_f1_score
         self.avg_results['avg_exec_time'] = avg_exec_time
         self.avg_results['total_exec_time'] = self.total_time
+        
         # print(self.avg_results)
 
         # accuracy scores 

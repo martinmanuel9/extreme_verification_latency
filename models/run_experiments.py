@@ -132,8 +132,8 @@ class RunExperiment:
                     
                     elif i == 'scargc' and j == '1nn': 
                         scargc_1nn_data = scargc.SetData(dataset= dataset)
-                        run_scargc_1nn = scargc.SCARGC(Xinit= scargc_1nn_data.X[0], Yinit= scargc_1nn_data.Y , classifier = '1nn', dataset= dataset)
-                        self.results[experiment] = run_scargc_1nn.run(Xts = scargc_1nn_data.X[0], Yts = scargc_1nn_data.Y)
+                        run_scargc_1nn = scargc.SCARGC(Xinit= scargc_1nn_data.X, Yinit= scargc_1nn_data.Y , classifier = '1nn', dataset= dataset)
+                        self.results[experiment] = run_scargc_1nn.run(Xts = scargc_1nn_data.X, Yts = scargc_1nn_data.Y)
                         results_df = pd.DataFrame.from_dict((run_scargc_1nn.avg_results.keys(), run_scargc_1nn.avg_results.values())).T
                         results_df.to_pickle('results_scargc_1nn.pkl')
                         results_pkl = pd.read_pickle('results_scargc_1nn.pkl')
