@@ -200,8 +200,8 @@ class SCARGC:
                 for i in range(dif):
                     xts_array.pop()
                 Yts[0] = np.array(xts_array)
-            knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
-            predicted_label = knn.predict(Yts[1])
+            knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0][:,:-1], Xts[0][:,-1])           # KNN.fit(train_data, train label)
+            predicted_label = knn.predict(Yts[1][:,:-1])
             
             
         elif self.classifier == 'svm':
@@ -228,16 +228,20 @@ class SCARGC:
         pool_index = 0
         past_centroid = self.cluster.cluster_centers_
 
+
         labeled_data_labels = Xts
         
         # run the experiment 
         for t in tqdm(range(self.T-1), position=0, leave=True): 
             # get the data from time T and resample if required
-
             # it seems that the algo takes in the labeled data labels and the labeled data as inputs 
             if self.classifier == '1nn':
-                Xt, Yt = np.array(Xts[t]), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
-                Xe, Ye = np.array(Xts[t+1]), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                if t == 0: 
+                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(labeled_data_labels[t+1]), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                else: 
+                    Xt, Yt = np.array(labeled_data_labels), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
             elif self.classifier == 'svm': 
                 Xt, Yt = np.array(Xts), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
                 Xe, Ye = np.array(Xts), np.array(Yts[t+1])                   # Xe = test labels ; Ye = test data
@@ -255,8 +259,8 @@ class SCARGC:
                 pool_index += 1
             else:
                 if self.classifier == '1nn':
-                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)                      # fit(train_data, train_label)
-                    predicted_label = knn_mdl.predict(Ye)
+                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt[:,:-1], Xt[:,-1])                      # fit(train_data, train_label)
+                    predicted_label = knn_mdl.predict(Ye[:,:-1])
 
                 elif self.classifier == 'svm':
                     svm_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])                          # fit(Xtrain, X_label_train)
@@ -280,8 +284,8 @@ class SCARGC:
                 for k in range(self.Kclusters):
                     if self.classifier == '1nn':
 
-                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid, temp_current_centroids)
-                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0] 
+                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1]) 
                         new_label_data = np.vstack(centroid_label)
 
                         # not sure why I need to find the nearest neighbor here
@@ -308,7 +312,6 @@ class SCARGC:
                 # get prediction score 
                 if self.classifier == '1nn': 
                     Ye = np.array(Ye[:,-1])
-                    predicted_label = predicted_label[:,-1]
                 elif self.classifier == 'svm': 
                     Ye = np.array(Ye[:,-1])
                 
