@@ -237,10 +237,12 @@ class SCARGC:
             # it seems that the algo takes in the labeled data labels and the labeled data as inputs 
             if self.classifier == '1nn':
                 if t == 0: 
+                    
                     Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
                     Xe, Ye = np.array(labeled_data_labels[t+1]), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
                 else: 
-                    Xt, Yt = np.array(labeled_data_labels), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
+                    # print(labeled_data_labels)
+                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)                     # Xt = train labels ; Yt = train data
                     Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
             elif self.classifier == 'svm': 
                 Xt, Yt = np.array(Xts), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
@@ -259,8 +261,8 @@ class SCARGC:
                 pool_index += 1
             else:
                 if self.classifier == '1nn':
-                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt[:,:-1], Xt[:,-1])                      # fit(train_data, train_label)
-                    predicted_label = knn_mdl.predict(Ye[:,:-1])
+                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)                # fit(train_data, train_label)
+                    predicted_label = knn_mdl.predict(Ye)
 
                 elif self.classifier == 'svm':
                     svm_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])                          # fit(Xtrain, X_label_train)
@@ -284,9 +286,9 @@ class SCARGC:
                 for k in range(self.Kclusters):
                     if self.classifier == '1nn':
 
-                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
-                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1]) 
-                        new_label_data = np.vstack(centroid_label)
+                        nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid, temp_current_centroids)
+                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0] 
+                        new_label_data = np.hstack(centroid_label)
 
                         # not sure why I need to find the nearest neighbor here
                         # _,new_label_data = nearestData.kneighbors([temp_current_centroids[k]])
