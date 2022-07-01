@@ -64,7 +64,7 @@ class COMPOSE:
         """
 
 
-        self.timestep = 1                   # The current timestep of the datase
+        self.timestep = 0                   # The current timestep of the datase
         self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  num_cores                   # Level of feedback displayed during run {default}
         self.verbose = verbose              #    0  : No Information Displayed
@@ -206,8 +206,8 @@ class COMPOSE:
         ## set a self.data dictionary for each time step 
         ## self.dataset[0][i] loop the arrays and append them to dictionary
         for i in range(0, len(self.dataset[0])):
-            ts += 1
             self.data[ts] = self.dataset[0][i]
+            ts += 1
         
         
         # filter out labeled and unlabeled from of each timestep
@@ -309,7 +309,6 @@ class COMPOSE:
         return np.sum(preds != L_test)/len(preds)
 
     def results_logs(self):
-        
         avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
         avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
         avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
@@ -357,8 +356,9 @@ class COMPOSE:
                 print('SSL Classifier:', self.classifier)
             total_time_start = time.time() 
             ts = start
+            
             for n in tqdm(range(len(timesteps))):
-                for ts in range(1, len(timesteps)):                    # iterate through all timesteps from the start to the end of the available data
+                for ts in range(0, len(timesteps)-1):                    # iterate through all timesteps from the start to the end of the available data
                     self.timestep = ts
                     # add core supports to hypothesis
                     self.get_core_supports(self.data[ts])              # create core supports at timestep
@@ -371,7 +371,7 @@ class COMPOSE:
                         print("Timestep:",ts)
                     self.step = 1
                     # first round with labeled data
-                    if ts == 1:
+                    if ts == 0:
                         t_start = time.time()
                         if np.shape(self.data[ts]) > np.shape(self.labeled[ts]):
                             data_val = int(np.shape(self.data[ts])[0] - np.shape(self.labeled[ts])[0])
@@ -380,9 +380,9 @@ class COMPOSE:
                                 data_array.pop()
                             self.data[ts] = np.array(data_array)
                         if self.classifier == 'QN_S3VM':
-                            self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts]) 
+                            self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts+1], X_test=self.data[ts+1], L_test=self.hypothesis[ts]) 
                         elif self.classifier == 'label_propagation':
-                            self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])        
+                            self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts+1], X_test=self.data[ts+1], L_test=self.hypothesis[ts])        
                         t_end = time.time()
                         elapsed_time = t_end - t_start
                         self.time_to_predict[ts] = elapsed_time
@@ -430,7 +430,7 @@ class COMPOSE:
                             rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
                             self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
                         
-                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts-1], L_train_l=self.labeled[ts], X_train_u=self.unlabeled[ts], X_test=self.labeled[ts+1], L_test=self.hypothesis[ts])
+                        self.learner[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts+1], X_test=self.data[ts+1], L_test=self.hypothesis[ts])
                         t_end = time.time()
                         elapsed_time = t_end - t_start
                         self.time_to_predict[ts] = elapsed_time

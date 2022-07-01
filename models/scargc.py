@@ -33,6 +33,7 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from cProfile import label
 import warnings
 warnings.filterwarnings('always')  # "error", "ignore", "always", "default", "module" or "once"
 
@@ -53,6 +54,7 @@ import time
 import pandas as pd
 from sklearn import metrics
 from sklearn import preprocessing
+from knn import knn as Bknn
 
 
 class SetData:
@@ -200,10 +202,14 @@ class SCARGC:
                 for i in range(dif):
                     xts_array.pop()
                 Yts[0] = np.array(xts_array)
-            knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0][:,:-1], Xts[0][:,-1])           # KNN.fit(train_data, train label)
-            predicted_label = knn.predict(Yts[1][:,:-1])
-            
-            
+            knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
+            predicted_label = knn.predict(Yts[1])
+
+            # brute knn
+            # bknn = Bknn(k=1, problem=1, metric=0)
+            # bknn.fit(Yts[0], Xts[0])
+            # predicted_label = bknn.predict(Yts[1])
+
         elif self.classifier == 'svm':
             if len(Yts[0]) < len(Xts):
                 dif = int(len(Xts) - len(Yts[0]))
@@ -230,6 +236,7 @@ class SCARGC:
 
 
         labeled_data_labels = Xts
+        labeled_data = Yts
         
         # run the experiment 
         for t in tqdm(range(self.T-1), position=0, leave=True): 
@@ -237,42 +244,70 @@ class SCARGC:
             # it seems that the algo takes in the labeled data labels and the labeled data as inputs 
             if self.classifier == '1nn':
                 if t == 0: 
-                    
-                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
-                    Xe, Ye = np.array(labeled_data_labels[t+1]), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(labeled_data[t])       # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(labeled_data_labels[t+1]), np.array(Yts[t+1])            # Xe = test labels ; Ye = test data
                 else: 
-                    # print(labeled_data_labels)
-                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)                     # Xt = train labels ; Yt = train data
+                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
                     Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
             elif self.classifier == 'svm': 
-                Xt, Yt = np.array(Xts), np.array(Yts[t])                     # Xt = train labels ; Yt = train data
-                Xe, Ye = np.array(Xts), np.array(Yts[t+1])                   # Xe = test labels ; Ye = test data
+                if t == 0:
+                    Xt, Yt = np.array(labeled_data_labels), np.array(Yts[t])                   # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(Xts), np.array(Yts[t+1])                                 # Xe = test labels ; Ye = test data
+                else:
+                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+    
             
             time_to_predict_start = time.time()
-
+        
             if self.resample:
-                N = len(Xt)
+                N = len(Yt)
+                V = len(Xt)
                 ii = np.random.randint(0, N, N)
-                Xt, Yt = Xt[ii], Yt[ii]
-            
+                jj = np.random.randint(0, V,V)
+                Xt = Xt[jj] 
+                Yt =  Yt[ii]
+
             if t == 0:
                 pool_data = Ye
                 pool_label = np.array(predicted_label)
                 pool_index += 1
             else:
                 if self.classifier == '1nn':
-                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)                # fit(train_data, train_label)
+                    if len(Yt) > len(Xt):
+                        dif = len(Yt) - len(Xt)
+                        yt_reduced = list(Yt)
+                        for q in range(dif):
+                            yt_reduced.pop()
+                        Yt = np.array(yt_reduced)
+
+                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)    # fit(train_data, train_label)
                     predicted_label = knn_mdl.predict(Ye)
 
+                    # bknn_mdl = Bknn(k=0, problem=1, metric=0)
+                    # bknn_mdl.fit(Yt, Xt)
+                    # predicted_label = bknn_mdl.predict(Ye)
+
                 elif self.classifier == 'svm':
-                    svm_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])                          # fit(Xtrain, X_label_train)
+                    svm_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])        # fit(Xtrain, X_label_train)
                     predicted_label = svm_mdl.predict(Ye[:,:-1])
                 
                 pool_data = np.vstack((pool_data, Ye))
 
-                # remove extra dimensions from pool label if svm 
+                # remove extra dimensions from pool label
                 pool_label = np.squeeze(pool_label)
-                pool_label = np.concatenate((np.array(pool_label), np.array(predicted_label)))
+                predicted_label = np.squeeze(predicted_label)
+                
+                if self.classifier == '1nn':
+                    pool_label = np.concatenate((pool_label, predicted_label))
+                elif self.classifier == 'svm':
+                    pool_label = np.concatenate((pool_label, predicted_label))
+                
+                if t > 0:
+                    sbrt_pool_lbl = list(pool_label)
+                    sbrt_pool_lbl.pop(0)
+                pool_label = np.array(pool_label)
+                
                 pool_index += 1
             concordant_label_count = 0
 
@@ -280,26 +315,33 @@ class SCARGC:
             if len(pool_label) > self.maxpool:
                 # C <- Clustering(pool, k)
                 temp_current_centroids = KMeans(n_clusters=self.Kclusters, init=past_centroid, n_init=1).fit(pool_data).cluster_centers_
-                
-                # find the label for the current centroids                
+                # find the label for the current centroids               
                 # new labeled data
+                new_label_data = np.zeros(np.shape(temp_current_centroids)[1])
                 for k in range(self.Kclusters):
                     if self.classifier == '1nn':
-
                         nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid, temp_current_centroids)
-                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0] 
-                        new_label_data = np.hstack(centroid_label)
-
-                        # not sure why I need to find the nearest neighbor here
+                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0]
+                        
+                        new_label_data = np.vstack((new_label_data, centroid_label))
+                        
                         # _,new_label_data = nearestData.kneighbors([temp_current_centroids[k]])
-                        # new_label_data = new_label_data[0][0]
+                        # new_label_data = np.vstack(new_label_data[0][0])
+                        # nearestData = Bknn(k=0, problem=1, metric=0)
+                        # nearestData.fit(past_centroid, temp_current_centroids)
+                        # centroid_label = nearestData.predict(temp_current_centroids[k])[0]
+                        # new_label_data = np.vstack((new_label_data[0], centroid_label))
+                        
                         
                     elif self.classifier == 'svm':
                         nearestData = SVR(gamma='auto').fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
                         centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
                         new_label_data = np.vstack(centroid_label)
-                        
-
+                
+                new_label_data = list(new_label_data)
+                new_label_data.pop(0)
+                new_label_data = np.array(new_label_data)
+                
                 # concordant data 
                 for l in range(0, len(pool_data)):
                     if pool_data[l][-1] == 1:
@@ -314,19 +356,24 @@ class SCARGC:
                 # get prediction score 
                 if self.classifier == '1nn': 
                     Ye = np.array(Ye[:,-1])
-                elif self.classifier == 'svm': 
+                if self.classifier == 'svm': 
                     Ye = np.array(Ye[:,-1])
                 
-                self.class_error[t] = self.classification_error(preds= np.array(predicted_label) , L_test= Ye )
+                # if self.classifier == '1nn':
+                #     if t>0:
+                #         predicted_label = predicted_label[:,-1]
+                
+                self.class_error[t] = self.classification_error(preds= predicted_label , L_test= Ye )
                 self.accuracy[t] = 1 - self.class_error[t] 
                 
-                self.roc_auc_score[t] = metrics.roc_auc_score(Ye, predicted_label)
+                
+                # self.roc_auc_score[t] = metrics.roc_auc_score(Ye, predicted_label)
             
                 # self.f1_score[t] = metrics.f1_score(np.array(Ye), np.array(predicted_label))
                 
                 # reset 
                 pool_data = np.zeros(np.shape(pool_data)[1])
-                pool_label = np.zeros(np.shape(pool_label))
+                pool_label = np.zeros(np.shape(pool_data))
                 pool_index = 0    
             
             time_to_predict_end = time.time() 
@@ -340,14 +387,14 @@ class SCARGC:
         avg_error = np.array(sum(self.class_error.values()) / len(self.class_error))
         avg_accuracy = np.array(sum(self.accuracy.values()) / len(self.accuracy))
         avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
-        avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
+        # avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
         # avg_f1_score = np.array(sum(self.f1_score.values()) / len(self.f1_score))
 
         self.avg_results['Classifier'] = 'SCARGC_' + self.classifier
         self.avg_results['Dataset'] = self.dataset
         self.avg_results['average_error'] = avg_error
         self.avg_results['average_accuracy'] = avg_accuracy
-        self.avg_results['roc_auc_score'] = avg_roc_auc_score
+        # self.avg_results['roc_auc_score'] = avg_roc_auc_score
         # self.avg_results['f1_score'] = avg_f1_score
         self.avg_results['avg_exec_time'] = avg_exec_time
         self.avg_results['total_exec_time'] = self.total_time
