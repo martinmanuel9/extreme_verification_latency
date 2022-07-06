@@ -398,6 +398,8 @@ class SCARGC:
         # self.avg_results['f1_score'] = avg_f1_score
         self.avg_results['avg_exec_time'] = avg_exec_time
         self.avg_results['total_exec_time'] = self.total_time
+        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+        self.avg_results['Time_Stamp'] = time_stamp
         
         # print(self.avg_results)
 

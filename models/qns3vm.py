@@ -223,6 +223,19 @@ class QN_S3VM_Dense:
         """
         self.__random_generator = random_generator
         self.__X_l, self.__X_u, self.__L_l = X_l, X_u, L_l
+        if len(X_l) > len(L_l):
+            dif_x_l = len(X_l) - len(L_l)
+            X_l = list(X_l)
+            for r in range(dif_x_l):
+                X_l.pop(0)
+            X_l = np.array(X_l)
+        else:
+            dif_x_l = len(L_l) - len(X_l)
+            L_l = list(L_l)
+            for r in range(dif_x_l):
+                L_l.pop(0)
+            L_l = np.array(L_l)
+
         assert len(X_l) == len(L_l)
         self.__X = cp.deepcopy(self.__X_l)
         self.__X.extend(cp.deepcopy(self.__X_u)) 

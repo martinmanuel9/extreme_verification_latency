@@ -40,13 +40,9 @@ import pandas as pd
 import numpy as np
 import os
 import math
+from pathlib import Path
 
-# change the directory to your particular files location
-cwd = os.getcwd()
-path_parent = os.path.dirname(os.getcwd())
-# print(path_parent)
-cwd = cwd + '/data/files/' 
-os.chdir(cwd)
+
 class Datagen:
     def __init__(self) -> None:
         # Unimodal, Multimodal, 1cdt, 2cdt, Unimodal3D,  1cht, 2cht, 4cr, 4crev1,4crev2
@@ -56,9 +52,15 @@ class Datagen:
         self.datatype = ''
         self.data = []
         self.dataset = []
+        
+    def change_directory(self):
+        path = str(Path.home())
+        path = path + '/extreme_verification_latency/data/files/'
+        os.chdir(path)
 
     def gen_dataset(self, datatype):
         self.datatype = datatype
+        self.change_directory()
         if self.datatype == 'UG_2C_2D':
             # Unimodal option
             UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['feat1', 'feat2', 'feat3'])                                                                                        

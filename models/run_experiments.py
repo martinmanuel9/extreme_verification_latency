@@ -43,7 +43,9 @@ import math
 import pickle5 as pickle 
 import time
 import scargc
-
+import os
+import time
+from pathlib import Path  
 
 class RunExperiment:
 
@@ -55,6 +57,10 @@ class RunExperiment:
         self.results = {}
         self.num_cores = num_cores
         
+    def change_dir(self):
+        path = str(Path.home())
+        path = path + "/extreme_verification_latency/results"
+        os.chdir(path)
 
     def plot_results(self):
         experiments = self.results.keys()
@@ -66,14 +72,23 @@ class RunExperiment:
             
             df.plot(ax=ax, label=experiment, x='Timesteps', y='Accuracy')
         
-        plt.title('Accuracy over timesteps')
+        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+        plt.title('Accuracy over timesteps_', time_stamp )
         plt.xlabel('Timesteps')
         plt.tight_layout()
         plt.legend
         plt.ylabel('% Accuracy')
         plt.show()
         
-        with open('results_plot.pkl', 'wb') as result_plot:
+
+        
+        # change the directory to your particular files location
+        self.change_dir()
+        result_plot_pkl = 'results_plot_' + time_stamp + '.pkl'
+        path = str(Path.home())
+        path = path + "/extreme_verification_latency/plots"
+        os.chdir(path) 
+        with open(result_plot_pkl, 'wb') as result_plot:
             pickle.dump(fig_handle, result_plot)
 
     def run(self):
@@ -88,10 +103,16 @@ class RunExperiment:
                         self.results[experiment] = fast_compose_QNS3VM.run()
                         end_time = time.time()
                         total_time = end_time - start_time
-                        fast_compose_QNS3VM.avg_results_dict['Total_Time'] = total_time
+                        fast_compose_QNS3VM.avg_results_dict['Total_Time'] = total_time 
+                        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+                        fast_compose_QNS3VM.avg_results_dict['Time_Stamp'] = time_stamp 
                         results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
-                        results_df.to_pickle('results_fast_compose_QN_S3VM.pkl')
-                        results_pkl = pd.read_pickle('results_fast_compose_QN_S3VM.pkl')
+                        
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_fast_compose_qns3vm = 'results_fast_compose_QN_S3VM_'+ time_stamp +'.pkl'
+                        results_df.to_pickle(results_fast_compose_qns3vm)
+                        results_pkl = pd.read_pickle(results_fast_compose_qns3vm)
                         print("Results:\n " , results_pkl )
 
                     elif i == 'fast_compose' and j == 'label_propagation':
@@ -101,9 +122,14 @@ class RunExperiment:
                         end_time = time.time()
                         total_time = end_time - start_time 
                         fast_compose_label_prop.avg_results_dict['Total_Time'] = total_time
+                        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+                        fast_compose_label_prop.avg_results_dict['Time_Stamp'] = time_stamp
                         results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
-                        results_df.to_pickle('results_fast_compose_label_propagation.pkl')
-                        results_pkl = pd.read_pickle('results_fast_compose_label_propagation.pkl')
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_fast_compose_lbl_prop = 'results_fast_compose_label_propagation_'+ time_stamp + '.pkl'
+                        results_df.to_pickle(results_fast_compose_lbl_prop)
+                        results_pkl = pd.read_pickle(results_fast_compose_lbl_prop)
                         print("Results:\n" , results_pkl )
                         
                     elif i == 'compose' and j == 'QN_S3VM':
@@ -113,9 +139,14 @@ class RunExperiment:
                         end_time = time.time()
                         total_time = end_time - start_time
                         reg_compose_label_QN_S3VM.avg_results_dict['Total_Time'] = total_time
+                        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+                        reg_compose_label_QN_S3VM.avg_results_dict['Time_Stamp'] = time_stamp
                         results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_results_dict.keys(), reg_compose_label_QN_S3VM.avg_results_dict.values())).T
-                        results_df.to_pickle('results_compose_QN_S3VM.pkl')
-                        results_pkl = pd.read_pickle('results_compose_QN_S3VM.pkl')
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_compose_qns3vm = 'results_compose_QN_S3VM_'+ time_stamp +'.pkl'
+                        results_df.to_pickle(results_compose_qns3vm)
+                        results_pkl = pd.read_pickle(results_compose_qns3vm)
                         print("Results:\n" , results_pkl )
 
                     elif i == 'compose' and j == 'label_propagation':
@@ -124,10 +155,15 @@ class RunExperiment:
                         self.results[experiment] = reg_compose_label_prop.run()
                         end_time = time.time()
                         total_time = end_time - start_time     
-                        reg_compose_label_prop.avg_results_dict['Total_Time'] = total_time       
+                        reg_compose_label_prop.avg_results_dict['Total_Time'] = total_time   
+                        time_stamp = time.strftime("%Y%m%d-%H%M%S")   
+                        reg_compose_label_prop.avg_results_dict['Time_Stamp'] = time_stamp  
                         results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
-                        results_df.to_pickle('results_compose_label_propagation.pkl')
-                        results_pkl = pd.read_pickle('results_compose_label_propagation.pkl')
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_compose_lbl_prop = 'results_compose_label_propagation_' + time_stamp + '.pkl' 
+                        results_df.to_pickle(results_compose_lbl_prop)
+                        results_pkl = pd.read_pickle(results_compose_lbl_prop)
                         print("Results:\n" , results_pkl )
                     
                     elif i == 'scargc' and j == '1nn': 
@@ -135,8 +171,12 @@ class RunExperiment:
                         run_scargc_1nn = scargc.SCARGC(Xinit= scargc_1nn_data.X, Yinit= scargc_1nn_data.Y , classifier = '1nn', dataset= dataset)
                         self.results[experiment] = run_scargc_1nn.run(Xts = scargc_1nn_data.X, Yts = scargc_1nn_data.Y)
                         results_df = pd.DataFrame.from_dict((run_scargc_1nn.avg_results.keys(), run_scargc_1nn.avg_results.values())).T
-                        results_df.to_pickle('results_scargc_1nn.pkl')
-                        results_pkl = pd.read_pickle('results_scargc_1nn.pkl')
+                        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_scargc_1nn = 'results_scargc_1nn_'+ time_stamp + '.pkl'
+                        results_df.to_pickle(results_scargc_1nn)
+                        results_pkl = pd.read_pickle(results_scargc_1nn)
                         print("Results:\n", results_df)
 
                     elif i == 'scargc' and j == 'svm': 
@@ -144,8 +184,12 @@ class RunExperiment:
                         run_scargc_svm = scargc.SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= dataset)
                         self.results[experiment] = run_scargc_svm.run(Xts = scargc_svm_data.X[0], Yts = scargc_svm_data.Y)              # .X[0] only get initial training set
                         results_df = pd.DataFrame.from_dict((run_scargc_svm.avg_results.keys(), run_scargc_svm.avg_results.values())).T
-                        results_df.to_pickle('results_scargc_svm.pkl')
-                        results_pkl = pd.read_pickle('results_scargc_svm.pkl')
+                        time_stamp = time.strftime("%Y%m%d-%H%M%S")
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_scargc_svm = 'results_scargc_svm_'+ time_stamp + '.pkl' 
+                        results_df.to_pickle(results_scargc_svm)
+                        results_pkl = pd.read_pickle(results_scargc_svm)
                         print("Results:\n", results_df)
         
         self.plot_results()
