@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 
 """
-Application:        Online Learning Extreme Verification Latency 
+Application:        Online Learning in Extreme Verification Latency
 File name:          openpickel.py
 Author:             Martin Manuel Lopez
 Creation:           07/05/2022

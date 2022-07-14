@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 
 """
-Application:        COMPOSE Framework 
+Application:        Online Learning in Extreme Verification Latency 
 File name:          evl_util.py 
 Author:             Martin Manuel Lopez
 Creation:           09/18/2021

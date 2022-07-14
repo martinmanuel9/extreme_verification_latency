@@ -81,9 +81,10 @@ from scipy import optimize
 import scipy.sparse as csc
 from scipy import sparse
 import scipy
-import warnings
-warnings.simplefilter('error')
-warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+import pandas as pd
+# import warnings
+# warnings.simplefilter('error')
+# warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
 
 
 __author__ =  'Fabian Gieseke, Antti Airola, Tapio Pahikkala, Oliver Kramer'
@@ -396,22 +397,29 @@ class QN_S3VM_Dense:
             
             for l in self.__L_l:
                 x.append(l)
-            self.__YL = mat(x, dtype=np.float64)
-            self.__YL = self.__YL.transpose()
+            # self.__YL = mat(x, dtype=np.float64) # old code
+            self.__YL = np.array(x, dtype=np.float64)
+            # self.__YL = self.__YL.transpose()    # old code
+            self.__YL = np.transpose(self.__YL)
+            
             # Initialize kernel matrices
             if (self.__kernel_type == "Linear"):
                 self.__kernel = LinearKernel()
             elif (self.__kernel_type == "RBF"):
                 self.__kernel = RBFKernel(self.__sigma)
-           
-            self.__Xreg = (mat(self.__X)[self.__regressors_indices,:].tolist())
+            
+            # self.__Xreg = (mat(self.__X)[self.__regressors_indices,:].tolist())   # old code
+            self.__Xreg = (np.array(self.__X)[self.__regressors_indices,:].tolist())
+
             self.__KLR = self.__kernel.computeKernelMatrix(self.__X_l,self.__Xreg, symmetric=False)
             self.__KUR = self.__kernel.computeKernelMatrix(self.__X_u,self.__Xreg, symmetric=False)
-            self.__KNR = cp.deepcopy(bmat([[self.__KLR], [self.__KUR]]))
+            # self.__KNR = cp.deepcopy(bmat([[self.__KLR], [self.__KUR]])) # old code
+            self.__KNR = cp.deepcopy(np.bmat([[self.__KLR], [self.__KUR]]))
             self.__KRR = self.__KNR[self.__regressors_indices,:]
             # Center patterns in feature space (with respect to approximated mean of unlabeled patterns in the feature space)
             subset_unlabled_indices = sorted(self.__random_generator.sample( range(0,len(self.__X_u)), min(self.__max_unlabeled_subset_size, len(self.__X_u)) ))
-            self.__X_u_subset = (mat(self.__X_u)[subset_unlabled_indices,:].tolist())
+            # self.__X_u_subset = (mat(self.__X_u)[subset_unlabled_indices,:].tolist()) # old code
+            self.__X_u_subset = (np.array(self.__X_u)[subset_unlabled_indices,:].tolist())
             self.__KNU_bar = self.__kernel.computeKernelMatrix(self.__X, self.__X_u_subset, symmetric=False)
             self.__KNU_bar_horizontal_sum = (1.0 / len(self.__X_u_subset)) * self.__KNU_bar.sum(axis=1)
             self.__KU_barR = self.__kernel.computeKernelMatrix(self.__X_u_subset, self.__Xreg, symmetric=False)
@@ -429,7 +437,8 @@ class QN_S3VM_Dense:
         # (that does not optimize the offset b) or not
         if len(c) == self.__dim - 1:
             c = np.append(c, self.__b)
-        c = mat(c)
+        # c = mat(c)    # old code
+        c = np.array([c])
         b = c[:,self.__dim-1].T
         c_new = c[:,0:self.__dim-1].T
         preds_labeled = self.__surrogate_gamma*(1.0 - multiply(self.__YL, self.__KLR * c_new + b))
@@ -450,6 +459,7 @@ class QN_S3VM_Dense:
         preds_unlabeled_squared = multiply(preds_unlabeled,preds_unlabeled)
         term2 = (float(self.__lamU)/float(self.__size_u))*np.sum(np.exp(-self.__s * preds_unlabeled_squared))
         term3 = self.__lam * (c_new.T * self.__KRR * c_new)
+        print((term1+term2+term3)[0,0])
         return (term1 + term2 + term3)[0,0]
 
     def __getFitness_Prime(self,c):
@@ -457,7 +467,8 @@ class QN_S3VM_Dense:
         # (that does not optimize the offset b) or not
         if len(c) == self.__dim - 1:
             c = np.append(c, self.__b)
-        c = mat(c)
+        # c = mat(c) # old code
+        c = np.array([c])
         b = c[:,self.__dim-1].T
         c_new = c[:,0:self.__dim-1].T
         preds_labeled = self.__surrogate_gamma * (1.0 - multiply(self.__YL, self.__KLR * c_new + b))
@@ -482,7 +493,8 @@ class QN_S3VM_Dense:
         return array((term1 + term2 + term3).T)[0]
 
     def __recomputeModel(self, indi):
-        self.__c = mat(indi[0]).T
+        # self.__c = mat(indi[0]).T     # old code
+        self.__c = np.array(indi[0]).T
 
     def __getTrainingPredictions(self, X, real_valued=False):
         preds = self.__KNR * self.__c[0:self.__dim-1,:] + self.__c[self.__dim-1,:]
@@ -540,8 +552,10 @@ class QN_S3VM_Sparse:
         x = arr.array('i')
         for l in L_l:
             x.append(int(l))
-        self.__YL = mat(x, dtype=np.float64)
-        self.__YL = self.__YL.transpose()
+        # self.__YL = mat(x, dtype=np.float64)  # old code
+        self.__YL = np.array(x, dtype=np.float64)
+        # self.__YL = self.__YL.transpose()     # old code
+        self.__YL = np.transpose(self.__YL)
         self.__setParameters( ** kw)
         self.__kw = kw
         self.X_l = X_l.tocsr()
@@ -684,7 +698,8 @@ class QN_S3VM_Sparse:
         # (that does not optimize the offset b) or not
         if len(c) == self.__dim - 1:
             c = np.append(c, self.__b)
-        c = mat(c)
+        # c = mat(c) # old code
+        c = np.array(c)
         b = c[:,self.__dim-1].T
         c_new = c[:,0:self.__dim-1].T
         c_new_sum = np.sum(c_new)
@@ -714,7 +729,8 @@ class QN_S3VM_Sparse:
         # (that does not optimize the offset b) or not
         if len(c) == self.__dim - 1:
             c = np.append(c, self.__b)
-        c = mat(c)
+        # c = mat(c)    # old code
+        c = np.array(c)
         b = c[:,self.__dim-1].T
         c_new = c[:,0:self.__dim-1].T
         c_new_sum = np.sum(c_new)
@@ -745,7 +761,8 @@ class QN_S3VM_Sparse:
         return array((term1 + term2 + term3).T)[0]
 
     def __recomputeModel(self, indi):
-        self.__c = mat(indi[0]).T
+        # self.__c = mat(indi[0]).T     # old code
+        self.__c = np.array(indi([0])).T
 
 ############################################################################################
 ############################################################################################
@@ -761,11 +778,14 @@ class LinearKernel():
         Computes the kernel matrix
         """
         logging.debug("Starting Linear Kernel Matrix Computation...")
-        self._data1 = mat(data1)
-        self._data2 = mat(data2)
+        # self._data1 = mat(data1)      # old code
+        self._data1 = np.array(data1)
+        # self._data2 = mat(data2)      # old code
+        self._data2 = np.array(data2)
+        
         assert self._data1.shape[1] == (self._data2.T).shape[0]
         try:
-            return self._data1 * self._data2.T
+            return np.dot(self._data1, self._data2.T) # used to be self._data1 * self._data2.T
         except Exception as e:
             logging.error("Error while computing kernel matrix: " + str(e))
             import traceback
@@ -777,9 +797,9 @@ class LinearKernel():
         """
         Returns a single kernel value.
         """
-        xi = array(xi)
-        xj = array(xj)
-        val = dot(xi, xj)
+        xi = np.array(xi)   # updated from array
+        xj = np.array(xj)
+        val = np.dot(xi, xj)    # updated from dot
         return val
 
 
@@ -802,7 +822,8 @@ class DictLinearKernel():
         self._symmetric = symmetric
         self.__km = None
         try:
-            km = mat(zeros((self._dim1, self._dim2), dtype=float64))
+            # km = mat(zeros((self._dim1, self._dim2), dtype=float64))  # old code
+            km = np.array(np.zeros((self._dim1, self._dim2), dtype=float64))
             if self._symmetric:
                 for i in range(self._dim1):
                     message = 'Kernel Matrix Progress: %dx%d/%dx%d' % (i, self._dim2,self._dim1,self._dim2)
@@ -849,8 +870,10 @@ class RBFKernel():
         Computes the kernel matrix
         """
         logging.debug("Starting RBF Kernel Matrix Computation...")
-        self._data1 = mat(data1)
-        self._data2 = mat(data2)
+        # self._data1 = mat(data1) # old code
+        self._data1 = np.array(data1)
+        # self._data2 = mat(data2) # old code
+        self._data2 = np.array(data2)
         assert self._data1.shape[1] == (self._data2.T).shape[0]
         self._dim1 = len(data1)
         self._dim2 = len(data2)
@@ -859,8 +882,10 @@ class RBFKernel():
         try:
             if self._symmetric:
                 linearkm = self._data1 * self._data2.T
-                trnorms = mat(np.diag(linearkm)).T
-                trace_matrix = trnorms * mat(np.ones((1, self._dim1), dtype = float64))
+                # trnorms = mat(np.diag(linearkm)).T    # old code
+                trnorms = np.array(np.diag(linearkm)).T
+                # trace_matrix = trnorms * mat(np.ones((1, self._dim1), dtype = float64))   # old code
+                trace_matrix = trnorms * np.array(np.ones((1, self._dim1), dtype = float64))
                 self.__km = trace_matrix + trace_matrix.T
                 self.__km = self.__km - 2*linearkm
                 self.__km = - self.__sigma_squared_inv * self.__km
@@ -870,17 +895,22 @@ class RBFKernel():
                 m = self._data1.shape[0]
                 n = self._data2.shape[0]
                 assert self._data1.shape[1] == self._data2.shape[1]
-                linkm = mat(self._data1 * self._data2.T)
+                # linkm = mat(self._data1 * self._data2.T)  # old code
+                linkm = np.array(self._data1 * self._data2.T)
                 trnorms1 = []
                 for i in range(m):
                     trnorms1.append((self._data1[i] * self._data1[i].T)[0,0])
-                trnorms1 = mat(trnorms1).T
+                # trnorms1 = mat(trnorms1).T    # old code
+                trnorms1 = np.array(trnorms1).T
                 trnorms2 = []
                 for i in range(n):
                     trnorms2.append((self._data2[i] * self._data2[i].T)[0,0])
-                trnorms2 = mat(trnorms2).T
-                self.__km = trnorms1 * mat(np.ones((n, 1), dtype = float64)).T
-                self.__km = self.__km + mat(np.ones((m, 1), dtype = float64)) * trnorms2.T
+                # trnorms2 = mat(trnorms2).T    # old code
+                trnorms2 = np.array(trnorms2).T
+                # self.__km = trnorms1 * mat(np.ones((n, 1), dtype = float64)).T    # old code
+                self.__km = trnorms1 * np.array(np.ones((n, 1), dtype = float64)).T
+                # self.__km = self.__km + mat(np.ones((m, 1), dtype = float64)) * trnorms2.T    # old code
+                self.__km = self.__km + np.array(np.ones((m, 1), dtype = float64)) * trnorms2.T
                 self.__km = self.__km - 2 * linkm
                 self.__km = - self.__sigma_squared_inv * self.__km
                 self.__km = np.exp(self.__km)
@@ -896,7 +926,7 @@ class RBFKernel():
         xi = array(xi)
         xj = array(xj)
         diff = xi-xj
-        val = exp(-self.__sigma_squared_inv * (dot(diff, diff)))
+        val = exp(-self.__sigma_squared_inv * (np.dot(diff, diff))) # used to be dot
         return val
 
 class DictRBFKernel():
@@ -919,7 +949,8 @@ class DictRBFKernel():
         self._symmetric = symmetric
         self.__km = None
         try:
-            km = mat(zeros((self._dim1, self._dim2), dtype=float64))
+            # km = mat(zeros((self._dim1, self._dim2), dtype=float64))  # old code
+            km = np.array(zeros((self._dim1, self._dim2), dtype=float64))
             if self._symmetric:
                 for i in range(self._dim1):
                     message = 'Kernel Matrix Progress: %dx%d/%dx%d' % (i, self._dim2,self._dim1,self._dim2)

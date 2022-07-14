@@ -389,15 +389,15 @@ class SCARGC:
         avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
         # avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
         # avg_f1_score = np.array(sum(self.f1_score.values()) / len(self.f1_score))
-
-        self.avg_results['Classifier'] = 'SCARGC_' + self.classifier
         self.avg_results['Dataset'] = self.dataset
-        self.avg_results['average_error'] = avg_error
-        self.avg_results['average_accuracy'] = avg_accuracy
+        self.avg_results['Classifier'] = 'SCARGC'
+        self.avg_results['Method'] = self.classifier
+        self.avg_results['Average_Error'] = avg_error
+        self.avg_results['Average_Accuracy'] = avg_accuracy
         # self.avg_results['roc_auc_score'] = avg_roc_auc_score
         # self.avg_results['f1_score'] = avg_f1_score
-        self.avg_results['avg_exec_time'] = avg_exec_time
-        self.avg_results['total_exec_time'] = self.total_time
+        self.avg_results['Avg_Exec_Time'] = avg_exec_time
+        self.avg_results['Total_Exec_Time'] = self.total_time
         time_stamp = time.strftime("%Y%m%d-%H%M%S")
         self.avg_results['Time_Stamp'] = time_stamp
         
