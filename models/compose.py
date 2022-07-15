@@ -74,7 +74,6 @@ class COMPOSE:
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
-        self.hypothesis = {}                #  array of timesteps each containing a N instances x 1 - Classifier hypothesis
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.num_cs = {}                    #  number of core supports 
         self.total_time = 0
@@ -86,7 +85,7 @@ class COMPOSE:
         self.figure_xlim = []
         self.figure_ylim = []
         self.step = 0 
-        self.learner = {}
+        self.learner = {}                   # predictions from base classifier 
         self.classifier_accuracy = {}
         self.classifier_error = {}
         self.time_to_predict = {}
@@ -357,17 +356,10 @@ class COMPOSE:
             total_time_start = time.time() 
             ts = start
             
-            
             for ts in range(0, len(timesteps)-1):                    # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
-                # add core supports to hypothesis
-                self.get_core_supports(self.data[ts])              # create core supports at timestep
                 
-                # if there is labeled data then copy labeles to hypothesis
-                if ts in self.labeled:
-                    self.hypothesis[ts] = self.labeled[ts]         # copy labels onto the hypthosis if they exist
-                else:
-                    self.hypothesis[ts] = self.labeled[ts-1]
+                self.get_core_supports(self.data[ts])              # create core supports at timestep
                 
                 if self.verbose == 1:
                     print("Timestep:",ts)
@@ -381,15 +373,18 @@ class COMPOSE:
                     #     for i in range(0, data_val):
                     #         data_array.pop()
                     #     self.data[ts] = np.array(data_array)
+                    # TODO: Need to match with what the article 
+
                     if self.classifier == 'QN_S3VM':
-                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.hypothesis[ts]) 
+                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.labeled[ts]) 
                     elif self.classifier == 'label_propagation':
-                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.hypothesis[ts])        
+                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.labeled[ts])        
                     t_end = time.time()
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
                     if self.verbose == 1:
                         print("Time to predict: ", elapsed_time, " seconds")
+                    
                 
                 # after firststep
                 if start != ts:
@@ -399,49 +394,48 @@ class COMPOSE:
                         self.core_supports[ts-1] = np.reshape(self.core_supports[ts-1], (np.shape(self.core_supports[ts-1])[0], 1))
                         self.core_supports[ts] = np.reshape(self.core_supports[ts], (np.shape(self.core_supports[ts])[0], 1))
                     
-                    if np.shape(self.core_supports[ts-1])[1] <= np.shape(self.core_supports[ts])[1]:
-                        to_cs = np.zeros((len(self.core_supports[ts]),(np.shape(self.hypothesis[ts-1])[1] - 1)))
-                        self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
+                    # if np.shape(self.core_supports[ts-1])[1] <= np.shape(self.core_supports[ts])[1]:
+                    #     to_cs = np.zeros((len(self.core_supports[ts]),(np.shape(self.learner[ts-1])[0])))
+                    #     self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
 
-                    if np.shape(self.hypothesis[ts-1])[1] < np.shape(self.core_supports[ts-1])[1]:
-                        to_hs = np.zeros((len(self.hypothesis[ts-1]),(np.shape(self.core_supports[ts-1])[1] - np.shape(self.hypothesis[ts-1])[1])))
-                        self.hypothesis[ts-1] = np.column_stack((to_hs, self.hypothesis[ts-1]))
-                    self.hypothesis[ts] = np.append(self.hypothesis[ts-1], self.core_supports[ts-1], axis=0)
+                    # if np.shape(self.learner[ts-1]) < np.shape(self.core_supports[ts-1])[1]:
+                    #     to_hs = np.zeros((len(self.learner[ts-1]),(np.shape(self.core_supports[ts-1])[1] - np.shape(self.learner[ts-1])[0])))
+                    #     self.learner[ts-1] = np.column_stack((to_hs, self.learner[ts-1]))
+                    # self.learner[ts] = np.append(self.learner[ts-1], self.core_supports[ts-1], axis=0)
 
-                    if np.shape(self.labeled[ts-1])[1] < np.shape(self.core_supports[ts-1])[1]:
-                        to_ls = np.zeros((len(self.labeled[ts-1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts-1])[1])))
-                        self.labeled[ts-1] = np.column_stack((to_ls, self.labeled[ts-1]))
-                    self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
+                    # if np.shape(self.labeled[ts-1])[1] < np.shape(self.core_supports[ts-1])[1]:
+                    #     to_ls = np.zeros((len(self.labeled[ts-1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts-1])[1])))
+                    #     self.labeled[ts-1] = np.column_stack((to_ls, self.labeled[ts-1]))
+                    # self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
 
-                    if np.shape(self.labeled[ts+1])[1] < np.shape(self.core_supports[ts-1])[1]:
-                        to_ls = np.zeros((len(self.labeled[ts+1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts+1])[1])))
-                        self.labeled[ts+1] = np.column_stack((to_ls, self.labeled[ts+1]))
+                    # if np.shape(self.labeled[ts+1])[1] < np.shape(self.core_supports[ts-1])[1]:
+                    #     to_ls = np.zeros((len(self.labeled[ts+1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts+1])[1])))
+                    #     self.labeled[ts+1] = np.column_stack((to_ls, self.labeled[ts+1]))
                     
-                    if np.shape(self.unlabeled[ts-1])[1] < np.shape(self.labeled[ts-1])[1]:
-                        to_uls = np.zeros((len(self.unlabeled[ts-1]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts-1])[1])))
-                        self.unlabeled[ts-1] = np.column_stack((to_uls, self.unlabeled[ts-1]))
+                    # if np.shape(self.unlabeled[ts-1])[1] < np.shape(self.labeled[ts-1])[1]:
+                    #     to_uls = np.zeros((len(self.unlabeled[ts-1]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts-1])[1])))
+                    #     self.unlabeled[ts-1] = np.column_stack((to_uls, self.unlabeled[ts-1]))
                     
-                    if np.shape(self.unlabeled[ts])[1] < np.shape(self.labeled[ts-1])[1]:
-                        to_uls = np.zeros((len(self.unlabeled[ts]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts])[1])))
-                        self.unlabeled[ts] = np.column_stack((to_uls, self.unlabeled[ts]))
+                    # if np.shape(self.unlabeled[ts])[1] < np.shape(self.labeled[ts-1])[1]:
+                    #     to_uls = np.zeros((len(self.unlabeled[ts]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts])[1])))
+                    #     self.unlabeled[ts] = np.column_stack((to_uls, self.unlabeled[ts]))
                     
                     t_start = time.time()
                     
                     # if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
                     #     rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
                     #     self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
-                    
-                    self.learner[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts+1], X_test=self.data[ts+1], L_test=self.hypothesis[ts])
+                    self.learner[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts+1], X_test=self.data[ts+1], L_test=self.labeled[ts])
                     t_end = time.time()
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
                     if self.verbose == 1:
                         print("Time to predict: ", elapsed_time, " seconds")  
-                hypoth_label = np.shape(self.hypothesis[ts])[1]-1
-                error = self.classification_error(list(self.learner[ts]), list(self.hypothesis[ts][:,hypoth_label]))
+                hypoth_label = np.shape(self.data[ts])[1]-1
+                error = self.classification_error(list(self.learner[ts]), list(self.data[ts+1][:,hypoth_label]))
                 
-                if len(self.hypothesis[ts][:,hypoth_label]) > len(self.learner[ts]):
-                    dif_hypoth_learner = len(self.hypothesis[ts][:,hypoth_label]) - len(self.learner[ts])
+                if len(self.data[ts+1][:,hypoth_label]) > len(self.learner[ts]):
+                    dif_hypoth_learner = len(self.data[ts+1][:,hypoth_label]) - len(self.learner[ts])
                     zeros_to_add = np.zeros(dif_hypoth_learner)
                     self.learner[ts] = np.append(self.learner[ts], zeros_to_add)
                 
