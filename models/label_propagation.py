@@ -83,6 +83,7 @@ class Label_Propagation:
         self.labels= np.array(X_labeled)
         self.unlabeled = np.array(X_unlabeled)
         self.actual_label = np.shape(X_labeled)[1]-1
+
     def ssl(self): 
         labels = self.labels[:,self.actual_label]
         labels_orig = np.copy(self.labels[:,self.actual_label])
@@ -91,7 +92,7 @@ class Label_Propagation:
         X = self.X
         
         # define model
-        model = LabelPropagation(kernel='knn', n_neighbors=5, gamma=30, max_iter=2000)
+        model = LabelPropagation(kernel='knn', n_neighbors=1, gamma=30, max_iter=2000)
         # fit model on training dataset
         if len(labels) > len(X):
             dif = len(labels) - len(X)

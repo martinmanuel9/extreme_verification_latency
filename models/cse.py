@@ -72,7 +72,8 @@ class CSE:
         elif type(data) is np.ndarray:
             self.data = data
             self.N_Instances = np.shape(self.data)[0]
-            self.N_features = np.shape(self.data)[1]
+            self.N_features =  np.shape(self.data)[1]
+            
         elif type(data) is list:
             self.data = data
             self.N_Instances = len(self.data)
@@ -173,7 +174,7 @@ class CSE:
             self.ashape = {}                                                         # set output to empty dict
             return                                                                   # returns to calling function
         else:
-            simplexes = Delaunay(self.data, qhull_options="Qbb Qc Qz Qx Q12")   # set the output simplexes to the Delaunay Triangulation 
+            simplexes = Delaunay(self.data)   # set the output simplexes to the Delaunay Triangulation - WAS: qhull_options="Qbb Qc Qz Qx Q12"
                                                                                 # ”Qbb Qc Qz Qx Q12” for ndim > 4 for qhull options
             
             for sID in range(0,len(simplexes.simplices)):

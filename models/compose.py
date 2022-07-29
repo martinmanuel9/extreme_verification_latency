@@ -84,8 +84,7 @@ class COMPOSE:
         self.dataset = selected_dataset
         self.figure_xlim = []
         self.figure_ylim = []
-        self.step = 0 
-        self.learner = {}                   # predictions from base classifier 
+        self.predictions = {}                   # predictions from base classifier 
         self.classifier_accuracy = {}
         self.classifier_error = {}
         self.time_to_predict = {}
@@ -93,6 +92,7 @@ class COMPOSE:
         self.avg_results = {}
         self.avg_results_dict = {}
         self.accuracy_sklearn = {}
+        self.stream = {}
         
         if self.classifier is None:
             avail_classifier = ['knn', 's3vm']
@@ -250,7 +250,7 @@ class COMPOSE:
                 concat_tuple = np.vstack(array_tuple)    
                 self.unlabeled[key] = concat_tuple 
 
-    def classify(self, X_train_l, L_train_l, X_train_u, X_test, L_test):
+    def classify(self, X_train_l, L_train_l, X_train_u, X_test):
         """
         Available classifiers : 'label_propagation',  'QN_S3VM'
 
@@ -359,87 +359,105 @@ class COMPOSE:
             for ts in range(0, len(timesteps)-1):                    # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
                 
-                self.get_core_supports(self.data[ts])              # create core supports at timestep
-                
                 if self.verbose == 1:
                     print("Timestep:",ts)
-                self.step = 1
-                # first round with labeled data
-                if ts == 0:
-                    t_start = time.time()
-                    # if np.shape(self.data[ts]) > np.shape(self.labeled[ts]):
-                    #     data_val = int(np.shape(self.data[ts])[0] - np.shape(self.labeled[ts])[0])
-                    #     data_array = list(self.data[ts])
-                    #     for i in range(0, data_val):
-                    #         data_array.pop()
-                    #     self.data[ts] = np.array(data_array)
-                    # TODO: Need to match with what the article 
+                
+                t_start = time.time()
 
+                # Receive Unlabeled Data - step 1 - step 3 
+                # We have received labeled data at initial time step and then we use the base classifier 
+                if ts == 0:
                     if self.classifier == 'QN_S3VM':
-                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.labeled[ts]) 
+                        self.predictions[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1]) 
                     elif self.classifier == 'label_propagation':
-                        self.learner[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1], L_test=self.labeled[ts])        
-                    t_end = time.time()
+                        self.predictions[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])       
+                    
+                    # Set D_t or data stream from concatenating the data stream with the predictions - step 3
+                    # {xl, yl } = self.labeled[ts = 0]
+                    # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
+                    if len(self.data[ts]) > len(self.predictions[ts]):
+                        dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
+                        xu = list(self.data[ts])
+                        for k in range(dif_xu_hu):
+                            xu.pop(0)
+                        self.data[ts] = np.array(xu)
+
+                    # { xu, hu }
+                    xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
+                    
+                    # Dt = { xl , yl } U { xu , hu }  
+                    self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu))
+                    
+                    # set L^t+1 = 0, Y^t = 0 - step 4 
+                    self.labeled[ts+1] = []
+                    
+                    # steps 5 - 7 as it extracts core supports
+                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
+
+                    # L^t+1 = L^t+1 
+                    self.labeled[ts+1] = self.core_supports[ts]
+
+                    t_end = time.time()         
+                    elapsed_time = t_end - t_start
+                    self.time_to_predict[ts] = elapsed_time
+                    
+                    if self.verbose == 1:
+                        print("Time to predict: ", elapsed_time, " seconds")
+
+                # after firststep
+                if start != ts:
+                    # if self.method == 'fast_compose': 
+                    #     self.core_supports[ts-1] = np.reshape(self.core_supports[ts-1], (np.shape(self.core_supports[ts-1])[0], 1))
+                    #     self.core_supports[ts] = np.reshape(self.core_supports[ts], (np.shape(self.core_supports[ts])[0], 1))
+                    
+                    t_start = time.time()
+                    to_cs = np.zeros((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
+                    self.core_supports[ts-1] = np.column_stack((to_cs ,self.core_supports[ts-1]))
+                    
+                    self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts+1], X_test=self.data[ts+1])
+
+                    # Set D_t or data stream from concatenating the data stream with the predictions - step 3
+                    # {xl, yl } = self.labeled[ts = 0]
+                    # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
+                    if len(self.data[ts]) > len(self.predictions[ts]):
+                        dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
+                        xu = list(self.data[ts])
+                        for k in range(dif_xu_hu):
+                            xu.pop(0)
+                        self.data[ts] = np.array(xu)
+
+                    # { xu, hu }
+                    xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
+                    
+                    # Dt = { xl , yl } U { xu , hu } 
+                    # add zeros to self.labeled as they are the core supports from previous 
+                    self.labeled[ts] = np.column_stack((to_cs, self.labeled[ts]))
+                    self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu))
+                    
+                    # set L^t+1 = 0, Y^t = 0 - step 4 
+                    self.labeled[ts+1] = []
+                    
+                    # steps 5 - 7 as it extracts core supports
+                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
+
+                    # L^t+1 = L^t+1 
+                    self.labeled[ts+1] = self.core_supports[ts]
+
+                    t_end = time.time()         
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
                     if self.verbose == 1:
                         print("Time to predict: ", elapsed_time, " seconds")
-                    
                 
-                # after firststep
-                if start != ts:
-                    # append core supports to hypothesis 
-                    # add labeled and hypothesis with core supports
-                    if self.method == 'fast_compose': 
-                        self.core_supports[ts-1] = np.reshape(self.core_supports[ts-1], (np.shape(self.core_supports[ts-1])[0], 1))
-                        self.core_supports[ts] = np.reshape(self.core_supports[ts], (np.shape(self.core_supports[ts])[0], 1))
-                    
-                    # if np.shape(self.core_supports[ts-1])[1] <= np.shape(self.core_supports[ts])[1]:
-                    #     to_cs = np.zeros((len(self.core_supports[ts]),(np.shape(self.learner[ts-1])[0])))
-                    #     self.core_supports[ts-1] = np.column_stack((to_cs, self.core_supports[ts-1]))
-
-                    # if np.shape(self.learner[ts-1]) < np.shape(self.core_supports[ts-1])[1]:
-                    #     to_hs = np.zeros((len(self.learner[ts-1]),(np.shape(self.core_supports[ts-1])[1] - np.shape(self.learner[ts-1])[0])))
-                    #     self.learner[ts-1] = np.column_stack((to_hs, self.learner[ts-1]))
-                    # self.learner[ts] = np.append(self.learner[ts-1], self.core_supports[ts-1], axis=0)
-
-                    # if np.shape(self.labeled[ts-1])[1] < np.shape(self.core_supports[ts-1])[1]:
-                    #     to_ls = np.zeros((len(self.labeled[ts-1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts-1])[1])))
-                    #     self.labeled[ts-1] = np.column_stack((to_ls, self.labeled[ts-1]))
-                    # self.labeled[ts] = np.append(self.labeled[ts-1], self.core_supports[ts-1], axis=0)
-
-                    # if np.shape(self.labeled[ts+1])[1] < np.shape(self.core_supports[ts-1])[1]:
-                    #     to_ls = np.zeros((len(self.labeled[ts+1]), (np.shape(self.core_supports[ts-1])[1] - np.shape(self.labeled[ts+1])[1])))
-                    #     self.labeled[ts+1] = np.column_stack((to_ls, self.labeled[ts+1]))
-                    
-                    # if np.shape(self.unlabeled[ts-1])[1] < np.shape(self.labeled[ts-1])[1]:
-                    #     to_uls = np.zeros((len(self.unlabeled[ts-1]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts-1])[1])))
-                    #     self.unlabeled[ts-1] = np.column_stack((to_uls, self.unlabeled[ts-1]))
-                    
-                    # if np.shape(self.unlabeled[ts])[1] < np.shape(self.labeled[ts-1])[1]:
-                    #     to_uls = np.zeros((len(self.unlabeled[ts]), (np.shape(self.labeled[ts-1])[1] - np.shape(self.unlabeled[ts])[1])))
-                    #     self.unlabeled[ts] = np.column_stack((to_uls, self.unlabeled[ts]))
-                    
-                    t_start = time.time()
-                    
-                    # if np.shape(self.labeled[ts]) > np.shape(self.labeled[ts-1]):
-                    #     rows_to_add = int(np.shape(self.labeled[ts])[0] - np.shape(self.labeled[ts-1])[0])
-                    #     self.labeled[ts-1] = np.append(self.labeled[ts-1], np.ones((rows_to_add,np.shape(self.labeled[ts-1])[1])), axis=0)
-                    self.learner[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts+1], X_test=self.data[ts+1], L_test=self.labeled[ts])
-                    t_end = time.time()
-                    elapsed_time = t_end - t_start
-                    self.time_to_predict[ts] = elapsed_time
-                    if self.verbose == 1:
-                        print("Time to predict: ", elapsed_time, " seconds")  
                 hypoth_label = np.shape(self.data[ts])[1]-1
-                error = self.classification_error(list(self.learner[ts]), list(self.data[ts+1][:,hypoth_label]))
+                error = self.classification_error(list(self.predictions[ts]), list(self.data[ts+1][:,hypoth_label]))
                 
-                if len(self.data[ts+1][:,hypoth_label]) > len(self.learner[ts]):
-                    dif_hypoth_learner = len(self.data[ts+1][:,hypoth_label]) - len(self.learner[ts])
+                if len(self.data[ts+1][:,hypoth_label]) > len(self.predictions[ts]):
+                    dif_hypoth_learner = len(self.data[ts+1][:,hypoth_label]) - len(self.predictions[ts])
                     zeros_to_add = np.zeros(dif_hypoth_learner)
-                    self.learner[ts] = np.append(self.learner[ts], zeros_to_add)
+                    self.predictions[ts] = np.append(self.predictions[ts], zeros_to_add)
                 
-                # self.accuracy_sklearn[ts] = metric.accuracy_score(self.learner[ts], self.hypothesis[ts][:,hypoth_label])           
+                # self.accuracy_sklearn[ts] = metric.accuracy_score(self.predictions[ts], self.predictions[ts][:,hypoth_label])           
                 self.classifier_accuracy[ts] = (1-error) 
                 self.classifier_error[ts] = error
                 
@@ -448,7 +466,6 @@ class COMPOSE:
                     print("Accuracy: ", 1 - error)
                     # self.plotter()
                     
-                self.step = 2 
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start
             if self.verbose == 1:
