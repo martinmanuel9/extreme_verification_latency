@@ -40,10 +40,9 @@ import sklearn.metrics as metric
 
 class ClassifierMetrics:
 
-    def __init__(self, preds, test, timestep, dataset, method, classifier, time_to_predict ):
+    def __init__(self, preds, test, dataset, method, classifier, time_to_predict ):
         self.preds = preds
         self.test = test
-        self.timestep = timestep
         self.selected_dataset = dataset
         self.method = method
         self.classifier = classifier
@@ -54,9 +53,13 @@ class ClassifierMetrics:
         self.accuracy_score_sklearn = {}
         self.classifier_accuracy = {}
 
+        # run classification error and gather results
+        self.classification_error(self.preds, self.test)
+        self.results_logs()
+
     def classification_error(self, preds, L_test):  
         self.classifier_error[self.timestep] =  np.sum(preds != L_test)/len(preds)
-        self.classifier_accuracy[self.timestep] = 1 - self.classifier_error[self.timestep] * 100
+        self.classifier_accuracy[self.timestep] = 1 - self.classifier_error[self.timestep] 
 
     def results_logs(self):
             avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
@@ -77,3 +80,5 @@ class ClassifierMetrics:
             accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
             x = accuracy_scores['Timesteps']
             y = accuracy_scores['Accuracy']
+
+            

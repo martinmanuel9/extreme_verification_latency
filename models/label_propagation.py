@@ -71,11 +71,13 @@ PhD Advisor: Dr. Gregory Ditzler
 # # summarize score
 # print('Accuracy: %.3f' % (score*100))
 
+from socket import if_nametoindex
 from sklearn.semi_supervised import LabelPropagation
 from sklearn.metrics import confusion_matrix, classification_report
 import numpy as np
 from sklearn import preprocessing
 from sklearn import utils
+import random
 
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
@@ -86,21 +88,32 @@ class Label_Propagation:
 
     def ssl(self): 
         labels = self.labels[:,self.actual_label]
-        labels_orig = np.copy(self.labels[:,self.actual_label])
-        labels = np.floor(labels)
-        labels_orig = np.floor(labels_orig)
+        # labels_orig = np.copy(self.labels[:,self.actual_label])
+        # labels = np.floor(labels)
+        # labels_orig = np.floor(labels_orig)
         X = self.X
         
         # define model
-        model = LabelPropagation(kernel='knn', n_neighbors=1, gamma=30, max_iter=2000)
+        model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
         # fit model on training dataset
-        if len(labels) > len(X):
-            dif = len(labels) - len(X)
-            labels_change = list(labels)
+        print("before" , np.shape(X), np.shape(labels))
+        if len(labels) < len(X):
+            dif = len(X) - len(labels)
+            labels_to_add = []
             for r in range(dif):
-                labels_change.pop(0)
-            labels = np.array(labels_change)
+                rndm_label = random.choice(labels)
+                labels_to_add = np.append(labels_to_add, rndm_label)
+            labels = np.append(labels, labels_to_add)
         
+        if len(X) < len(labels):
+            dif = len(labels) - len(X)
+            X_to_add =[]
+            for k in range(dif):
+                rdm_X = random.choice(X)
+                X_to_add = np.append(X_to_add, rdm_X)
+            X = np.append(X, X_to_add)
+        print(np.shape(X), np.shape(labels))
+
         model.fit(X, labels)
         # make predictions
         predicted_labels = model.predict(X)

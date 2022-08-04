@@ -82,8 +82,6 @@ class CSE:
             print("Please ensure that you pass in data to extract core supports!")
             exit() 
 
-            
-
     # Set Boundary Construction Type and Options 
     def set_boundary(self, boundary_selection, opts=None):
         if not opts:
@@ -110,14 +108,6 @@ class CSE:
             print('Boundary construction type not set - default classifier and options loaded') 
             # set gmm as defualt boundary
             self.set_boundary('gmm', opts='gmm')
-
-        # plot labeled and unlabeled data 
-        if self.verbose == 2:
-            self.plot_cse([])
-        
-        # run boundary constructor and extract indices of core supporting instances 
-        # inds = obj.boundary(obj);
-        
 
         if self.verbose == 2:
             self.plot_cse(self.Indices)
@@ -166,7 +156,6 @@ class CSE:
         uniques = np.unique(set_data, axis=0)
         self.data = np.array(uniques)
         
-        
         if self.N_Instances < self.N_features + 1:            # If a class does not have enought points to construct a tesselation 
             print("Warning::Alpha_Shape::Tesselation_Construction" +
             "Data of dimension", self.N_features, "requires a minimum of", (self.N_features + 1)," unique points.\n" +
@@ -174,7 +163,7 @@ class CSE:
             self.ashape = {}                                                         # set output to empty dict
             return                                                                   # returns to calling function
         else:
-            simplexes = Delaunay(self.data)   # set the output simplexes to the Delaunay Triangulation - WAS: qhull_options="Qbb Qc Qz Qx Q12"
+            simplexes = Delaunay(self.data,qhull_options='Qbb Qc Qz Qx Q12' )   # set the output simplexes to the Delaunay Triangulation - WAS: qhull_options='Qbb Qc Qz Qx Q12'
                                                                                 # ”Qbb Qc Qz Qx Q12” for ndim > 4 for qhull options
             
             for sID in range(0,len(simplexes.simplices)):
@@ -312,6 +301,8 @@ class CSE:
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
         # BIC = GMM(n_components=2).fit(x_ul) 
+
+        # TODO: Need to predict values and determine what is our training and what is test as we need to capture the GMM
         
         if self.boundary_opts['kl'] == self.boundary_opts['kh']:
             gmm_range = self.boundary_opts['kl'] + 1

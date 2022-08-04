@@ -51,6 +51,7 @@ import util as ut
 import matplotlib.animation as animation
 import math
 import sklearn.metrics as metric
+import classifier_performance as cp
 
 class COMPOSE: 
     def __init__(self, 
@@ -377,10 +378,13 @@ class COMPOSE:
                     # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
                     if len(self.data[ts]) > len(self.predictions[ts]):
                         dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
-                        xu = list(self.data[ts])
+                        preds_to_add = []
                         for k in range(dif_xu_hu):
-                            xu.pop(0)
-                        self.data[ts] = np.array(xu)
+                            randm_list = np.unique(self.predictions[ts])
+                            rdm_preds = random.choice(randm_list)
+                            preds_to_add = np.append(preds_to_add, rdm_preds)
+                        self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
+                            
 
                     # { xu, hu }
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
@@ -392,6 +396,7 @@ class COMPOSE:
                     self.labeled[ts+1] = []
                     
                     # steps 5 - 7 as it extracts core supports
+            
                     self.get_core_supports(self.stream[ts])              # create core supports at timestep
 
                     # L^t+1 = L^t+1 
@@ -406,31 +411,29 @@ class COMPOSE:
 
                 # after firststep
                 if start != ts:
-                    # if self.method == 'fast_compose': 
-                    #     self.core_supports[ts-1] = np.reshape(self.core_supports[ts-1], (np.shape(self.core_supports[ts-1])[0], 1))
-                    #     self.core_supports[ts] = np.reshape(self.core_supports[ts], (np.shape(self.core_supports[ts])[0], 1))
-                    
                     t_start = time.time()
-                    to_cs = np.zeros((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
+                    to_cs = np.ones((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
                     self.core_supports[ts-1] = np.column_stack((to_cs ,self.core_supports[ts-1]))
                     
-                    self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts+1], X_test=self.data[ts+1])
+                    self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
 
                     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
                     # {xl, yl } = self.labeled[ts = 0]
                     # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
                     if len(self.data[ts]) > len(self.predictions[ts]):
                         dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
-                        xu = list(self.data[ts])
+                        preds_to_add = []
                         for k in range(dif_xu_hu):
-                            xu.pop(0)
-                        self.data[ts] = np.array(xu)
-
+                            randm_list = np.unique(self.predictions[ts])
+                            rdm_preds = random.choice(randm_list)
+                            preds_to_add = np.append(preds_to_add, rdm_preds)
+                        self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
+                    
                     # { xu, hu }
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
                     
                     # Dt = { xl , yl } U { xu , hu } 
-                    # add zeros to self.labeled as they are the core supports from previous 
+                    # add ones to complete to self.labeled as they are the core supports from previous 
                     self.labeled[ts] = np.column_stack((to_cs, self.labeled[ts]))
                     self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu))
                     
@@ -457,10 +460,9 @@ class COMPOSE:
                     zeros_to_add = np.zeros(dif_hypoth_learner)
                     self.predictions[ts] = np.append(self.predictions[ts], zeros_to_add)
                 
-                # self.accuracy_sklearn[ts] = metric.accuracy_score(self.predictions[ts], self.predictions[ts][:,hypoth_label])           
                 self.classifier_accuracy[ts] = (1-error) 
                 self.classifier_error[ts] = error
-                
+
                 if self.verbose == 1:
                     print("Classification error: ", error)
                     print("Accuracy: ", 1 - error)
@@ -471,4 +473,6 @@ class COMPOSE:
             if self.verbose == 1:
                 print('Total Time', self.total_time)
             ## Report out
+            # classifier_perf = cp.ClassifierMetrics(preds = self.predictions, test= self.data, timestep= ts,\
+            #                         method= self.method, classifier= self.classifier, dataset= self.selected_dataset, time_to_predict= self.time_to_predict[ts])
             return self.results_logs()
