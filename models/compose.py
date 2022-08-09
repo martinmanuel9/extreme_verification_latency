@@ -397,7 +397,7 @@ class COMPOSE:
                     
                     # steps 5 - 7 as it extracts core supports
             
-                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
+                    self.get_core_supports(data= self.stream[ts])              # create core supports at timestep
 
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
@@ -412,7 +412,7 @@ class COMPOSE:
                 # after firststep
                 if start != ts:
                     t_start = time.time()
-                    to_cs = np.ones((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
+                    to_cs = np.zeros((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
                     self.core_supports[ts-1] = np.column_stack((to_cs ,self.core_supports[ts-1]))
                     
                     self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
