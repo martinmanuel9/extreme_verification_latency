@@ -49,7 +49,7 @@ from sklearn.mixture import GaussianMixture as GMM
 import util
 import knn
 import scipy.special as sp
-from sklearn.model_selection import KFold
+from matplotlib import pyplot as plt
 
 
 class CSE:
@@ -295,11 +295,6 @@ class CSE:
     ## GMM Clustering
     def gmm(self):
         x_ul = self.data
-        kf = KFold(n_splits = 4)
-        for train_index, test_index in kf.split(x_ul)
-            X_train, X_test = x_ul[train_index], x_ul[test_index]
-        # what is my Y_train, X_test????
-        n_classes = len(np.unique(x_ul[:,-1]))
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
         BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)   # Bayesian Info Criterion
         GM = {}
@@ -308,24 +303,29 @@ class CSE:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
         # BIC = GMM(n_components=2).fit(x_ul) 
 
-        # TODO: Need to predict values and determine what is our training and what is test as we need to capture the GMM
+        # TODO: Need to determine 
         
         if self.boundary_opts['kl'] == self.boundary_opts['kh']:
             gmm_range = self.boundary_opts['kl'] + 1
-            for i in range(1,gmm_range):
-                GM[i] = GMM(n_components = n_classes).fit(x_ul)
-                preds[i] = GMM.predict()
+            for i in range(1, gmm_range):
+                GM[i] = GMM(n_components = self.N_features).fit(x_ul)
+                preds[i] = GM[i].predict(x_ul)
                 BIC.append(GM[i].bic(x_ul))
         else:
             upper_range = self.boundary_opts['kh'] + 1
             for i in range(self.boundary_opts['kl'], upper_range):
-                GM[i] = GMM(n_components= n_classes).fit(x_ul)
+                GM[i] = GMM(n_components= self.N_features).fit(x_ul)
+                preds[i] = GM[i].predict(x_ul)
                 BIC.append(GM[i].bic(x_ul))
-        
+        gmm_preds = np.array(list(preds.values()))
+        print(preds.values())
+        plt.scatter(x_ul[:,0], x_ul[:,1], c=gmm_preds, s=40, cmap='viridis')
+        plt.show()
         temp = self.boundary_opts['kl'] - 1
         minBIC = np.min(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
 
         numComponents = BIC.count(minBIC) 
+        print(numComponents)
         
         # need to calculate the Mahalanobis Distance for GMM
         get_MD = util.Util(data=x_ul)
