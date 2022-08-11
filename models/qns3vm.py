@@ -1,3 +1,4 @@
+#%%
 ############################################################################################
 # QN-S3VM BFGS optimizer for semi-supervised support vector machines.
 #

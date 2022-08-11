@@ -1,3 +1,4 @@
+#%%
 #!/usr/bin/env python 
 
 """
@@ -319,7 +320,9 @@ class CSE:
                 BIC.append(GM[i].bic(x_ul))
         gmm_preds = np.array(list(preds.values()))
         print(preds.values())
-        plt.scatter(x_ul[:,0], x_ul[:,1], c=gmm_preds, s=40, cmap='viridis')
+        plt.figure()
+        plt.scatter(x_ul[:,0], x_ul[:,1], s=40, cmap='viridis')
+        plt.plot()
         plt.show()
         temp = self.boundary_opts['kl'] - 1
         minBIC = np.min(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
@@ -388,3 +391,5 @@ class CSE:
         neighbors_dist = np.array(neighbors_dist)
         sort_neighbors = np.sort(neighbors_dist)
         return sort_neighbors
+
+# %%
