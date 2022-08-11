@@ -1,4 +1,3 @@
-#%%
 #!/usr/bin/env python 
 
 """
@@ -163,14 +162,14 @@ class COMPOSE:
         if self.verbose == 1:
             print("Number of cores executing:", self.n_cores)
 
-    def get_core_supports(self, input_data = None):
+    def get_core_supports(self, input_data = None, next_data = None):
         """
         Method provides core supports based on desired core support extraction.
         Available Core Support Extraction includes: 
         GMM, Parzen Window, and Alpha Shape Core Supports
         """
 
-        self.cse = cse.CSE(data=input_data)           # gets core support based on first timestep
+        self.cse = cse.CSE(data=input_data, next_data= next_data)           # gets core support based on first timestep
 
         if self.method == 'fast_compose':
             self.cse.set_boundary('gmm')
@@ -397,7 +396,7 @@ class COMPOSE:
                     self.labeled[ts+1] = []
                     
                     # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
+                    self.get_core_supports(self.stream[ts], self.data[ts+1])              # create core supports at timestep
 
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
@@ -441,7 +440,7 @@ class COMPOSE:
                     self.labeled[ts+1] = []
                     
                     # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
+                    self.get_core_supports(self.stream[ts], self.data[ts+1])              # create core supports at timestep
 
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
