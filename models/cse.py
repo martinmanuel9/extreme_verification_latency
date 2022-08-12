@@ -69,12 +69,12 @@ class CSE:
         if type(data) is dict:
             self.data = utility.makeDataFrame(data)     
             self.N_Instances = np.shape(self.data)[0]
-            self.N_features = np.shape(self.data)[1]
-            self.predictions = utility.makeDataFrame(preds)
+            self.N_features = np.shape(self.data)[1] - 1
+            
         elif type(data) is np.ndarray:
             self.data = data
             self.N_Instances = np.shape(self.data)[0]
-            self.N_features =  np.shape(self.data)[1]
+            self.N_features =  np.shape(self.data)[1] - 1
         elif type(data) is list:
             self.data = data
             self.N_Instances = len(self.data)
@@ -299,54 +299,58 @@ class CSE:
         y_test = self.test
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
         BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)   # Bayesian Info Criterion
-        GM = {}
-        preds = {}
+        GM = [] #{}
+        preds = [] #{}
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
-        # BIC = GMM(n_components=2).fit(x_ul) 
+        
 
-        # TODO: Need to determine
-        n_classes = np.unique(x_ul[:,-1])
-        if len(n_classes) < self.N_features:
-            n_classes = self.N_features
+        # TODO: issue with ambiguous 
         
-        if self.boundary_opts['kl'] == self.boundary_opts['kh']:
-            gmm_range = self.boundary_opts['kl'] + 1
-            for i in range(1, gmm_range):
-                GM[i] = GMM(n_components = n_classes).fit(x_ul)
-                preds[i] = GM[i].predict(y_test)
-                BIC.append(GM[i].bic(y_test))
-        else:
-            upper_range = self.boundary_opts['kh'] + 1
-            for i in range(self.boundary_opts['kl'], upper_range):
-                GM[i] = GMM(n_components= n_classes).fit(x_ul)
-                preds[i] = GM[i].predict(x_ul)
-                BIC.append(GM[i].bic(x_ul))
+        GM = GMM(n_components = self.N_features).fit(x_ul)
+        preds = GM.predict(y_test[:-1])
+        BIC.append(GM.bic(x_ul))
+        
+        # if self.boundary_opts['kl'] == self.boundary_opts['kh']:
+        #     gmm_range = self.boundary_opts['kl'] + 1
+        #     for i in range(1, gmm_range):
+        #         GM[i] = GMM(n_components = n_classes).fit(x_ul)
+        #         preds[i] = GM[i].predict(y_test[:-1])
+        #         BIC.append(GM[i].bic(y_test))
+        # else:
+        #     upper_range = self.boundary_opts['kh'] + 1
+        #     for i in range(self.boundary_opts['kl'], upper_range):
+        #         GM[i] = GMM(n_components= n_classes).fit(x_ul)
+        #         preds[i] = GM[i].predict_proba(y_test[:,-1])
+        #         BIC.append(GM[i].bic(x_ul))
+        
+        # print(preds)
+        # plt.figure()
+        # plt.scatter(x_ul[:,0], x_ul[:,1]) 
+        # plt.plot()
+        # plt.show()
 
-        gmm_preds = np.array(list(preds.values()))
-        print(np.shape(gmm_preds))
-        plt.figure()
-        plt.scatter(y_test[:,0], y_test[:,1], s= 0.8, color="navy")
-        plt.plot()
-        plt.show()
-        temp = self.boundary_opts['kl'] - 1
-        minBIC = np.min(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
+        
+        # temp = self.boundary_opts['kl'] - 1
+        # minBIC = np.min(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
+        
+        # numComponents = BIC.count(minBIC) 
+        
+        # # need to calculate the Mahalanobis Distance for GMM
+        # get_MD = util.Util(data=x_ul)
+        # D = get_MD.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
+        
+        # mahalDistance = np.array(D)
+        # minMahal = np.min(mahalDistance)
+        # # I = np.where(minMahal)[0]
+        
+        # sortMahal = np.sort(mahalDistance)
+        # IX = np.where(sortMahal)
+        # support_indices = sortMahal[:core_support_cutoff]
+        # self.boundary_data['BIC'] = BIC
 
-        numComponents = BIC.count(minBIC) 
-        
-        # need to calculate the Mahalanobis Distance for GMM
-        get_MD = util.Util(data=x_ul)
-        D = get_MD.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
-        
-        mahalDistance = np.array(D)
-        minMahal = np.min(mahalDistance)
-        # I = np.where(minMahal)[0]
-        
-        sortMahal = np.sort(mahalDistance)
-        IX = np.where(sortMahal)
-        support_indices = sortMahal[:core_support_cutoff]
-        self.boundary_data['BIC'] = BIC
-        
+        support_indices = np.ones((len(preds), self.N_features))
+        support_indices = np.column_stack((support_indices, preds))
         return support_indices
     
     # Parzen Window Clustering

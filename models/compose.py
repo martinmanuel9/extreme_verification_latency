@@ -396,7 +396,7 @@ class COMPOSE:
                     self.labeled[ts+1] = []
                     
                     # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts], self.data[ts+1])              # create core supports at timestep
+                    self.get_core_supports(self.stream[ts], self.labeled[ts])              # create core supports at timestep
 
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
@@ -411,8 +411,10 @@ class COMPOSE:
                 # after firststep
                 if start != ts:
                     t_start = time.time()
-                    to_cs = np.zeros((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
-                    self.core_supports[ts-1] = np.column_stack((to_cs ,self.core_supports[ts-1]))
+
+                    # removed after cse update
+                    # to_cs = np.zeros((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
+                    # self.core_supports[ts-1] = np.column_stack((to_cs ,self.core_supports[ts-1]))
                     
                     self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
 
@@ -432,9 +434,9 @@ class COMPOSE:
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
                     
                     # Dt = { xl , yl } U { xu , hu } 
-                    # add ones to complete to self.labeled as they are the core supports from previous 
-                    self.labeled[ts] = np.column_stack((to_cs, self.labeled[ts]))
-                    self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu))
+                    
+                    self.labeled[ts] = np.vstack((self.core_supports[ts-1], self.labeled[ts])) # to_cs , labeled
+                    self.stream[ts] = np.vstack((self.labeled[ts], xu_hu))
                     
                     # set L^t+1 = 0, Y^t = 0 - step 4 
                     self.labeled[ts+1] = []
@@ -456,8 +458,8 @@ class COMPOSE:
                 
                 if len(self.data[ts+1][:,hypoth_label]) > len(self.predictions[ts]):
                     dif_hypoth_learner = len(self.data[ts+1][:,hypoth_label]) - len(self.predictions[ts])
-                    zeros_to_add = np.zeros(dif_hypoth_learner)
-                    self.predictions[ts] = np.append(self.predictions[ts], zeros_to_add)
+                    ones_to_add = np.ones(dif_hypoth_learner)
+                    self.predictions[ts] = np.append(self.predictions[ts], ones_to_add)
                 
                 self.classifier_accuracy[ts] = (1-error) 
                 self.classifier_error[ts] = error

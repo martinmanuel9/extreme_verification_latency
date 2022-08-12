@@ -106,7 +106,7 @@ class Label_Propagation:
             labels = np.append(labels, labels_to_add)
         elif len(X) < len(labels):
             dif = len(labels) - len(X)
-            X_to_add = np.zeros(np.shape(X)[1])
+            X_to_add = np.ones(np.shape(X)[1])
             for k in range(dif):
                 rdm_X = random.randint(0, len(X)-1)
                 X_to_add = np.vstack((X_to_add, X[rdm_X]))
