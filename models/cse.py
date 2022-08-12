@@ -303,40 +303,28 @@ class CSE:
         preds = [] #{}
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
-        
 
-        # TODO: issue with ambiguous 
-        
-        GM = GMM(n_components = self.N_features).fit(x_ul)
-        preds = GM.predict(y_test[:-1])
+        # creates Gaussian Mixutre Model (GMM)
+        GM = GMM(n_components = self.N_features + 1).fit(x_ul)
+        preds = GM.predict(y_test)
         BIC.append(GM.bic(x_ul))
-        
-        # if self.boundary_opts['kl'] == self.boundary_opts['kh']:
-        #     gmm_range = self.boundary_opts['kl'] + 1
-        #     for i in range(1, gmm_range):
-        #         GM[i] = GMM(n_components = n_classes).fit(x_ul)
-        #         preds[i] = GM[i].predict(y_test[:-1])
-        #         BIC.append(GM[i].bic(y_test))
-        # else:
-        #     upper_range = self.boundary_opts['kh'] + 1
-        #     for i in range(self.boundary_opts['kl'], upper_range):
-        #         GM[i] = GMM(n_components= n_classes).fit(x_ul)
-        #         preds[i] = GM[i].predict_proba(y_test[:,-1])
-        #         BIC.append(GM[i].bic(x_ul))
-        
-        # print(preds)
+
+        ## Plots GMM 
         # plt.figure()
         # plt.scatter(x_ul[:,0], x_ul[:,1]) 
         # plt.plot()
         # plt.show()
+        
 
+        support_indices = np.ones((len(preds), self.N_features))
+        support_indices = np.column_stack((support_indices, preds))
         
         # temp = self.boundary_opts['kl'] - 1
         # minBIC = np.min(BIC)              # minimum Baysian Information Criterion (BIC) - used to see if we fit under MLE
         
         # numComponents = BIC.count(minBIC) 
         
-        # # need to calculate the Mahalanobis Distance for GMM
+        # # # need to calculate the Mahalanobis Distance for GMM
         # get_MD = util.Util(data=x_ul)
         # D = get_MD.MahalanobisDistance()  # calculates Mahalanobis Distance - outlier detection
         
@@ -349,8 +337,6 @@ class CSE:
         # support_indices = sortMahal[:core_support_cutoff]
         # self.boundary_data['BIC'] = BIC
 
-        support_indices = np.ones((len(preds), self.N_features))
-        support_indices = np.column_stack((support_indices, preds))
         return support_indices
     
     # Parzen Window Clustering
