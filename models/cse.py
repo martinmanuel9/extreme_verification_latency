@@ -309,11 +309,11 @@ class CSE:
         preds = GM.predict(y_test)
         BIC.append(GM.bic(x_ul))
 
-        ## Plots GMM 
-        # plt.figure()
-        # plt.scatter(x_ul[:,0], x_ul[:,1]) 
-        # plt.plot()
-        # plt.show()
+        # Plots GMM 
+        plt.figure()
+        plt.scatter(x_ul[:,0], x_ul[:,1]) 
+        plt.plot()
+        plt.show()
         
 
         support_indices = np.ones((len(preds), self.N_features))
