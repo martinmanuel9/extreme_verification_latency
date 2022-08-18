@@ -50,7 +50,7 @@ import util
 import knn
 import scipy.special as sp
 from matplotlib import pyplot as plt
-
+import matplotlib as mpl
 
 class CSE:
     def __init__(self, data=None, next_data = None):
@@ -307,11 +307,39 @@ class CSE:
         # creates Gaussian Mixutre Model (GMM)
         GM = GMM(n_components = self.N_features + 1).fit(x_ul)
         preds = GM.predict(y_test)
+        
         BIC.append(GM.bic(x_ul))
 
-        # Plots GMM 
-        plt.figure()
+        # # Plots GMM
+        
+
+        colors = ["green", "purple"]
+
+        ax = plt.subplot(2, self.N_features // 2, 2)
+        for n, color in enumerate(colors):
+            if GM.covariance_type == "full":
+                covariances = GM.covariances_[n][:2, :2]
+            elif GM.covariance_type == "tied":
+                covariances = GM.covariances_[:2, :2]
+            elif GM.covariance_type == "diag":
+                covariances = np.diag(GM.covariances_[n][:2])
+            elif GM.covariance_type == "spherical":
+                covariances = np.eye(GM.means_.shape[1]) * GM.covariances_[n]
+            v, w = np.linalg.eigh(covariances)
+            u = w[0] / np.linalg.norm(w[0])
+            angle = np.arctan2(u[1], u[0])
+            angle = 180 * angle / np.pi  # convert to degrees
+            v = 2.0 * np.sqrt(2.0) * np.sqrt(v)
+            ell = mpl.patches.Ellipse(
+                GM.means_[n, :2], v[0], v[1], 180 + angle, color=color
+            )
+            ell.set_clip_box(ax.bbox)
+            ell.set_alpha(0.5)
+            ax.add_artist(ell)
+            ax.set_aspect("equal", "datalim")
+        
         plt.scatter(x_ul[:,0], x_ul[:,1]) 
+        plt.scatter(y_test[0,:], y_test[1,:], c="orange", zorder=10, s=100)
         plt.plot()
         plt.show()
         
