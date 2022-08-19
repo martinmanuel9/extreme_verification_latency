@@ -46,7 +46,9 @@ import time
 import scargc
 import os
 import time
-from pathlib import Path  
+from pathlib import Path 
+import numpy as np
+
 
 class RunExperiment:
 

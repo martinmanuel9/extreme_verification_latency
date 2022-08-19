@@ -78,7 +78,7 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn import utils
 import random
-
+np.seterr(invalid='ignore')
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
         self.X = np.array(X_train)
@@ -86,7 +86,8 @@ class Label_Propagation:
         self.unlabeled = np.array(X_unlabeled)
         self.actual_label = np.shape(X_labeled)[1]-1
 
-    def ssl(self): 
+    def ssl(self):
+        
         labels = self.labels[:,self.actual_label]
         # labels_orig = np.copy(self.labels[:,self.actual_label])
         # labels = np.floor(labels)
@@ -112,8 +113,11 @@ class Label_Propagation:
                 X_to_add = np.vstack((X_to_add, X[rdm_X]))
             X_to_add = np.delete(X_to_add, 0, axis=0)
             X = np.vstack((X, X_to_add))
+            
         
-        model.fit(X, labels)
+        with np.errstate(divide='ignore'):
+            model.fit(X, labels)
+        
         # make predictions
         predicted_labels = model.predict(X)
 

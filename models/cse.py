@@ -35,6 +35,7 @@ PhD Advisor: Dr. Gregory Ditzler
 # SOFTWARE.
 
 from random import random
+from tkinter import Y
 from numpy.lib.function_base import diff
 from numpy.lib.twodim_base import diag
 from pandas.core.frame import DataFrame
@@ -50,7 +51,7 @@ import util
 import knn
 import scipy.special as sp
 from matplotlib import pyplot as plt
-import matplotlib as mpl
+from sklearn.model_selection import StratifiedKFold
 
 class CSE:
     def __init__(self, data=None, next_data = None):
@@ -292,11 +293,11 @@ class CSE:
         # return core supports 
         support_indices = self.ashape['simplexes'][np.where(self.ashape['core_support']==1)[0]]
         return support_indices
-        
+    
     ## GMM Clustering
     def gmm(self):
         x_ul = self.data
-        y_test = self.test
+        y = self.test
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
         BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)   # Bayesian Info Criterion
         GM = [] #{}
@@ -306,18 +307,16 @@ class CSE:
 
         # creates Gaussian Mixutre Model (GMM)
         GM = GMM(n_components = self.N_features + 1).fit(x_ul)
-        preds = GM.predict(y_test)
-        
+        preds = GM.predict(Y)
         BIC.append(GM.bic(x_ul))
 
-        # # Plots GMM
+        # Plots GMM
         plt.scatter(x_ul[:,0], x_ul[:,1]) 
-        plt.scatter(y_test[0,:], y_test[1,:], c="orange", zorder=10, s=100)
+        plt.scatter(y[0,:], y[1,:], c="orange", zorder=10, s=100)
         plt.plot()
         plt.show()
-        
 
-        support_indices = np.ones((len(preds), self.N_features))
+        support_indices = np.zeros((len(preds), self.N_features))
         support_indices = np.column_stack((support_indices, preds))
         
         # temp = self.boundary_opts['kl'] - 1
