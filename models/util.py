@@ -54,21 +54,21 @@ class Util:
         self.data = pd.DataFrame(data)
         self.N_features = np.shape(self.data)[1]
 
-    def MahalanobisDistance(self, cov=None, data=None):
+    def MahalanobisDistance(self, x=None, cov=None, data=None):
         """Compute the Mahalanobis Distance between each row of x and the data  
         x    : vector or matrix of data with, say, p columns.
         data : ndarray of the distribution from which Mahalanobis distance of each observation of x is to be computed.
         cov  : covariance matrix (p x p) of the distribution. If None, will be computed from data.
         """
 
-        data = self.data
+        # data = self.data
 
-        colmn_mean = data.mean()
-        x_mu = []
-        for i in range(np.shape(data)[0]):
-            x_mu.append(data.iloc[i] - colmn_mean)
+        # colmn_mean = data.mean()
+        # x_mu = []
+        # for i in range(np.shape(data)[0]):
+        #     x_mu.append(data.iloc[i] - colmn_mean)
 
-        x_minus_mean = np.array(x_mu)
+        x_minus_mean = x - np.mean(data)
         if not cov:
             cov = np.cov(data.values.T)
         
