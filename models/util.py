@@ -70,10 +70,9 @@ class Util:
 
         x_minus_mean = x - np.mean(data)
         if not cov:
-            cov = np.cov(data.values.T)
+            cov = np.cov(data.T)
         
         # print(cov)
-        
         inv_cov = sp.linalg.pinv(cov)
         # print(inv_covmat)
         left_term = np.dot(x_minus_mean, inv_cov)

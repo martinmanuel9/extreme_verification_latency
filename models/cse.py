@@ -311,7 +311,7 @@ class CSE:
             preds[i] = GM[i].predict(y)
             BIC.append(GM[i].bic(x_ul))
 
-        print(BIC)
+        
         # Plots GMM
         # plt.scatter(x_ul[:,0], x_ul[:,1], label='Stream @ current timestep') 
         # plt.scatter(y[0,:], y[1,:], c="orange", zorder=10, s=100, label="Train Data from timestep+1")
@@ -326,15 +326,11 @@ class CSE:
         minBIC, bicIX = np.min(BIC), np.argmin(BIC)       # gets the index of minimal BIC
         numComponents = bicIX 
         
-        
         # # need to calculate the Mahalanobis Distance for GMM
         get_MD = util.Util(data=x_ul)
-
-        print(GM[temp+numComponents])
-
-        # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        D = get_MD.MahalanobisDistance(x=x_ul , data=GM[temp+numComponents])  # calculates Mahalanobis Distance - outlier detection; 
         
+        # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
+        D = get_MD.MahalanobisDistance(x= GM[temp + numComponents].means_ , data= x_ul )  
         print(D)
         mahalDistance, mdIX = np.min(D), np.argmin(D)
         
