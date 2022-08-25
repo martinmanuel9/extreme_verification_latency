@@ -68,7 +68,11 @@ class Util:
         # for i in range(np.shape(data)[0]):
         #     x_mu.append(data.iloc[i] - colmn_mean)
 
+
+        x = x[:,:np.shape(data)[1]]
+        
         x_minus_mean = x - np.mean(data)
+    
         if not cov:
             cov = np.cov(data.T)
         

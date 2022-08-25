@@ -330,16 +330,17 @@ class CSE:
         get_MD = util.Util(data=x_ul)
         
         # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        D = get_MD.MahalanobisDistance(x= GM[temp + numComponents].means_ , data= x_ul )  
-        print(D)
-        mahalDistance, mdIX = np.min(D), np.argmin(D)
+        # D = get_MD.MahalanobisDistance(x= x_ul , data= GM[temp + numComponents].predict_proba(x_ul))  
+        D = get_MD.MahalanobisDistance(x= GM[temp + numComponents].predict_proba(x_ul)  , data= x_ul ) 
         
-        minMahal = np.min(mahalDistance)
-        # I = np.where(minMahal)[0]
+        # minMahal, mdIX = np.min(D), np.argmin(D)  # returns the min value of each row and its index
+        # print(minMahal, mdIX)
+        sortMahal, sortIX = np.sort(D), np.argsort(D)
         
-        sortMahal = [np.argsort(mahalDistance)]
-        IX = np.where(sortMahal)
+
         support_indices = sortMahal[:core_support_cutoff]
+        # to_supports = np.zeros((len(support_indices), np.shape(x_ul)[1]-1))
+        # support_indices = np.column_stack((to_supports, support_indices))
         self.boundary_data['BIC'] = BIC
 
         return support_indices
