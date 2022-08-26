@@ -59,26 +59,14 @@ class Util:
         x    : vector or matrix of data with, say, p columns.
         data : ndarray of the distribution from which Mahalanobis distance of each observation of x is to be computed.
         cov  : covariance matrix (p x p) of the distribution. If None, will be computed from data.
-        """
-
-        # data = self.data
-
-        # colmn_mean = data.mean()
-        # x_mu = []
-        # for i in range(np.shape(data)[0]):
-        #     x_mu.append(data.iloc[i] - colmn_mean)
-
-
-        x = x[:,:np.shape(data)[1]]
+        """        
+        cov = np.squeeze(cov)
+        x_minus_mean = x - data[0] # used to be np.mean(data) but GMM.means_ provides means GMM; only getting first row of data
         
-        x_minus_mean = x - np.mean(data)
-    
-        if not cov:
+        if cov is None:
             cov = np.cov(data.T)
         
-        # print(cov)
         inv_cov = sp.linalg.pinv(cov)
-        # print(inv_covmat)
         left_term = np.dot(x_minus_mean, inv_cov)
         mahalDist = np.dot(left_term,x_minus_mean.T)
         

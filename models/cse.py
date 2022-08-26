@@ -35,7 +35,7 @@ PhD Advisor: Dr. Gregory Ditzler
 # SOFTWARE.
 
 from random import random
-from tkinter import Y
+from tkinter import N, Y
 from numpy.lib.function_base import diff
 from numpy.lib.twodim_base import diag
 from pandas.core.frame import DataFrame
@@ -318,9 +318,6 @@ class CSE:
         # plt.legend()
         # plt.plot()
         # plt.show()
-
-        # support_indices = np.zeros((len(preds), self.N_features))
-        # support_indices = np.column_stack((support_indices, preds))
         
         temp = self.boundary_opts['kl'] - 1
         minBIC, bicIX = np.min(BIC), np.argmin(BIC)       # gets the index of minimal BIC
@@ -329,9 +326,15 @@ class CSE:
         # # need to calculate the Mahalanobis Distance for GMM
         get_MD = util.Util(data=x_ul)
         
+
+        if numComponents < 1:
+            numComponents = 1
+        elif numComponents > self.boundary_opts['kl'] + 1:
+            numComponents = temp
+        
         # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        # D = get_MD.MahalanobisDistance(x= x_ul , data= GM[temp + numComponents].predict_proba(x_ul)) 
-        D = get_MD.MahalanobisDistance(x= GM[temp].predict_proba(x_ul)  , data= x_ul ) 
+        D = get_MD.MahalanobisDistance(x= x_ul , data= GM[numComponents].means_ , cov= GM[numComponents].covariances_[0])
+        # D = get_MD.MahalanobisDistance(x= GM[numComponents].predict_proba(x_ul)  , data= x_ul  ) 
         
         # minMahal, mdIX = np.min(D), np.argmin(D)  # returns the min value of each row and its index
         # print(minMahal, mdIX)
