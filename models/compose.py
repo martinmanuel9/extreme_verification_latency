@@ -431,6 +431,13 @@ class COMPOSE:
                         self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
                     
                     # { xu, hu }
+                    if len(self.predictions[ts]) > len(self.data[ts]):
+                        differ = len(self.predictions[ts]) - len(self.data[ts])
+                        preds = list(self.predictions[ts])
+                        for k in range(differ):
+                            preds.pop()
+                        self.predictions[ts] = np.array(preds)
+                    
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
                     
                     # Dt = { xl , yl } U { xu , hu } 
