@@ -46,7 +46,6 @@ import pandas as pd
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt 
-import math
 from sklearn.covariance import EmpiricalCovariance, MinCovDet
 
 class Util:
@@ -59,9 +58,8 @@ class Util:
         x    : vector or matrix of data with, say, p columns.
         data : ndarray of the distribution from which Mahalanobis distance of each observation of x is to be computed.
         cov  : covariance matrix (p x p) of the distribution. If None, will be computed from data.
-        """        
-        cov = np.squeeze(cov)
-        x_minus_mean = x - data[0] # used to be np.mean(data) but GMM.means_ provides means GMM; only getting first row of data
+        """       
+        x_minus_mean = x - np.mean(data) 
         
         if cov is None:
             cov = np.cov(data.T)

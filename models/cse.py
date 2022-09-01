@@ -321,20 +321,23 @@ class CSE:
         
         temp = self.boundary_opts['kl'] - 1
         minBIC, bicIX = np.min(BIC), np.argmin(BIC)       # gets the index of minimal BIC
-        numComponents = bicIX 
+        numComponents = bicIX                             # lowest BIC score becomes numComponets  
         
         # # need to calculate the Mahalanobis Distance for GMM
         get_MD = util.Util(data=x_ul)
         
-
-        if numComponents < 1:
-            numComponents = 1
-        elif numComponents > self.boundary_opts['kl'] + 1:
-            numComponents = temp
+        GM_means = []
+        GM_cov = []
+        if numComponents <= 1:
+            numComponents = 2
         
+        GM_means = GM[numComponents].means_
+        GM_means = GM_means.reshape((-1, np.shape(x_ul)[1]))
+        GM_cov = GM[numComponents].covariances_
+        GM_cov = GM_cov.reshape((-1, np.shape(x_ul)[1]))
+
         # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        D = get_MD.MahalanobisDistance(x= x_ul , data= GM[numComponents].means_ , cov= GM[numComponents].covariances_[0])
-        # D = get_MD.MahalanobisDistance(x= GM[numComponents].predict_proba(x_ul)  , data= x_ul  ) 
+        D = get_MD.MahalanobisDistance( x= x_ul , data= GM_means , cov = GM_cov)           # x= observations, data=distribution
         
         # minMahal, mdIX = np.min(D), np.argmin(D)  # returns the min value of each row and its index
         # print(minMahal, mdIX)

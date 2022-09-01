@@ -59,4 +59,5 @@ plot_dir = os.listdir(plot_path)
 
 for j in range(len(plot_dir)):
     plotter = pickel.load(open(plot_dir[j], "rb"))
+    
     plotter.show()
