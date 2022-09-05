@@ -9,7 +9,7 @@ Creation:           09/18/2021
 The University of Arizona
 Department of Electrical and Computer Engineering
 College of Engineering
-PhD Advisor: Dr. Gregory Ditzler
+PhD Advisor: Dr. Gregory Ditzler and Dr. Salim Hariri
 """
 
 # MIT License
@@ -52,6 +52,7 @@ import knn
 import scipy.special as sp
 from matplotlib import pyplot as plt
 from sklearn.model_selection import StratifiedKFold
+import warnings
 
 class CSE:
     def __init__(self, data=None, next_data = None):
@@ -304,11 +305,11 @@ class CSE:
         preds = {}
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
-
+        
         # creates Gaussian Mixutre Model (GMM)
         for i in range(1, self.boundary_opts['kl']+1):
             GM[i] = GMM(n_components = i ).fit(x_ul)
-            preds[i] = GM[i].predict(y)
+            # preds[i] = GM[i].predict(y) # we may not need to predict
             BIC.append(GM[i].bic(x_ul))
 
         

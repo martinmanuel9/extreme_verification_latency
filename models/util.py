@@ -9,7 +9,7 @@ Creation:           09/18/2021
 The University of Arizona
 Department of Electrical and Computer Engineering
 College of Engineering
-PhD Advisor: Dr. Gregory Ditzler
+PhD Advisor: Dr. Gregory Ditzler and Dr. Salim Hariri 
 """
 
 # MIT License
@@ -46,7 +46,7 @@ import pandas as pd
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt 
-from sklearn.covariance import EmpiricalCovariance, MinCovDet
+import random
 
 class Util:
     def __init__(self, data=None) -> None:
@@ -64,10 +64,17 @@ class Util:
         if cov is None:
             cov = np.cov(data.T)
         
-        inv_cov = sp.linalg.pinv(cov)
+        # make cov a square matrix 
+        if np.shape(cov)[0] > np.shape(cov)[1]:
+            cov = list(cov)
+            to_pop = np.shape(cov)[0] - np.shape(cov)[1]
+            for k in range(to_pop):
+                cov.pop()
+        
+        cov = np.array(cov)
+        inv_cov = sp.linalg.inv(cov)
         left_term = np.dot(x_minus_mean, inv_cov)
         mahalDist = np.dot(left_term,x_minus_mean.T)
-        
         return mahalDist.diagonal()
 
     def quickMahal(self, x, mu, sig):
