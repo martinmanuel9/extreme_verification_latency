@@ -306,6 +306,14 @@ class CSE:
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
         
+        df = pd.DataFrame(x_ul)
+        df.iat[0, 0] /= 0   # add an inf
+        df.iat[-1, -1] = np.nan # add a NaN
+
+        df[df.apply(np.isfinite).all(axis=1)]
+        print(df)
+        x_ul = np.array(df)
+
         # creates Gaussian Mixutre Model (GMM)
         for i in range(1, self.boundary_opts['kl']+1):
             GM[i] = GMM(n_components = i ).fit(x_ul)
