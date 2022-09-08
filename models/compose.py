@@ -384,8 +384,7 @@ class COMPOSE:
                             rdm_preds = random.choice(randm_list)
                             preds_to_add = np.append(preds_to_add, rdm_preds)
                         self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
-                            
-
+                        
                     # { xu, hu }
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
                     
@@ -411,11 +410,6 @@ class COMPOSE:
                 # after firststep
                 if start != ts:
                     t_start = time.time()
-
-                    # removed after cse update
-                    # to_cs = np.zeros((len(self.core_supports[ts-1]) , (np.shape(self.data[ts])[1]-1)))
-                    # self.core_supports[ts-1] = np.column_stack((to_cs ,self.core_supports[ts-1]))
-                    
                     self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
 
                     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
@@ -441,7 +435,6 @@ class COMPOSE:
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
                     
                     # Dt = { xl , yl } U { xu , hu } 
-                    
                     self.labeled[ts] = np.vstack((self.core_supports[ts-1], self.labeled[ts])) # to_cs , labeled
                     self.stream[ts] = np.vstack((self.labeled[ts], xu_hu))
                     

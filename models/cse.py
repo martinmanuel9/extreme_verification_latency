@@ -306,20 +306,14 @@ class CSE:
         if self.boundary_opts['kl'] > self.boundary_opts['kh'] or self.boundary_opts['kl'] < 0:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
         
-        df = pd.DataFrame(x_ul)
-        df.iat[0, 0] /= 0   # add an inf
-        df.iat[-1, -1] = np.nan # add a NaN
-
-        df[df.apply(np.isfinite).all(axis=1)]
-        print(df)
-        x_ul = np.array(df)
+        df = pd.DataFrame(x_ul, dtype='int64')
+        df = df.replace([np.inf, -np.inf], np.nan).dropna(axis=0)
 
         # creates Gaussian Mixutre Model (GMM)
         for i in range(1, self.boundary_opts['kl']+1):
-            GM[i] = GMM(n_components = i ).fit(x_ul)
+            GM[i] = GMM(n_components = i ).fit(df)
             # preds[i] = GM[i].predict(y) # we may not need to predict
-            BIC.append(GM[i].bic(x_ul))
-
+            BIC.append(GM[i].bic(df))
         
         # Plots GMM
         # plt.scatter(x_ul[:,0], x_ul[:,1], label='Stream @ current timestep') 
@@ -333,7 +327,7 @@ class CSE:
         numComponents = bicIX                             # lowest BIC score becomes numComponets  
         
         # # need to calculate the Mahalanobis Distance for GMM
-        get_MD = util.Util(data=x_ul)
+        get_MD = util.Util(data=df)
         
         GM_means = []
         GM_cov = []
@@ -341,12 +335,12 @@ class CSE:
             numComponents = 2
         
         GM_means = GM[numComponents].means_
-        GM_means = GM_means.reshape((-1, np.shape(x_ul)[1]))
+        GM_means = GM_means.reshape((-1, np.shape(df)[1]))
         GM_cov = GM[numComponents].covariances_
-        GM_cov = GM_cov.reshape((-1, np.shape(x_ul)[1]))
+        GM_cov = GM_cov.reshape((-1, np.shape(df)[1]))
 
         # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        D = get_MD.MahalanobisDistance( x= x_ul , data= GM_means , cov = GM_cov)           # x= observations, data=distribution
+        D = get_MD.MahalanobisDistance( x= df , data= GM_means , cov = GM_cov)           # x= observations, data=distribution
         
         # minMahal, mdIX = np.min(D), np.argmin(D)  # returns the min value of each row and its index
         # print(minMahal, mdIX)
