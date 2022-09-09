@@ -357,11 +357,25 @@ class COMPOSE:
         """
         # sort the hypothesis in descending order 
         sortHypoth, sortID  = hypothesis[hypothesis[:,-1].argsort(kind='heapsort')], np.argsort(hypothesis[:,-1], kind='heapsort')
-        # sorting based on the label in descending order so unlabled go to the bottom
-        data_stream = np.sort(data_stream, order= sortID)
-        
-        
+        # sort data to match hypothesis shift
 
+        # sort labels to support hypothesis shifts
+
+        # sort core supports to match hypothsis shifts
+
+        # keep track of instances originally unlabeled so we know which instances to use for perf metrics
+        
+    def core_support_extract(self, data_stream):
+        """
+        This method preprocesses the data before extracting the core supports from the stream
+        The intent of this method is to complete the following:
+            1. Remove duplicate data instances 
+            2. Sort the classes prior to extracting core supports 
+            3. Extract the core supports
+        """
+        # remove duplicate data from stream, from labeles, previous core supports, hypothesis 
+        uniq_stream, sortID = np.unique(data_stream), np.argsort(data_stream)
+        print(uniq_stream, sortID)
 
     def run(self):
         # set cores
@@ -385,10 +399,7 @@ class COMPOSE:
                 if ts == 0: # there will be no core supports @ ts = 0 
                     self.hypothesis[ts] = self.labeled[ts]
                 else:
-                    print(self.core_supports[ts-1], "\n")
-
                     self.hypothesis[ts] = np.column_stack((self.labeled[ts], self.core_supports[ts-1]))
-                    print(self.hypothesis[ts])
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
@@ -417,7 +428,7 @@ class COMPOSE:
                     # set L^t+1 = 0, Y^t = 0 - step 4 
                     self.labeled[ts+1] = []
                     # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts], self.labeled[ts])              # create core supports at timestep 0
+                    self.get_core_supports(self.stream[ts])              # create core supports at timestep 0
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
                     t_end = time.time()         
@@ -430,7 +441,7 @@ class COMPOSE:
                 # after firststep
                 if start != ts:
                     t_start = time.time()
-                    self.sort_classify(self.data[ts], self.core_supports[ts-1])
+                    # self.sort_classify(self.data[ts], self.core_supports[ts-1])
                     self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
                     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
                     # {xl, yl } = self.labeled[ts = 0]
@@ -458,7 +469,7 @@ class COMPOSE:
                     # set L^t+1 = 0, Y^t = 0 - step 4 
                     self.labeled[ts+1] = []
                     # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts], self.data[ts+1])              # create core supports at timestep
+                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
                     t_end = time.time()         

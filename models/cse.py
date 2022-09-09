@@ -298,7 +298,6 @@ class CSE:
     ## GMM using for Fast COMPOSE
     def gmm(self):
         x_ul = self.data
-        y = self.test
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
         BIC = []    #np.zeros(self.boundary_opts['kh'] - self.boundary_opts['kl'] + 1)   # Bayesian Info Criterion
         GM = {}
@@ -313,7 +312,6 @@ class CSE:
         # creates Gaussian Mixutre Model (GMM)
         for i in range(1, self.boundary_opts['kl']+1):
             GM[i] = GMM(n_components = i ).fit(x_ul_df)
-            # preds[i] = GM[i].predict(y) # we may not need to predict
             BIC.append(GM[i].bic(x_ul_df))
         
         # Plots GMM
@@ -341,16 +339,13 @@ class CSE:
         GM_cov = GM_cov.reshape((-1, np.shape(x_ul_df)[1]))
 
         # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        D = get_MD.MahalanobisDistance( x= x_ul_df , data= GM_means , cov = GM_cov)           # x= observations, data=distribution
+        x_ul_df['mahalanobis'] = get_MD.MahalanobisDistance( x= x_ul_df , data= GM_means , cov = GM_cov)           # x= observations, data=distribution
+        x_ul_df = x_ul_df.sort_values(by='mahalanobis')
         
-        sortMahal, sortIX = np.sort(D), np.argsort(D)
-        
-        support_indices = sortMahal[:core_support_cutoff]
-        # to_supports = np.zeros((len(support_indices), np.shape(x_ul)[1]-1))
-        # support_indices = np.column_stack((to_supports, support_indices))
+        support_indices = x_ul_df.loc[:, x_ul_df.columns != 'mahalanobis']  # get all but mahalanobis distance
+        support_indices = support_indices.loc[:core_support_cutoff]
         self.boundary_data['BIC'] = BIC
-
-        return support_indices
+        return support_indices.to_numpy()
     
     # Parzen Window Clustering
     def parzen(self):
