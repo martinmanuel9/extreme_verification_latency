@@ -81,7 +81,7 @@ class COMPOSE:
         self.cse_opts = []                  # options for the selected cse function in cse class
         self.selected_dataset = selected_dataset
         self.classifier = classifier
-        self.method = method                # not sure what to use for method
+        self.method = method                
         self.dataset = selected_dataset
         self.figure_xlim = []
         self.figure_ylim = []
@@ -93,7 +93,8 @@ class COMPOSE:
         self.avg_results = {}
         self.avg_results_dict = {}
         self.accuracy_sklearn = {}
-        self.stream = {}
+        self.stream = {}                    # establishing stream
+        self.hypothesis = {}                # hypothesis to copy available labels & core supports 
         
         if self.classifier is None:
             avail_classifier = ['knn', 's3vm']
@@ -344,6 +345,23 @@ class COMPOSE:
             plt.show()
 
         return accuracy_scores
+    
+    def sort_classify(self, data_stream, hypothesis):
+        """
+        The intent of this method is the following:
+            1. Sort the unlabeled data is at the bottom of the list
+            2. Sort data to match hypothesis shifts [hypothesis = previous core supports from CSE]
+            3. sort core supports to match hypothesis shifts
+            4. keep track which instances were originally unlabeled so we know which to use for performance metrics
+        This method should sort the data prior to using a SSL classifier
+        """
+        # sort the hypothesis in descending order 
+        sortHypoth, sortID  = hypothesis[hypothesis[:,-1].argsort(kind='heapsort')], np.argsort(hypothesis[:,-1], kind='heapsort')
+        # sorting based on the label in descending order so unlabled go to the bottom
+        data_stream = np.sort(data_stream, order= sortID)
+        
+        
+
 
     def run(self):
         # set cores
@@ -357,21 +375,28 @@ class COMPOSE:
             total_time_start = time.time() 
             ts = start
             
-            for ts in range(0, len(timesteps)-1):                    # iterate through all timesteps from the start to the end of the available data
+            for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
-                
                 if self.verbose == 1:
                     print("Timestep:",ts)
-                
                 t_start = time.time()
+
+                # TODO: copy labels and add to hypthothesis vector 
+                if ts == 0: # there will be no core supports @ ts = 0 
+                    self.hypothesis[ts] = self.labeled[ts]
+                else:
+                    print(self.core_supports[ts-1], "\n")
+
+                    self.hypothesis[ts] = np.column_stack((self.labeled[ts], self.core_supports[ts-1]))
+                    print(self.hypothesis[ts])
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
                 if ts == 0:
                     if self.classifier == 'QN_S3VM':
-                        self.predictions[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1]) 
+                        self.predictions[ts] = self.classify(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1]) 
                     elif self.classifier == 'label_propagation':
-                        self.predictions[ts] = self.classify(X_train_l=self.labeled[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])       
+                        self.predictions[ts] = self.classify(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1])       
                     
                     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
                     # {xl, yl } = self.labeled[ts = 0]
@@ -387,19 +412,14 @@ class COMPOSE:
                         
                     # { xu, hu }
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
-                    
                     # Dt = { xl , yl } U { xu , hu }  
-                    self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu))
-                    
+                    self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu)) 
                     # set L^t+1 = 0, Y^t = 0 - step 4 
                     self.labeled[ts+1] = []
-                    
                     # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts], self.labeled[ts])              # create core supports at timestep
-
+                    self.get_core_supports(self.stream[ts], self.labeled[ts])              # create core supports at timestep 0
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
-
                     t_end = time.time()         
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
@@ -410,8 +430,8 @@ class COMPOSE:
                 # after firststep
                 if start != ts:
                     t_start = time.time()
+                    self.sort_classify(self.data[ts], self.core_supports[ts-1])
                     self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
-
                     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
                     # {xl, yl } = self.labeled[ts = 0]
                     # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
@@ -423,7 +443,6 @@ class COMPOSE:
                             rdm_preds = random.choice(randm_list)
                             preds_to_add = np.append(preds_to_add, rdm_preds)
                         self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
-                    
                     # { xu, hu }
                     if len(self.predictions[ts]) > len(self.data[ts]):
                         differ = len(self.predictions[ts]) - len(self.data[ts])
@@ -431,22 +450,17 @@ class COMPOSE:
                         for k in range(differ):
                             preds.pop()
                         self.predictions[ts] = np.array(preds)
-                    
+
                     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
-                    
                     # Dt = { xl , yl } U { xu , hu } 
                     self.labeled[ts] = np.vstack((self.core_supports[ts-1], self.labeled[ts])) # to_cs , labeled
                     self.stream[ts] = np.vstack((self.labeled[ts], xu_hu))
-                    
                     # set L^t+1 = 0, Y^t = 0 - step 4 
                     self.labeled[ts+1] = []
-                    
                     # steps 5 - 7 as it extracts core supports
                     self.get_core_supports(self.stream[ts], self.data[ts+1])              # create core supports at timestep
-
                     # L^t+1 = L^t+1 
                     self.labeled[ts+1] = self.core_supports[ts]
-
                     t_end = time.time()         
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
