@@ -3,9 +3,7 @@
 Application:        SCARGC
 File name:          scargc.py
 Author:             Martin Manuel Lopez
-Creation:           08/05/2021
-SCARGC Origin:      Stream Classification Guided by Clustering (SCARGC) by
-                    Vinicius M. A. Souza, Diego Silva, Joao Gama, Gustavo Batista
+Creation:           05/30/2021
 
 The University of Arizona
 Department of Electrical and Computer Engineering

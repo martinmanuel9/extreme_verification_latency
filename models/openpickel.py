@@ -9,7 +9,6 @@ Creation:           07/05/2022
 The University of Arizona
 Department of Electrical and Computer Engineering
 College of Engineering
-PhD Advisor: Dr. Gregory Ditzler
 """
 
 # MIT License

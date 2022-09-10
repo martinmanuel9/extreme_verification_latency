@@ -9,7 +9,6 @@ Creation:           09/18/2021
 The University of Arizona
 Department of Electrical and Computer Engineering
 College of Engineering
-PhD Advisor: Dr. Gregory Ditzler and Dr. Salim Hariri
 """
 
 # MIT License
