@@ -86,11 +86,13 @@ class Label_Propagation:
         self.actual_label = np.shape(X_labeled)[1]-1
 
     def ssl(self):
-        
         labels = self.labels[:,self.actual_label]
+        
+
         # labels_orig = np.copy(self.labels[:,self.actual_label])
         # labels = np.floor(labels)
         # labels_orig = np.floor(labels_orig)
+
         X = self.X
         
         # define model

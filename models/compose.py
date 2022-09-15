@@ -251,7 +251,7 @@ class COMPOSE:
                 concat_tuple = np.vstack(array_tuple)    
                 self.unlabeled[key] = concat_tuple 
 
-    def classify(self, X_train_l, L_train_l, X_train_u, X_test):
+    def learn(self, X_train_l, L_train_l, X_train_u, X_test):
         """
         Available classifiers : 'label_propagation',  'QN_S3VM'
 
@@ -344,25 +344,6 @@ class COMPOSE:
             plt.show()
 
         return accuracy_scores
-    
-    def sort_pre_classify(self, data_stream, hypothesis):
-        """
-        The intent of this method is the following:
-            1. Sort the unlabeled data is at the bottom of the list
-            2. Sort data to match hypothesis shifts [hypothesis = previous core supports from CSE]
-            3. sort core supports to match hypothesis shifts
-            4. keep track which instances were originally unlabeled so we know which to use for performance metrics
-        This method should sort the data prior to using a SSL classifier
-        """
-        # sort the hypothesis in descending order 
-        sortHypoth, sortID  = hypothesis[hypothesis[:,-1].argsort(kind='heapsort')], np.argsort(hypothesis[:,-1], kind='heapsort')
-        # sort data to match hypothesis shift
-
-        # sort labels to support hypothesis shifts
-
-        # sort core supports to match hypothsis shifts
-
-        # keep track of instances originally unlabeled so we know which instances to use for perf metrics
 
     def add_core_supports(self, ts):
         """
@@ -385,7 +366,6 @@ class COMPOSE:
         # append the core supports to accomodate the added core supports from previous ts
         self.core_supports[ts] = np.concatenate((self.core_supports[ts-1][cs_indices]))
 
-
         
     def core_support_extract(self, data_stream):
         """
@@ -397,7 +377,37 @@ class COMPOSE:
         """
         # remove duplicate data from stream, from labeles, previous core supports, hypothesis 
         uniq_stream, sortID = np.unique(data_stream), np.argsort(data_stream)
-        print(uniq_stream, sortID)
+        
+
+    def classify(self, ts):
+        """
+        This method classifies the unlabeled data then goes through the Semi-Supervised Learning Algorithm to receive labels from classification. 
+        In this method we complete the following: 
+        1. sort the hypothesis sos that the unlabeled data is that the bottom
+        2. sort the data to match hypothesis shift
+        3. sort the labeled so that the it matches the hypothesis shift
+        4. sort the core supports to match hypothesis shift
+        5. classify the data via SSL algorithm
+        """
+        # 1. sort the hypothesis so unlabeled data is at the bottom
+        self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
+        # 2. sort the data to match hypothesis shift
+        shift_data = self.data[ts][sortID[:,0]]
+        remain_data = self.data[ts][len(shift_data):,:]
+        self.data[ts] = np.concatenate((shift_data, remain_data))
+        # 3. sort labeled to match hypothesis shift
+        shift_label = self.labeled[ts][sortID[:,0]]
+        remain_label = self.labeled[ts][len(shift_label):,:]
+        self.labeled[ts] = np.concatenate((shift_label, remain_label))
+        # 4. sort the core supports to match hypothesis 
+        if ts>0:
+            shift_cs = self.core_supports[ts-1][sortID[:,0]]
+            remain_cs = self.core_supports[ts-1][len(shift_cs):,:]
+            self.core_supports[ts-1] = np.concatenate((shift_cs, remain_cs))
+        
+        # classify 
+        self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
+        print(self.predictions[ts])
 
     def run(self):
         # set cores
@@ -418,54 +428,57 @@ class COMPOSE:
                 t_start = time.time()
                 
                 # determine if there are any labeled data & add core_suppports from previous timestep
+                # steps 1 - 2
                 if ts == 0: # there will be no core supports @ ts = 0 
                     self.hypothesis[ts] = self.labeled[ts]
                 else:
                     # add previous core supports from previous time step
                     self.add_core_supports(ts)
+                #  step 3 receive inlabeled data U^t = { xu^t in X, u = 1,..., N}
+                unlabeled_data = self.classify(ts)
+                print("stop")
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
-                if ts == 0:
-                    if self.classifier == 'QN_S3VM':
-                        self.predictions[ts] = self.classify(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1]) 
-                    elif self.classifier == 'label_propagation':
-                        self.predictions[ts] = self.classify(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1])       
+                # if ts == 0:
+                #     if self.classifier == 'QN_S3VM':
+                #         self.predictions[ts] = self.classify(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1]) 
+                #     elif self.classifier == 'label_propagation':
+                #         self.predictions[ts] = self.classifier(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1])       
                     
-                    # Set D_t or data stream from concatenating the data stream with the predictions - step 3
-                    # {xl, yl } = self.labeled[ts = 0]
-                    # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
-                    if len(self.data[ts]) > len(self.predictions[ts]):
-                        dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
-                        preds_to_add = []
-                        for k in range(dif_xu_hu):
-                            randm_list = np.unique(self.predictions[ts])
-                            rdm_preds = random.choice(randm_list)
-                            preds_to_add = np.append(preds_to_add, rdm_preds)
-                        self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
+                #     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
+                #     # {xl, yl } = self.labeled[ts = 0]
+                #     # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
+                #     if len(self.data[ts]) > len(self.predictions[ts]):
+                #         dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
+                #         preds_to_add = []
+                #         for k in range(dif_xu_hu):
+                #             randm_list = np.unique(self.predictions[ts])
+                #             rdm_preds = random.choice(randm_list)
+                #             preds_to_add = np.append(preds_to_add, rdm_preds)
+                #         self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
                         
-                    # { xu, hu }
-                    xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
-                    # Dt = { xl , yl } U { xu , hu }  
-                    self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu)) 
-                    # set L^t+1 = 0, Y^t = 0 - step 4 
-                    self.labeled[ts+1] = []
-                    # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts])              # create core supports at timestep 0
-                    # L^t+1 = L^t+1 
-                    self.labeled[ts+1] = self.core_supports[ts]
-                    t_end = time.time()         
-                    elapsed_time = t_end - t_start
-                    self.time_to_predict[ts] = elapsed_time
+                #     # { xu, hu }
+                #     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
+                #     # Dt = { xl , yl } U { xu , hu }  
+                #     self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu)) 
+                #     # set L^t+1 = 0, Y^t = 0 - step 4 
+                #     self.labeled[ts+1] = []
+                #     # steps 5 - 7 as it extracts core supports
+                #     self.get_core_supports(self.stream[ts])              # create core supports at timestep 0
+                #     # L^t+1 = L^t+1 
+                #     self.labeled[ts+1] = self.core_supports[ts]
+                #     t_end = time.time()         
+                #     elapsed_time = t_end - t_start
+                #     self.time_to_predict[ts] = elapsed_time
                     
-                    if self.verbose == 1:
-                        print("Time to predict: ", elapsed_time, " seconds")
+                #     if self.verbose == 1:
+                #         print("Time to predict: ", elapsed_time, " seconds")
 
                 # after firststep
                 if start != ts:
                     t_start = time.time()
-                    # self.sort_classify(self.data[ts], self.core_supports[ts-1])
-                    self.predictions[ts] = self.classify(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
+                    self.predictions[ts] = self.learn(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
                     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
                     # {xl, yl } = self.labeled[ts = 0]
                     # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
