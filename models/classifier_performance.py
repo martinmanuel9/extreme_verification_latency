@@ -39,7 +39,7 @@ import sklearn.metrics as metric
 
 class ClassifierMetrics:
 
-    def __init__(self, preds, test, dataset, method, classifier, time_to_predict ):
+    def __init__(self, preds, test, dataset, method, classifier, time_to_predict, tstart, tend ):
         self.preds = preds
         self.test = test
         self.selected_dataset = dataset

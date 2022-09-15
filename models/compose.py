@@ -345,7 +345,7 @@ class COMPOSE:
 
         return accuracy_scores
 
-    def add_core_supports(self, ts):
+    def set_stream(self, ts):
         """
         The intent of the method is so when ts!=1 we add the information of core supports from the previous timestep
         ts = current timestep. This method should not be invoked unless it is after timestep 1 
@@ -358,10 +358,12 @@ class COMPOSE:
         # determine indices in which core supports have labeled
         cs_indices = np.where(np.any(self.core_supports[ts-1]==1, axis=1))[0] # adding only the labeled core supports 
         # append the current data with the core supports
+        # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
         self.data[ts] = np.concatenate((self.data[ts-1], self.core_supports[ts-1][cs_indices]))
         # append hypothesis to include classes of the core supports
         self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], self.core_supports[ts-1][cs_indices])) 
         # append the labels to include the class of the core supports
+        # receive labeled data from core supports and labels 
         self.labeled[ts] = np.concatenate((self.labeled[ts-1], self.core_supports[ts-1][cs_indices]))
         # append the core supports to accomodate the added core supports from previous ts
         self.core_supports[ts] = np.concatenate((self.core_supports[ts-1][cs_indices]))
@@ -400,14 +402,22 @@ class COMPOSE:
         remain_label = self.labeled[ts][len(shift_label):,:]
         self.labeled[ts] = np.concatenate((shift_label, remain_label))
         # 4. sort the core supports to match hypothesis 
-        if ts>0:
+        if ts > 0:
             shift_cs = self.core_supports[ts-1][sortID[:,0]]
             remain_cs = self.core_supports[ts-1][len(shift_cs):,:]
             self.core_supports[ts-1] = np.concatenate((shift_cs, remain_cs))
         
         # classify 
+        # step 4 call SSL with L, Y , U
+        t_start = time.time()
         self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
-        print(self.predictions[ts])
+        t_end = time.time() 
+        # obtain hypothesis ht: X-> Y 
+        self.hypothesis[ts] = self.predictions[ts]
+        # get performance metrics of classification 
+        perf_metric = cp.ClassifierMetrics(tstart=t_start, tend=t_end) # need to add additonal info
+        
+        return self.predictions[ts]
 
     def run(self):
         # set cores
@@ -433,10 +443,13 @@ class COMPOSE:
                     self.hypothesis[ts] = self.labeled[ts]
                 else:
                     # add previous core supports from previous time step
-                    self.add_core_supports(ts)
+                    self.set_stream(ts)
                 #  step 3 receive inlabeled data U^t = { xu^t in X, u = 1,..., N}
                 unlabeled_data = self.classify(ts)
                 print("stop")
+
+
+
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
