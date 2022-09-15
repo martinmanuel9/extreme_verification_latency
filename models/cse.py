@@ -305,7 +305,7 @@ class CSE:
             print('the lower bound of k (kl) needs to be set less or equal to the upper bound of k (kh), k must be a positive number')
         
         # remove infs and NaN
-        x_ul_df = pd.DataFrame(x_ul, dtype='int64')
+        x_ul_df = pd.DataFrame(x_ul)
         x_ul_df = x_ul_df.replace([np.inf, -np.inf], np.nan).dropna(axis=0)
 
         # creates Gaussian Mixutre Model (GMM)
@@ -338,7 +338,7 @@ class CSE:
         GM_cov = GM_cov.reshape((-1, np.shape(x_ul_df)[1]))
 
         # needs to return the squared Mahalanobis Distance of each observation in x to the reference samples in data
-        x_ul_df['mahalanobis'] = get_MD.MahalanobisDistance( x= x_ul_df , data= GM_means , cov = GM_cov)           # x= observations, data=distribution
+        x_ul_df['mahalanobis'] = get_MD.MahalanobisDistance( x= x_ul_df , data= GM_means, cov=GM_cov)           # x= observations, data=distribution
         x_ul_df = x_ul_df.sort_values(by='mahalanobis')
         
         support_indices = x_ul_df.loc[:, x_ul_df.columns != 'mahalanobis']  # get all but mahalanobis distance

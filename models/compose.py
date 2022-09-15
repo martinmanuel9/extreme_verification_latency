@@ -345,7 +345,7 @@ class COMPOSE:
 
         return accuracy_scores
     
-    def sort_classify(self, data_stream, hypothesis):
+    def sort_pre_classify(self, data_stream, hypothesis):
         """
         The intent of this method is the following:
             1. Sort the unlabeled data is at the bottom of the list
@@ -363,6 +363,29 @@ class COMPOSE:
         # sort core supports to match hypothsis shifts
 
         # keep track of instances originally unlabeled so we know which instances to use for perf metrics
+
+    def add_core_supports(self, ts):
+        """
+        The intent of the method is so when ts!=1 we add the information of core supports from the previous timestep
+        ts = current timestep. This method should not be invoked unless it is after timestep 1 
+        This method will conduct the following:
+        1. append the current data stream with the core supports 
+        2. append the hypothesis to include the classes of the core supports
+        3. append the labels to include the class of the core supports 
+        4. append the core supports to accomodate the added core supports of the previous timestep 
+        """
+        # determine indices in which core supports have labeled
+        cs_indices = np.where(np.any(self.core_supports[ts-1]==1, axis=1))[0] # adding only the labeled core supports 
+        # append the current data with the core supports
+        self.data[ts] = np.concatenate((self.data[ts-1], self.core_supports[ts-1][cs_indices]))
+        # append hypothesis to include classes of the core supports
+        self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], self.core_supports[ts-1][cs_indices])) 
+        # append the labels to include the class of the core supports
+        self.labeled[ts] = np.concatenate((self.labeled[ts-1], self.core_supports[ts-1][cs_indices]))
+        # append the core supports to accomodate the added core supports from previous ts
+        self.core_supports[ts] = np.concatenate((self.core_supports[ts-1][cs_indices]))
+
+
         
     def core_support_extract(self, data_stream):
         """
@@ -393,12 +416,13 @@ class COMPOSE:
                 if self.verbose == 1:
                     print("Timestep:",ts)
                 t_start = time.time()
-
-                # TODO: copy labels and add to hypthothesis vector 
+                
+                # determine if there are any labeled data & add core_suppports from previous timestep
                 if ts == 0: # there will be no core supports @ ts = 0 
                     self.hypothesis[ts] = self.labeled[ts]
                 else:
-                    self.hypothesis[ts] = np.column_stack((self.labeled[ts], self.core_supports[ts-1]))
+                    # add previous core supports from previous time step
+                    self.add_core_supports(ts)
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
@@ -479,7 +503,7 @@ class COMPOSE:
                 
                 hypoth_label = np.shape(self.data[ts])[1]-1
                 error = self.classification_error(list(self.predictions[ts]), list(self.data[ts+1][:,hypoth_label]))
-                
+                # TODO determine if this is needed 
                 if len(self.data[ts+1][:,hypoth_label]) > len(self.predictions[ts]):
                     dif_hypoth_learner = len(self.data[ts+1][:,hypoth_label]) - len(self.predictions[ts])
                     ones_to_add = np.ones(dif_hypoth_learner)
