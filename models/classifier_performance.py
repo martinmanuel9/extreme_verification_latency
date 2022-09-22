@@ -33,9 +33,11 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from random import random
 import numpy as np 
 import pandas as pd
 import sklearn.metrics as metric
+import random
 
 class ClassifierMetrics:
     """
@@ -74,7 +76,13 @@ class ClassifierMetrics:
         self.findClassifierMetrics(self.preds, self.test)
 
     def findClassifierMetrics(self, preds, test):  
-        print(np.shape(preds), np.shape(test))
+        # if len(test) > len(preds):
+        #     reduc = len(test) - len(preds)
+        #     test = list(test)
+        #     for i in range(reduc):
+        #         rnd = random.randint(0, len(test)-1)
+        #         test.pop(rnd)
+        #     test = np.array(test)
         self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds) # preds != test
         self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
         # roc curve
