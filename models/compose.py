@@ -118,7 +118,7 @@ class COMPOSE:
             print("Only 3 options to display information: \n", 
             "0 - No Info ;\n", 
             "1 - Command Line Progress Updates;\n",
-            "2 - Plots when possilbe and Command Line Progress")
+            "2 - Plots when possilbe and Command Line Progress") 
 
     def compose(self):
         """
@@ -416,6 +416,7 @@ class COMPOSE:
         self.hypothesis[ts] = self.predictions[ts]
         # get performance metrics of classification 
         perf_metric = cp.ClassifierMetrics(tstart=t_start, tend=t_end) # need to add additonal info
+        print(perf_metric)
         
         return self.predictions[ts]
 
@@ -446,10 +447,6 @@ class COMPOSE:
                     self.set_stream(ts)
                 #  step 3 receive inlabeled data U^t = { xu^t in X, u = 1,..., N}
                 unlabeled_data = self.classify(ts)
-                print("stop")
-
-
-
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
@@ -547,6 +544,7 @@ class COMPOSE:
             self.total_time = total_time_end - total_time_start
             if self.verbose == 1:
                 print('Total Time', self.total_time)
+            
             ## Report out
             # classifier_perf = cp.ClassifierMetrics(preds = self.predictions, test= self.data, timestep= ts,\
             #                         method= self.method, classifier= self.classifier, dataset= self.selected_dataset, time_to_predict= self.time_to_predict[ts])
