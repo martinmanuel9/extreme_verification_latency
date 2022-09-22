@@ -38,46 +38,95 @@ import pandas as pd
 import sklearn.metrics as metric
 
 class ClassifierMetrics:
-
-    def __init__(self, preds, test, dataset, method, classifier, time_to_predict, tstart, tend ):
+    """
+    Intent of Classification Class is to get the classification metrics for either 
+    a single timestep or an overtime performance of the a classifier 
+    Initialization requires: 
+        timestep = what time step you want get the prediction, can be single or array 
+        preds = predictions from classifier 
+        test = expected results 
+        dataset = what is the dataset you are running 
+        method = the algorithm running COMPOSE or Fast COMPOSE or MClass etc 
+        classifier = classifying algorithm; SSL ; QN_S3VM; Label Propogation
+        tstart = time started classification
+        tend = end time classification
+    """
+    def __init__(self, timestep, preds, test, dataset, method, classifier, tstart, tend ):
         self.preds = preds
         self.test = test
         self.selected_dataset = dataset
         self.method = method
         self.classifier = classifier
-        self.time_to_predict = time_to_predict
-        self.avg_results_dict = {}
-        self.avg_results = {}
+        self.ts = timestep
+        self.total_time = tend - tstart
+        # classification metrics
         self.classifier_error = {}
-        self.accuracy_score_sklearn = {}
         self.classifier_accuracy = {}
-
+        self.roc_auc_score = {}
+        self.roc_auc_plot = {}
+        self.f1_score = {}
+        self.mathews_corr_coeff = {}
+        # batch results - creates dict of all avg results 
+        self.avg_results = {}
+        # results
+        self.perf_metrics = {}
         # run classification error and gather results
-        self.classification_error(self.preds, self.test)
-        self.results_logs()
+        self.findClassifierMetrics(self.preds, self.test)
 
-    def classification_error(self, preds, L_test):  
-        self.classifier_error[self.timestep] =  np.sum(preds != L_test)/len(preds)
-        self.classifier_accuracy[self.timestep] = 1 - self.classifier_error[self.timestep] 
+    def findClassifierMetrics(self, preds, test):  
+        print(np.shape(preds), np.shape(test))
+        self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds) # preds != test
+        self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
+        # roc curve
+        self.roc_auc_score[self.ts] = metric.roc_auc_score(test, preds)
+        fpr, tpr, _ = metric.roc_curve(test, preds)
+        self.roc_auc_plot[self.ts] = [fpr, tpr]
+        # F1-score 
+        self.f1_score[self.ts] = metric.f1_score(test, preds, average=None)
+        # Mathews Correlation Coefficient 
+        self.mathews_corr_coeff[self.ts] = metric.matthews_corrcoef(test, preds)
+        self.perf_metrics['Dataset'] = self.selected_dataset
+        self.perf_metrics['Classifier'] = self.classifier
+        self.perf_metrics['Method'] = self.method
+        self.perf_metrics['Classifier_Error'] = self.classifier_error[self.ts]
+        self.perf_metrics['Classifier_Accuracy'] = self.classifier_accuracy[self.ts]
+        self.perf_metrics['ROC_AUC_Score'] = self.roc_auc_score[self.ts]
+        self.perf_metrics['ROC_AUC_Plotter'] = self.roc_auc_plot[self.ts]
+        self.perf_metrics['F1_Score'] = self.f1_score[self.ts]
+        self.perf_metrics['Matthews_CorrCoef'] = self.mathews_corr_coeff[self.ts]
+        self.perf_metrics['Total_Time_Seconds'] = self.total_time
+        self.perf_metrics['Total_Time_Min'] = self.total_time / 60
+        perf_metric_df = pd.DataFrame.from_dict((self.perf_metrics.keys(), self.perf_metrics.values())).T
+        performance_metrics = pd.DataFrame(perf_metric_df.values, columns=['Metrics', 'Scores'])
+        return performance_metrics
 
-    def results_logs(self):
-            avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
-            avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
-            avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
-            avg_results_df = pd.DataFrame({'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method], 'Avg_Error': [avg_error], 'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_time': [avg_exec_time]}, 
-                                columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time'])
-            self.avg_results_dict['Dataset'] = self.selected_dataset
-            self.avg_results_dict['Classifier'] = self.classifier
-            self.avg_results_dict['Method'] = self.method
-            self.avg_results_dict['Avg_Error'] = avg_error
-            self.avg_results_dict['Avg_Accuracy'] = avg_accuracy
-            self.avg_results_dict['Avg_Exec_Time'] = avg_exec_time
-            run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
-            self.avg_results[run_method] = avg_results_df
+    def findAvePerfMetrics(self):
+        avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
+        avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
+        avg_exec_time_sec = np.array(sum(self.perf_metrics['Total_Time_Seconds'].values()) / len(self.perf_metrics['Total_Time_Seconds']))
+        avg_exec_time_min = np.array(sum(self.perf_metrics['Total_Time_Min'].values()) / len(self.perf_metrics['Total_Time_Min']))
+        avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
+        avg_f1_score = np.array(sum(self.f1_score.values())/ len(self.f1_score))
+        avg_matt_corrcoeff = np.array(sum(self.mathews_corr_coeff.values())/ len(self.mathews_corr_coeff))
 
-            df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
-            accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
-            x = accuracy_scores['Timesteps']
-            y = accuracy_scores['Accuracy']
+        self.avg_results['Dataset'] = self.selected_dataset
+        self.avg_results['Classifier'] = self.classifier
+        self.avg_results['Method'] = self.method
+        self.avg_results['Avg_Error'] = avg_error
+        self.avg_results['Avg_Accuracy'] = avg_accuracy
+        self.avg_results['Avg_Exec_Time_Sec'] = avg_exec_time_sec
+        self.avg_results['Avg_Exec_Time_Min'] = avg_exec_time_min
+        self.avg_results['Avg_ROC_AUC_Score'] = avg_roc_auc_score
+        self.avg_results['Avg_F1_Score'] = avg_f1_score
+        self.avg_results['Avg_Matthews_Corr_Coeff'] = avg_matt_corrcoeff
+
+
+        avg_perf_metrics = pd.DataFrame({'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method], 'Avg_Error': [avg_error], 
+                                        'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_Time_Sec': [avg_exec_time_sec], 'Avg_Exec_Time_Min': [avg_exec_time_min],
+                                        'Avg_ROC_AUC_Score': [avg_roc_auc_score], 'Avg_F1_Score': [avg_f1_score], 'Avg_Matthews_Corr_Coeff': [avg_matt_corrcoeff]}, 
+                            columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time_Sec','Avg_Exec_Time_Min',
+                                    'Avg_ROC_AUC_Score', 'Avg_F1_Score', 'Avg_Matthews_Corr_Coeff'])
+        
+        return avg_perf_metrics
 
             
