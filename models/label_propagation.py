@@ -81,7 +81,7 @@ np.seterr(invalid='ignore')
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
         self.X = np.array(X_train)
-        self.labels= np.array(X_labeled)
+        self.labels= np.array(X_labeled)[:,-1]
         self.unlabeled = np.array(X_unlabeled)
         self.actual_label = np.shape(X_labeled)[1]-1
 
@@ -99,25 +99,24 @@ class Label_Propagation:
         model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
         # fit model on training dataset
         
-        if len(labels) < len(X):
-            dif = len(X) - len(labels)
-            labels_to_add = []
-            for r in range(dif):
-                rndm_label = random.choice(labels)
-                labels_to_add = np.append(labels_to_add, rndm_label)
-            labels = np.append(labels, labels_to_add)
-        elif len(X) < len(labels):
-            dif = len(labels) - len(X)
-            X_to_add = np.ones(np.shape(X)[1])
-            for k in range(dif):
-                rdm_X = random.randint(0, len(X)-1)
-                X_to_add = np.vstack((X_to_add, X[rdm_X]))
-            X_to_add = np.delete(X_to_add, 0, axis=0)
-            X = np.vstack((X, X_to_add))
-            
+        # if len(labels) < len(X):
+        #     dif = len(X) - len(labels)
+        #     labels_to_add = []
+        #     for r in range(dif):
+        #         rndm_label = random.choice(labels)
+        #         labels_to_add = np.append(labels_to_add, rndm_label)
+        #     labels = np.append(labels, labels_to_add)
+        # elif len(X) < len(labels):
+        #     dif = len(labels) - len(X)
+        #     X_to_add = np.ones(np.shape(X)[1])
+        #     for k in range(dif):
+        #         rdm_X = random.randint(0, len(X)-1)
+        #         X_to_add = np.vstack((X_to_add, X[rdm_X]))
+        #     X_to_add = np.delete(X_to_add, 0, axis=0)
+        #     X = np.vstack((X, X_to_add))
         
-        with np.errstate(divide='ignore'):
-            model.fit(X, labels)
+        # with np.errstate(divide='ignore'):
+        model.fit(X, labels)
         
         # make predictions
         predicted_labels = model.predict(X)

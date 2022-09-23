@@ -95,6 +95,7 @@ class COMPOSE:
         self.stream = {}                    # establishing stream
         self.hypothesis = {}                # hypothesis to copy available labels & core supports 
         self.performance_metric = {}
+        self.compact_time = {}
         
         if self.classifier is None:
             avail_classifier = ['knn', 's3vm']
@@ -179,43 +180,85 @@ class COMPOSE:
         ts = timestep
         # 1. Remove duplicate data instances 
         # check the data bu rows and remove the duplicate instances keeping track what was removed
-        self.data[ts], sortID = np.unique(self.data[ts], return_index=True)
+        self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
         # remove labels of removed instances
-
-        uniq_labeled = self.labeled[ts][sortID]
-        print(np.shape(uniq_labeled))
-        remain_labeled = self.labeled[ts][len(uniq_labeled):,:]
-        self.labeled[ts] = np.concatenate((uniq_labeled, remain_labeled))
-        
+        sorter = []
+        for id in sortID:
+            if id > len(self.labeled[ts]):
+                break
+            else:
+                sorter.append(id) 
+        self.labeled[ts] = self.labeled[ts][sorter]
         # remove core supports dupes
         if ts > 0:
-            uniq_cs = self.core_supports[ts-1][sortID[:,0]]
-            remain_cs = self.core_supports[ts-1][len(uniq_cs):,:]
-            self.core_supports[ts-1] = np.concatenate((uniq_cs, remain_cs))
+            sorter = []
+            for id in sortID:
+                if id > len(self.core_supports[ts]):
+                    break
+                else:
+                    sorter.append(id) 
+            self.core_supports[ts] = self.core_supports[ts][sorter]
         # remove hypothesis dupes
-        uniq_hypoth = self.labeled[ts][sortID[:,0]]
-        remain_labeled = self.labeled[ts][len(uniq_hypoth):,:]
-        self.labeled[ts] = np.concatenate((uniq_hypoth, remain_labeled))
-        # remove unlabeled data indices of removed instances 
-        uniq_unlabeled = unlabeled[sortID[:,0]]
-        remain_unlabeled = unlabeled[len(uniq_unlabeled):,:]
-        unlabeled = np.concatenate((uniq_unlabeled, remain_unlabeled))
+        sorter = []
+        for id in sortID:
+            if id > len(self.hypothesis[ts]):
+                break
+            else:
+                sorter.append(id)
+        self.hypothesis[ts] = self.hypothesis[ts][sorter]
+        # remove unlabeled data indices of removed instances
+        sorter = []
+        for id in sortID:
+            if id > len(unlabeled):
+                break
+            else:
+                sorter.append(id)
+        unlabeled = unlabeled[sorter]
 
-        print(self.labeled[ts])
+        # Sort the class
+        uniq_class = np.unique(self.hypothesis[ts])     # determine number of classes
+        # sort by the class
+        self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
+        # match data with sort 
+        self.data[ts] = self.data[ts][sortID]
+        # match labeles with sort 
+        self.labeled[ts] = self.labeled[ts][sortID]
+        # match core supports with sort 
+        if ts > 0:
+            self.core_supports[ts-1] = self.core_supports[ts-1][sortID]
+        # match unlabeled with sort
+        unlabeled = unlabeled[sortID]
 
-        self.cse = cse.CSE(data=input_data, next_data= next_data)           # gets core support based on first timestep
-
-        if self.method == 'fast_compose':
-            self.cse.set_boundary('gmm')
-            self.num_cs[self.timestep] = len(self.cse.gmm())
-            self.core_supports[self.timestep] = self.cse.gmm()
-        elif self.method == 'parzen':
-            self.cse.set_boundary(self.method)
-            self.num_cs[self.timestep] = len(self.cse.parzen())
-            self.core_supports[self.timestep] = self.cse.parzen()
-        elif self.method == 'a_shape':
-            self.cse.set_boundary(self.method)
-            self.core_supports[self.timestep] = self.cse.a_shape_compaction()
+        t_start = time.time()
+        # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
+        # ------------------------------------------------------------
+        # step 3 in this method to extract core supports 
+        # step 7 -9 
+        # for each class:  
+            # call CSE for core supports, 
+            # add core supports to labeled data
+            # L^(t+1) = L^(t+1) U CSc
+            # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
+        # ------------------------------------------------------------
+    
+        for c in uniq_class:
+            class_ind = np.argwhere(self.hypothesis[ts] == c)
+            self.cse = cse.CSE(data=self.data[ts][class_ind])           # gets core support based on first timestep
+            if self.method == 'fast_compose':
+                self.cse.set_boundary('gmm')
+                self.num_cs[ts] = len(self.cse.gmm())
+                self.core_supports[ts] = self.cse.gmm()
+            elif self.method == 'parzen':
+                self.cse.set_boundary(self.method)
+                self.num_cs[ts] = len(self.cse.parzen())
+                self.core_supports[ts] = self.cse.parzen()
+            elif self.method == 'a_shape':
+                self.cse.set_boundary(self.method)
+                self.core_supports[ts] = self.cse.a_shape_compaction()
+        t_end = time.time()
+        self.compact_time[ts] = t_end - t_start
+        print(self.compact_time[ts]) 
+        print("stop")
 
     def set_data(self):
         """
@@ -407,38 +450,30 @@ class COMPOSE:
         This is step 4 of the COMPOSE Algorithm:
         Call SSL with L^t, Y^t, and U^t to obtain hypothesis, h^t: X->Y
         """
-        # 1. sort the hypothesis so unlabeled data is at the bottom
-        self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
+        # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
+        self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
         # 2. sort the data to match hypothesis shift
-        shift_data = self.data[ts][sortID[:,0]]
-        remain_data = self.data[ts][len(shift_data):,:]
-        self.data[ts] = np.concatenate((shift_data, remain_data))
+        # shift_data = self.data[ts][sortID[:,0]]
+        # remain_data = self.data[ts][len(shift_data):,:]
+        # self.data[ts] = np.concatenate((shift_data, remain_data))
+        self.data[ts] = self.data[ts][sortID]
         # 3. sort labeled to match hypothesis shift
-        shift_label = self.labeled[ts][sortID[:,0]]
-        remain_label = self.labeled[ts][len(shift_label):,:]
-        self.labeled[ts] = np.concatenate((shift_label, remain_label))
+        self.labeled[ts] = self.labeled[ts][sortID]
         # 4. sort the core supports to match hypothesis 
         if ts > 0:
-            shift_cs = self.core_supports[ts-1][sortID[:,0]]
-            remain_cs = self.core_supports[ts-1][len(shift_cs):,:]
-            self.core_supports[ts-1] = np.concatenate((shift_cs, remain_cs))
-        
+            self.core_supports[ts-1] = self.core_supports[ts-1][sortID]
         # classify 
         # step 4 call SSL with L, Y , U
         t_start = time.time()
         self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
         t_end = time.time() 
-
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
-        
         # get performance metrics of classification 
-        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
+        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts][:,-1], \
                                             dataset= self.selected_dataset , method= self.method , \
-                                            classifier= self.classifier, tstart=t_start, tend=t_end) 
-        
+                                            classifier= self.classifier, tstart=t_start, tend=t_end)
         self.performance_metric = perf_metric.performance_metric()
-        
         return self.predictions[ts]
 
     def run(self):

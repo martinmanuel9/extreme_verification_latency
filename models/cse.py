@@ -54,10 +54,9 @@ from sklearn.model_selection import StratifiedKFold
 import warnings
 
 class CSE:
-    def __init__(self, data=None, next_data = None):
+    def __init__(self, data=None):
         # self.data must be updated as it is taking data as a dictionary 
         self.data = []
-        self.test = next_data
         self.boundary = []
         self.boundary_data = {}
         self.boundary_opts = {} 
