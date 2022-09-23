@@ -303,48 +303,45 @@ class COMPOSE:
             self.cse.set_boundary('knn')
             self.cse.k_nn()
 
-    
-    def classification_error(self, preds, L_test):  
-        return np.sum(preds != L_test)/len(preds)
+    # def classification_error(self, preds, L_test):  
+    #     return np.sum(preds != L_test)/len(preds)
 
-    def results_logs(self):
-        avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
-        avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
-        avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
-        avg_results_df = pd.DataFrame( {'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method],
-                            'Avg_Error': [avg_error], 'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_Time': [avg_exec_time], 'Total_Exec_Time' : [self.total_time] }, 
-                            columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time', 'Total_Exec_Time'] )
-        self.avg_results_dict['Dataset'] = self.selected_dataset
-        self.avg_results_dict['Classifier'] = self.classifier
-        self.avg_results_dict['Method'] = self.method
-        self.avg_results_dict['Average_Error'] = avg_error
-        self.avg_results_dict['Average_Accuracy'] = avg_accuracy
-        self.avg_results_dict['Avg_Exec_Time'] = avg_exec_time
-        self.avg_results_dict['Total_Exec_Time'] = self.total_time
-        run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
-        self.avg_results[run_method] = avg_results_df
+    # def results_logs(self):
+    #     avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
+    #     avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
+    #     avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
+    #     avg_results_df = pd.DataFrame( {'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method],
+    #                         'Avg_Error': [avg_error], 'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_Time': [avg_exec_time], 'Total_Exec_Time' : [self.total_time] }, 
+    #                         columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time', 'Total_Exec_Time'] )
+    #     self.avg_results_dict['Dataset'] = self.selected_dataset
+    #     self.avg_results_dict['Classifier'] = self.classifier
+    #     self.avg_results_dict['Method'] = self.method
+    #     self.avg_results_dict['Average_Error'] = avg_error
+    #     self.avg_results_dict['Average_Accuracy'] = avg_accuracy
+    #     self.avg_results_dict['Avg_Exec_Time'] = avg_exec_time
+    #     self.avg_results_dict['Total_Exec_Time'] = self.total_time
+    #     run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
+    #     self.avg_results[run_method] = avg_results_df
         
         
-        if self.verbose == 1:
-            print('Execition Time:', self.total_time[self.user_data_input], "seconds")
-            print('Average error:', avg_error)
-            print('Average Accuracy:', avg_accuracy)
-            print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
+    #     if self.verbose == 1:
+    #         print('Execition Time:', self.total_time[self.user_data_input], "seconds")
+    #         print('Average error:', avg_error)
+    #         print('Average Accuracy:', avg_accuracy)
+    #         print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
 
-        df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
-        accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
-        x = accuracy_scores['Timesteps']
-        y = accuracy_scores['Accuracy']
-        
+    #     df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
+    #     accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
+    #     x = accuracy_scores['Timesteps']
+    #     y = accuracy_scores['Accuracy']
+    #     if self.verbose == 1:
+    #         plt.xlabel('Timesteps')
+    #         plt.ylabel('Accuracy [%]')
+    #         plt.title('Correct Classification [%]')
+    #         plt.plot(x,y,'o', color='black')
+    #         plt.show()
 
-        if self.verbose == 1:
-            plt.xlabel('Timesteps')
-            plt.ylabel('Accuracy [%]')
-            plt.title('Correct Classification [%]')
-            plt.plot(x,y,'o', color='black')
-            plt.show()
-
-        return accuracy_scores
+    #     return accuracy_scores
 
     def set_stream(self, ts):
         """
@@ -415,6 +412,7 @@ class COMPOSE:
         t_end = time.time() 
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
+        
         # get performance metrics of classification 
         perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
             dataset= self.selected_dataset , method= self.method ,classifier= self.classifier, tstart=t_start, tend=t_end) 
@@ -448,6 +446,7 @@ class COMPOSE:
                 else:
                     # add previous core supports from previous time step
                     self.set_stream(ts)
+                
                 #  step 3 receive inlabeled data U^t = { xu^t in X, u = 1,..., N}
                 unlabeled_data = self.classify(ts)
 
