@@ -163,12 +163,45 @@ class COMPOSE:
         if self.verbose == 1:
             print("Number of cores executing:", self.n_cores)
 
-    def get_core_supports(self, input_data = None, next_data = None):
+    def get_core_supports(self, unlabeled, timestep):
         """
         Method provides core supports based on desired core support extraction.
         Available Core Support Extraction includes: 
         GMM, Parzen Window, and Alpha Shape Core Supports
+
+        Prior to doing the core support extraction: 
+        This method preprocesses the data before extracting the core supports from the stream
+        The intent of this method is to complete the following:
+            1. Remove duplicate data instances 
+            2. Sort the classes prior to extracting core supports 
+            3. Extract the core supports
         """
+        ts = timestep
+        # 1. Remove duplicate data instances 
+        # check the data bu rows and remove the duplicate instances keeping track what was removed
+        self.data[ts], sortID = np.unique(self.data[ts], return_index=True)
+        # remove labels of removed instances
+
+        uniq_labeled = self.labeled[ts][sortID]
+        print(np.shape(uniq_labeled))
+        remain_labeled = self.labeled[ts][len(uniq_labeled):,:]
+        self.labeled[ts] = np.concatenate((uniq_labeled, remain_labeled))
+        
+        # remove core supports dupes
+        if ts > 0:
+            uniq_cs = self.core_supports[ts-1][sortID[:,0]]
+            remain_cs = self.core_supports[ts-1][len(uniq_cs):,:]
+            self.core_supports[ts-1] = np.concatenate((uniq_cs, remain_cs))
+        # remove hypothesis dupes
+        uniq_hypoth = self.labeled[ts][sortID[:,0]]
+        remain_labeled = self.labeled[ts][len(uniq_hypoth):,:]
+        self.labeled[ts] = np.concatenate((uniq_hypoth, remain_labeled))
+        # remove unlabeled data indices of removed instances 
+        uniq_unlabeled = unlabeled[sortID[:,0]]
+        remain_unlabeled = unlabeled[len(uniq_unlabeled):,:]
+        unlabeled = np.concatenate((uniq_unlabeled, remain_unlabeled))
+
+        print(self.labeled[ts])
 
         self.cse = cse.CSE(data=input_data, next_data= next_data)           # gets core support based on first timestep
 
@@ -305,7 +338,6 @@ class COMPOSE:
 
     # def classification_error(self, preds, L_test):  
     #     return np.sum(preds != L_test)/len(preds)
-
     # def results_logs(self):
     #     avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
     #     avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
@@ -322,14 +354,11 @@ class COMPOSE:
     #     self.avg_results_dict['Total_Exec_Time'] = self.total_time
     #     run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
     #     self.avg_results[run_method] = avg_results_df
-        
-        
     #     if self.verbose == 1:
     #         print('Execition Time:', self.total_time[self.user_data_input], "seconds")
     #         print('Average error:', avg_error)
     #         print('Average Accuracy:', avg_accuracy)
     #         print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
-
     #     df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
     #     accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
     #     x = accuracy_scores['Timesteps']
@@ -340,7 +369,6 @@ class COMPOSE:
     #         plt.title('Correct Classification [%]')
     #         plt.plot(x,y,'o', color='black')
     #         plt.show()
-
     #     return accuracy_scores
 
     def set_stream(self, ts):
@@ -366,19 +394,6 @@ class COMPOSE:
         # append the core supports to accomodate the added core supports from previous ts
         self.core_supports[ts] = np.concatenate((self.core_supports[ts-1][cs_indices]))
 
-        
-    def core_support_extract(self, data_stream):
-        """
-        This method preprocesses the data before extracting the core supports from the stream
-        The intent of this method is to complete the following:
-            1. Remove duplicate data instances 
-            2. Sort the classes prior to extracting core supports 
-            3. Extract the core supports
-        """
-        # remove duplicate data from stream, from labeles, previous core supports, hypothesis 
-        uniq_stream, sortID = np.unique(data_stream), np.argsort(data_stream)
-        
-
     def classify(self, ts):
         """
         This method classifies the unlabeled data then goes through the Semi-Supervised Learning Algorithm to receive labels from classification. 
@@ -388,6 +403,9 @@ class COMPOSE:
         3. sort the labeled so that the it matches the hypothesis shift
         4. sort the core supports to match hypothesis shift
         5. classify the data via SSL algorithm
+
+        This is step 4 of the COMPOSE Algorithm:
+        Call SSL with L^t, Y^t, and U^t to obtain hypothesis, h^t: X->Y
         """
         # 1. sort the hypothesis so unlabeled data is at the bottom
         self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
@@ -410,12 +428,14 @@ class COMPOSE:
         t_start = time.time()
         self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
         t_end = time.time() 
+
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
         
         # get performance metrics of classification 
         perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
-            dataset= self.selected_dataset , method= self.method ,classifier= self.classifier, tstart=t_start, tend=t_end) 
+                                            dataset= self.selected_dataset , method= self.method , \
+                                            classifier= self.classifier, tstart=t_start, tend=t_end) 
         
         self.performance_metric = perf_metric.performance_metric()
         
@@ -447,8 +467,12 @@ class COMPOSE:
                     # add previous core supports from previous time step
                     self.set_stream(ts)
                 
-                #  step 3 receive inlabeled data U^t = { xu^t in X, u = 1,..., N}
-                unlabeled_data = self.classify(ts)
+                # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}
+                # step 4 call SSL with L^t, Y^t, and U^t
+                unlabeled_data = self.classify(ts) 
+
+                # get core supports 
+                self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
 
                 # Receive Unlabeled Data - step 1 - step 3 
                 # We have received labeled data at initial time step and then we use the base classifier 
