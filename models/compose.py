@@ -94,6 +94,7 @@ class COMPOSE:
         self.accuracy_sklearn = {}
         self.stream = {}                    # establishing stream
         self.hypothesis = {}                # hypothesis to copy available labels & core supports 
+        self.performance_metric = {}
         
         if self.classifier is None:
             avail_classifier = ['knn', 's3vm']
@@ -415,11 +416,10 @@ class COMPOSE:
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
         # get performance metrics of classification 
-        perf_metric = cp.ClassifierMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.data[ts], \
+        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
             dataset= self.selected_dataset , method= self.method ,classifier= self.classifier, tstart=t_start, tend=t_end) 
         
-        print(perf_metric)
-        print("stop")
+        self.performance_metric = perf_metric.performance_metric()
         
         return self.predictions[ts]
 

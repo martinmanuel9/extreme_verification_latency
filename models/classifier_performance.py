@@ -39,7 +39,7 @@ import pandas as pd
 import sklearn.metrics as metric
 import random
 
-class ClassifierMetrics:
+class PerformanceMetrics:
     """
     Intent of Classification Class is to get the classification metrics for either 
     a single timestep or an overtime performance of the a classifier 
@@ -55,7 +55,7 @@ class ClassifierMetrics:
     """
     def __init__(self, timestep, preds, test, dataset, method, classifier, tstart, tend ):
         self.preds = preds
-        self.test = test
+        self.test = test[:,-1]
         self.selected_dataset = dataset
         self.method = method
         self.classifier = classifier
@@ -72,23 +72,40 @@ class ClassifierMetrics:
         self.avg_results = {}
         # results
         self.perf_metrics = {}
-        # run classification error and gather results
-        self.findClassifierMetrics(self.preds, self.test)
 
-    def findClassifierMetrics(self, preds, test):  
-        # if len(test) > len(preds):
-        #     reduc = len(test) - len(preds)
-        #     test = list(test)
-        #     for i in range(reduc):
-        #         rnd = random.randint(0, len(test)-1)
-        #         test.pop(rnd)
-        #     test = np.array(test)
-        self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds) # preds != test
-        self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
+        # align data
+        if len(self.test) > len(self.preds):
+            reduc = len(self.test) - len(self.preds)
+            self.test = list(self.test)
+            for i in range(reduc):
+                rnd = random.randint(0, len(self.test)-1)
+                self.test.pop(rnd)
+            self.test = np.array(self.test)
+        elif len(self.test) < len(self.preds):
+            reduc = len(self.preds) - len(self.test)
+            self.preds = list(self.preds)
+            for i in range(reduc):
+                rnd = random.randint(0, len(self.preds)-1)
+                self.preds.pop(rnd)
+            self.preds = np.array(self.preds)
+
+        # run classification error and gather results
+        self.metric = self.findClassifierMetrics(self.preds, self.test)
+
+    def findClassifierMetrics(self, preds, test): 
+        self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds)
+        self.classifier_accuracy[self.ts] = np.mean(np.argmax(preds) == test)
+        # self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
+
         # roc curve
-        self.roc_auc_score[self.ts] = metric.roc_auc_score(test, preds)
-        fpr, tpr, _ = metric.roc_curve(test, preds)
-        self.roc_auc_plot[self.ts] = [fpr, tpr]
+        try:
+            self.roc_auc_score[self.ts] = metric.roc_auc_score(test, preds)
+            fpr, tpr, _ = metric.roc_curve(test, preds, pos_label=1)
+            self.roc_auc_plot[self.ts] = [fpr, tpr]
+        except ValueError:
+            self.roc_auc_score[self.ts] = 'No Score.Only one class present'
+            self.roc_auc_plot[self.ts] = 'No plot data.Only one class present'
+        
         # F1-score 
         self.f1_score[self.ts] = metric.f1_score(test, preds, average=None)
         # Mathews Correlation Coefficient 
@@ -106,6 +123,7 @@ class ClassifierMetrics:
         self.perf_metrics['Total_Time_Min'] = self.total_time / 60
         perf_metric_df = pd.DataFrame.from_dict((self.perf_metrics.keys(), self.perf_metrics.values())).T
         performance_metrics = pd.DataFrame(perf_metric_df.values, columns=['Metrics', 'Scores'])
+        
         return performance_metrics
 
     def findAvePerfMetrics(self):
@@ -136,5 +154,8 @@ class ClassifierMetrics:
                                     'Avg_ROC_AUC_Score', 'Avg_F1_Score', 'Avg_Matthews_Corr_Coeff'])
         
         return avg_perf_metrics
+
+    def performance_metric(self):
+        return self.metric
 
             
