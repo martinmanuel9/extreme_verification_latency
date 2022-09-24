@@ -56,7 +56,6 @@ class COMPOSE:
     def __init__(self, 
                 classifier = 'QN_S3VM', 
                 method= 'fast_compose',
-                verbose = 1,
                 num_cores = 0.8, 
                 selected_dataset = 'UG_2C_2D'): 
         """
@@ -67,17 +66,11 @@ class COMPOSE:
         self.timestep = 0                   # The current timestep of the datase
         self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  num_cores                   # Level of feedback displayed during run {default}
-        self.verbose = verbose              #    0  : No Information Displayed
-                                            #    1  : Command line progress updates - {default}
-                                            #    2  : Plots when possible and Command line progress updates
-
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        self.num_cs = {}                    #  number of core supports 
         self.total_time = 0
-        self.cse_opts = []                  # options for the selected cse function in cse class
         self.selected_dataset = selected_dataset
         self.classifier = classifier
         self.method = method                
@@ -103,34 +96,9 @@ class COMPOSE:
             classifier_input = input('Enter classifier:')
             self.classifier = classifier_input
         
-        if verbose is None:
-            # set object displayed info setting 
-            print("Only 3 options to display information for verbose: \n", 
-                "0 - No Info ; \n", 
-                "1 - Command Line Progress Updates; \n",
-                "2 - Plots when possilbe and Command Line Progress \n")
-            print("Set Verbose: ")
-            verbose_input = input("Enter display information option:")
-            self.verbose = verbose_input
-
-        if self.verbose >= 0 and self.verbose <=2:
-            if self.verbose == 1:
-                print("Run method: ", self.verbose)
-        else:
-            print("Only 3 options to display information: \n", 
-            "0 - No Info ;\n", 
-            "1 - Command Line Progress Updates;\n",
-            "2 - Plots when possilbe and Command Line Progress") 
 
     def compose(self):
         """
-        Sets COMPOSE dataset and information processing options
-        Check if the input parameters are not empty for compose
-        This checks if the dataset is empty and checks what option of feedback you want
-        Gets dataset and verbose (the command to display options as COMPOSE processes)
-        Verbose:    0 : no info is displayed
-                    1 : Command Line progress updates
-                    2 : Plots when possible and Command Line progress updates
         """
         # set labels and unlabeles and dataset to process
         self.set_data()
@@ -145,24 +113,20 @@ class COMPOSE:
         """
         self.figure_xlim = np.amin(self.dataset)
         self.figure_ylim = np.amax(self.dataset)
-        if self.verbose == 1:
-            print("Drift window:" , [self.figure_xlim, self.figure_ylim])
+
 
     def set_cores(self):
         """
         Establishes number of cores to conduct parallel processing
         """
         num_cores = multiprocessing.cpu_count()         # determines number of cores
-        if self.verbose == 1: 
-            print("Available cores:", num_cores)
         percent_cores = math.ceil(self.n_cores * num_cores)
         if percent_cores > num_cores:
             print("You do not have enough cores on this machine. Cores have to be set to ", num_cores)
             self.n_cores = int(num_cores)                   # sets number of cores to available 
         else:
             self.n_cores = int(percent_cores)                   # original number of cores to 1
-        if self.verbose == 1:
-            print("Number of cores executing:", self.n_cores)
+
 
     def get_core_supports(self, unlabeled, timestep):
         """
@@ -220,7 +184,9 @@ class COMPOSE:
         # sort by the class
         self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
         # match data with sort 
+        
         self.data[ts] = self.data[ts][sortID]
+        
         # match labeles with sort 
         self.labeled[ts] = self.labeled[ts][sortID]
         # match core supports with sort 
@@ -240,24 +206,14 @@ class COMPOSE:
             # L^(t+1) = L^(t+1) U CSc
             # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
         # ------------------------------------------------------------
-    
         for c in uniq_class:
-            class_ind = np.argwhere(self.hypothesis[ts] == c)
-            self.cse = cse.CSE(data=self.data[ts][class_ind])           # gets core support based on first timestep
-            if self.method == 'fast_compose':
-                self.cse.set_boundary('gmm')
-                self.num_cs[ts] = len(self.cse.gmm())
-                self.core_supports[ts] = self.cse.gmm()
-            elif self.method == 'parzen':
-                self.cse.set_boundary(self.method)
-                self.num_cs[ts] = len(self.cse.parzen())
-                self.core_supports[ts] = self.cse.parzen()
-            elif self.method == 'a_shape':
-                self.cse.set_boundary(self.method)
-                self.core_supports[ts] = self.cse.a_shape_compaction()
+            class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
+            extract_cs = cse.CSE(data=self.data[ts][class_ind], method=self.method)    # gets core support based on first timestep
         t_end = time.time()
         self.compact_time[ts] = t_end - t_start
-        print(self.compact_time[ts]) 
+        self.core_supports[ts] = extract_cs.core_support_extract()
+        
+        print(self.core_supports[ts])
         print("stop")
 
     def set_data(self):
@@ -269,9 +225,6 @@ class COMPOSE:
                 '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
             print('The following datasets are available:\n' , avail_data_opts)
             self.dataset = input('Enter dataset:')
-        if self.verbose == 1 :
-            print("Dataset:", self.dataset)
-            print("Method:", self.method)
         self.user_data_input = self.dataset
         data_gen = bmdg.Datagen()
         dataset_gen = data_gen.gen_dataset(self.dataset)
@@ -374,45 +327,7 @@ class COMPOSE:
             ssl_label_propagation = lbl_prop.Label_Propagation(X_train_l, L_train_l, X_train_u)
             preds = ssl_label_propagation.ssl()
             return preds
-        elif self.classifier == 'knn':
-            self.cse = cse.CSE(data=self.data)
-            self.cse.set_boundary('knn')
-            self.cse.k_nn()
-
-    # def classification_error(self, preds, L_test):  
-    #     return np.sum(preds != L_test)/len(preds)
-    # def results_logs(self):
-    #     avg_error = np.array(sum(self.classifier_error.values()) / len(self.classifier_error))
-    #     avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
-    #     avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
-    #     avg_results_df = pd.DataFrame( {'Dataset': [self.selected_dataset], 'Classifier': [self.classifier],'Method': [self.method],
-    #                         'Avg_Error': [avg_error], 'Avg_Accuracy': [avg_accuracy], 'Avg_Exec_Time': [avg_exec_time], 'Total_Exec_Time' : [self.total_time] }, 
-    #                         columns=['Dataset','Classifier','Method','Avg_Error', 'Avg_Accuracy', 'Avg_Exec_Time', 'Total_Exec_Time'] )
-    #     self.avg_results_dict['Dataset'] = self.selected_dataset
-    #     self.avg_results_dict['Classifier'] = self.classifier
-    #     self.avg_results_dict['Method'] = self.method
-    #     self.avg_results_dict['Average_Error'] = avg_error
-    #     self.avg_results_dict['Average_Accuracy'] = avg_accuracy
-    #     self.avg_results_dict['Avg_Exec_Time'] = avg_exec_time
-    #     self.avg_results_dict['Total_Exec_Time'] = self.total_time
-    #     run_method = self.selected_dataset + '_' + self.classifier + '_' + self.method
-    #     self.avg_results[run_method] = avg_results_df
-    #     if self.verbose == 1:
-    #         print('Execition Time:', self.total_time[self.user_data_input], "seconds")
-    #         print('Average error:', avg_error)
-    #         print('Average Accuracy:', avg_accuracy)
-    #         print('Average Execution Time per Timestep:', avg_exec_time, "seconds")
-    #     df = pd.DataFrame.from_dict((self.classifier_accuracy.keys(), self.classifier_accuracy.values())).T
-    #     accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
-    #     x = accuracy_scores['Timesteps']
-    #     y = accuracy_scores['Accuracy']
-    #     if self.verbose == 1:
-    #         plt.xlabel('Timesteps')
-    #         plt.ylabel('Accuracy [%]')
-    #         plt.title('Correct Classification [%]')
-    #         plt.plot(x,y,'o', color='black')
-    #         plt.show()
-    #     return accuracy_scores
+        # TODO: KNN 
 
     def set_stream(self, ts):
         """
@@ -453,15 +368,12 @@ class COMPOSE:
         # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
         self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
         # 2. sort the data to match hypothesis shift
-        # shift_data = self.data[ts][sortID[:,0]]
-        # remain_data = self.data[ts][len(shift_data):,:]
-        # self.data[ts] = np.concatenate((shift_data, remain_data))
-        self.data[ts] = self.data[ts][sortID]
+        self.data[ts] = np.take_along_axis(self.data[ts], sortID, axis=0)
         # 3. sort labeled to match hypothesis shift
-        self.labeled[ts] = self.labeled[ts][sortID]
+        self.labeled[ts] = np.take_along_axis(self.labeled[ts], sortID, axis=0)
         # 4. sort the core supports to match hypothesis 
         if ts > 0:
-            self.core_supports[ts-1] = self.core_supports[ts-1][sortID]
+            self.core_supports[ts-1] = np.take_along_axis(self.core_supports[ts-1],sortID, axis=0)
         # classify 
         # step 4 call SSL with L, Y , U
         t_start = time.time()
@@ -483,15 +395,11 @@ class COMPOSE:
             self.compose()
             start = self.timestep
             timesteps = self.data.keys()
-            if self.verbose == 1:
-                print('SSL Classifier:', self.classifier)
             total_time_start = time.time() 
             ts = start
             
             for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
-                if self.verbose == 1:
-                    print("Timestep:",ts)
                 t_start = time.time()
                 
                 # determine if there are any labeled data & add core_suppports from previous timestep
@@ -543,8 +451,7 @@ class COMPOSE:
                 #     elapsed_time = t_end - t_start
                 #     self.time_to_predict[ts] = elapsed_time
                     
-                #     if self.verbose == 1:
-                #         print("Time to predict: ", elapsed_time, " seconds")
+
 
                 # after firststep
                 if start != ts:
@@ -582,8 +489,7 @@ class COMPOSE:
                     t_end = time.time()         
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
-                    if self.verbose == 1:
-                        print("Time to predict: ", elapsed_time, " seconds")
+                    
                 
                 hypoth_label = np.shape(self.data[ts])[1]-1
                 error = self.classification_error(list(self.predictions[ts]), list(self.data[ts+1][:,hypoth_label]))
@@ -596,15 +502,10 @@ class COMPOSE:
                 self.classifier_accuracy[ts] = (1-error) 
                 self.classifier_error[ts] = error
 
-                if self.verbose == 1:
-                    print("Classification error: ", error)
-                    print("Accuracy: ", 1 - error)
-                    # self.plotter()
                     
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start
-            if self.verbose == 1:
-                print('Total Time', self.total_time)
+           
             
             ## Report out
             # classifier_perf = cp.ClassifierMetrics(preds = self.predictions, test= self.data, timestep= ts,\

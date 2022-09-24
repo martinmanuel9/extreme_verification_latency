@@ -51,10 +51,9 @@ import numpy as np
 
 class RunExperiment:
 
-    def __init__(self, experiements = [], classifier = [], verbose =[], datasets=[], num_cores= 0.8):
+    def __init__(self, experiements = [], classifier = [], datasets=[], num_cores= 0.8):
         self.experiments = experiements
         self.classifier = classifier
-        self.verbose = verbose
         self.datasets = datasets
         self.results = {}
         self.num_cores = num_cores
@@ -98,7 +97,7 @@ class RunExperiment:
                 for dataset in self.datasets:
                     experiment = dataset + '_' + j + '_' + i
                     if i == 'fast_compose' and j == 'QN_S3VM':
-                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="fast_compose", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="fast_compose", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = fast_compose_QNS3VM.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                         fast_compose_QNS3VM.avg_results_dict['Time_Stamp'] = time_stamp 
@@ -111,7 +110,7 @@ class RunExperiment:
                         print("Results:\n " , results_pkl )
 
                     elif i == 'fast_compose' and j == 'label_propagation':
-                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="fast_compose", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = fast_compose_label_prop.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                         fast_compose_label_prop.avg_results_dict['Time_Stamp'] = time_stamp
@@ -124,7 +123,7 @@ class RunExperiment:
                         print("Results:\n" , results_pkl )
                         
                     elif i == 'compose' and j == 'QN_S3VM':
-                        reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", verbose = self.verbose, num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = reg_compose_label_QN_S3VM.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                         reg_compose_label_QN_S3VM.avg_results_dict['Time_Stamp'] = time_stamp
@@ -137,7 +136,7 @@ class RunExperiment:
                         print("Results:\n" , results_pkl )
 
                     elif i == 'compose' and j == 'label_propagation':
-                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", verbose = self.verbose ,num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = reg_compose_label_prop.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")   
                         reg_compose_label_prop.avg_results_dict['Time_Stamp'] = time_stamp  
@@ -177,8 +176,8 @@ class RunExperiment:
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT' ], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT' ], num_cores=0.95)
 run_experiment.run()
-# run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], verbose=0, datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
+# run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 # run_experiment.run()
 #%%

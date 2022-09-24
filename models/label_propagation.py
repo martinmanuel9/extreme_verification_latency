@@ -77,18 +77,17 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn import utils
 import random
-np.seterr(invalid='ignore')
+
+# np.seterr(invalid='ignore')
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
         self.X = np.array(X_train)
-        self.labels= np.array(X_labeled)[:,-1]
+        self.labels= np.array(X_labeled)# [:,-1]
         self.unlabeled = np.array(X_unlabeled)
         self.actual_label = np.shape(X_labeled)[1]-1
 
     def ssl(self):
         labels = self.labels[:,self.actual_label]
-        
-
         # labels_orig = np.copy(self.labels[:,self.actual_label])
         # labels = np.floor(labels)
         # labels_orig = np.floor(labels_orig)

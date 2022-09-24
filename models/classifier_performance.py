@@ -90,7 +90,7 @@ class PerformanceMetrics:
         #     self.preds = np.array(self.preds)
 
         # run classification error and gather results
-        self.metric = self.findClassifierMetrics(preds= self.preds, test=self.test[:,-1])
+        self.metric = self.findClassifierMetrics(preds= self.preds, test=self.test)
 
     def findClassifierMetrics(self, preds, test): 
         self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds)
