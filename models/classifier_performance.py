@@ -92,10 +92,14 @@ class PerformanceMetrics:
         # run classification error and gather results
         self.metric = self.findClassifierMetrics(preds= self.preds, test=self.test)
 
-    def findClassifierMetrics(self, preds, test): 
+    def findClassifierMetrics(self, preds, test):
+        print(preds) 
         self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds)
-        self.classifier_accuracy[self.ts] = np.mean(np.argmax(preds) == test)
-        # self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
+        # self.classifier_accuracy[self.ts] = np.mean(np.argmax(preds) == test)
+        self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
+        # class_report = metric.classification_report(test, preds)
+        # print(class_report)
+
         # roc curve
         try:
             self.roc_auc_score[self.ts] = metric.roc_auc_score(test, preds)
@@ -113,7 +117,6 @@ class PerformanceMetrics:
         self.perf_metrics['Method'] = self.method
         self.perf_metrics['Classifier_Error'] = self.classifier_error[self.ts]
         self.perf_metrics['Classifier_Accuracy'] = self.classifier_accuracy[self.ts]
-        #TODO: need to remove the only one class found 
         self.perf_metrics['ROC_AUC_Score'] = self.roc_auc_score[self.ts]
         self.perf_metrics['ROC_AUC_Plotter'] = self.roc_auc_plot[self.ts]
         self.perf_metrics['F1_Score'] = self.f1_score[self.ts]
@@ -129,7 +132,13 @@ class PerformanceMetrics:
         avg_accuracy = np.array(sum(self.classifier_accuracy.values()) / len(self.classifier_accuracy))
         avg_exec_time_sec = np.array(sum(self.perf_metrics['Total_Time_Seconds'].values()) / len(self.perf_metrics['Total_Time_Seconds']))
         avg_exec_time_min = np.array(sum(self.perf_metrics['Total_Time_Min'].values()) / len(self.perf_metrics['Total_Time_Min']))
-        avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
+        roc_auc_scores = []
+        for k, v in self.perf_metrics['ROC_AUC_Score']:
+            if v == 'Only one class found':
+                break
+            else:
+                roc_auc_scores.append(v)
+        avg_roc_auc_score = np.array(sum(roc_auc_scores) / len(roc_auc_scores))
         avg_f1_score = np.array(sum(self.f1_score.values())/ len(self.f1_score))
         avg_matt_corrcoeff = np.array(sum(self.mathews_corr_coeff.values())/ len(self.mathews_corr_coeff))
         self.avg_results['Dataset'] = self.selected_dataset

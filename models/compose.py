@@ -212,9 +212,6 @@ class COMPOSE:
         t_end = time.time()
         self.compact_time[ts] = t_end - t_start
         self.core_supports[ts] = extract_cs.core_support_extract()
-        
-        print(self.core_supports[ts])
-        print("stop")
 
     def set_data(self):
         """
@@ -417,42 +414,6 @@ class COMPOSE:
                 # get core supports 
                 self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
 
-                # Receive Unlabeled Data - step 1 - step 3 
-                # We have received labeled data at initial time step and then we use the base classifier 
-                # if ts == 0:
-                #     if self.classifier == 'QN_S3VM':
-                #         self.predictions[ts] = self.classify(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1]) 
-                #     elif self.classifier == 'label_propagation':
-                #         self.predictions[ts] = self.classifier(X_train_l=self.hypothesis[ts], L_train_l=self.labeled[ts+1], X_train_u = self.data[ts], X_test=self.data[ts+1])       
-                    
-                #     # Set D_t or data stream from concatenating the data stream with the predictions - step 3
-                #     # {xl, yl } = self.labeled[ts = 0]
-                #     # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
-                #     if len(self.data[ts]) > len(self.predictions[ts]):
-                #         dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
-                #         preds_to_add = []
-                #         for k in range(dif_xu_hu):
-                #             randm_list = np.unique(self.predictions[ts])
-                #             rdm_preds = random.choice(randm_list)
-                #             preds_to_add = np.append(preds_to_add, rdm_preds)
-                #         self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
-                        
-                #     # { xu, hu }
-                #     xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
-                #     # Dt = { xl , yl } U { xu , hu }  
-                #     self.stream[ts] = np.concatenate((self.labeled[ts], xu_hu)) 
-                #     # set L^t+1 = 0, Y^t = 0 - step 4 
-                #     self.labeled[ts+1] = []
-                #     # steps 5 - 7 as it extracts core supports
-                #     self.get_core_supports(self.stream[ts])              # create core supports at timestep 0
-                #     # L^t+1 = L^t+1 
-                #     self.labeled[ts+1] = self.core_supports[ts]
-                #     t_end = time.time()         
-                #     elapsed_time = t_end - t_start
-                #     self.time_to_predict[ts] = elapsed_time
-                    
-
-
                 # after firststep
                 if start != ts:
                     t_start = time.time()
@@ -490,24 +451,8 @@ class COMPOSE:
                     elapsed_time = t_end - t_start
                     self.time_to_predict[ts] = elapsed_time
                     
-                
-                hypoth_label = np.shape(self.data[ts])[1]-1
-                error = self.classification_error(list(self.predictions[ts]), list(self.data[ts+1][:,hypoth_label]))
-                # TODO determine if this is needed 
-                if len(self.data[ts+1][:,hypoth_label]) > len(self.predictions[ts]):
-                    dif_hypoth_learner = len(self.data[ts+1][:,hypoth_label]) - len(self.predictions[ts])
-                    ones_to_add = np.ones(dif_hypoth_learner)
-                    self.predictions[ts] = np.append(self.predictions[ts], ones_to_add)
-                
-                self.classifier_accuracy[ts] = (1-error) 
-                self.classifier_error[ts] = error
-
-                    
-            total_time_end = time.time()
-            self.total_time = total_time_end - total_time_start
-           
             
             ## Report out
             # classifier_perf = cp.ClassifierMetrics(preds = self.predictions, test= self.data, timestep= ts,\
             #                         method= self.method, classifier= self.classifier, dataset= self.selected_dataset, time_to_predict= self.time_to_predict[ts])
-            return self.results_logs()
+            return 'Result'
