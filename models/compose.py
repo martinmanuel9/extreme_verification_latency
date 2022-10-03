@@ -51,6 +51,7 @@ import matplotlib.animation as animation
 import math
 import sklearn.metrics as metric
 import classifier_performance as cp
+import jax
 
 class COMPOSE: 
     def __init__(self, 
@@ -61,34 +62,24 @@ class COMPOSE:
         """
         Initialization of Fast COMPOSE
         """
-
-
         self.timestep = 0                   # The current timestep of the datase
-        self.synthetic = 0                  # 1 Allows synthetic data during cse and {0} does not allow synthetic data
         self.n_cores =  num_cores                   # Level of feedback displayed during run {default}
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
-        self.total_time = 0
+        self.total_time = []
         self.selected_dataset = selected_dataset
         self.classifier = classifier
         self.method = method                
         self.dataset = selected_dataset
-        self.figure_xlim = []
-        self.figure_ylim = []
         self.predictions = {}                   # predictions from base classifier 
-        self.classifier_accuracy = {}
-        self.classifier_error = {}
-        self.time_to_predict = {}
         self.user_data_input = {}
-        self.avg_results = {}
-        self.avg_results_dict = {}
-        self.accuracy_sklearn = {}
-        self.stream = {}                    # establishing stream
         self.hypothesis = {}                # hypothesis to copy available labels & core supports 
         self.performance_metric = {}
+        self.avg_perf_metric = {}
         self.compact_time = {}
+        self.num_cs = {}
         
         if self.classifier is None:
             avail_classifier = ['knn', 's3vm']
@@ -142,6 +133,8 @@ class COMPOSE:
             3. Extract the core supports
         """
         ts = timestep
+        # make sure hypothesis are the labels based on label propagation preds
+        self.hypothesis[ts] = self.hypothesis[ts][:,-1]
         # 1. Remove duplicate data instances 
         # check the data bu rows and remove the duplicate instances keeping track what was removed
         self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
@@ -154,13 +147,14 @@ class COMPOSE:
                 sorter.append(id) 
         self.labeled[ts] = self.labeled[ts][sorter]
         # remove core supports dupes
-        if ts > 0:
+        if ts > 1:
             sorter = []
             for id in sortID:
                 if id > len(self.core_supports[ts]):
                     break
                 else:
                     sorter.append(id) 
+            #TODO out of bounds
             self.core_supports[ts] = self.core_supports[ts][sorter]
         # remove hypothesis dupes
         sorter = []
@@ -184,17 +178,23 @@ class COMPOSE:
         # sort by the class
         self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
         # match data with sort 
-        
         self.data[ts] = self.data[ts][sortID]
-        
         # match labeles with sort 
         self.labeled[ts] = self.labeled[ts][sortID]
+        
         # match core supports with sort 
         if ts > 0:
-            self.core_supports[ts-1] = self.core_supports[ts-1][sortID]
+            sorter = []
+            # if the sortID is larger than any index in the available core supports
+            for i in range(len(sortID)):
+                if len(self.core_supports[ts-1])-1 < sortID[i]:
+                    pass
+                else:
+                    sorter.append(sortID[i])
+            self.core_supports[ts-1] = self.core_supports[ts-1][sorter]
+            # self.core_supports[ts-1] = self.core_supports[ts-1][sortID]
         # match unlabeled with sort
         unlabeled = unlabeled[sortID]
-
         t_start = time.time()
         # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
         # ------------------------------------------------------------
@@ -206,12 +206,21 @@ class COMPOSE:
             # L^(t+1) = L^(t+1) U CSc
             # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
         # ------------------------------------------------------------
+
         for c in uniq_class:
             class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
-            extract_cs = cse.CSE(data=self.data[ts][class_ind], method=self.method)    # gets core support based on first timestep
+            if class_ind is None:
+                extract_cs = cse.CSE(data=self.data[ts], method=self.method)    # gets core support based on first timestep
+            else:
+                extract_cs = cse.CSE(data=self.data[ts][class_ind], method=self.method)    # gets core support based on first timestep
         t_end = time.time()
         self.compact_time[ts] = t_end - t_start
         self.core_supports[ts] = extract_cs.core_support_extract()
+        self.num_cs[ts] = len(self.core_supports[ts])
+
+        # set hypothesis dimension as start of method
+        to_add = np.zeros((len(self.hypothesis[ts]), np.shape(self.data[ts])[1]-1))
+        self.hypothesis[ts] = np.column_stack((to_add, self.hypothesis[ts]))
 
     def set_data(self):
         """
@@ -336,18 +345,18 @@ class COMPOSE:
         3. append the labels to include the class of the core supports 
         4. append the core supports to accomodate the added core supports of the previous timestep 
         """
-        # determine indices in which core supports have labeled
-        cs_indices = np.where(np.any(self.core_supports[ts-1]==1, axis=1))[0] # adding only the labeled core supports 
         # append the current data with the core supports
         # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
-        self.data[ts] = np.concatenate((self.data[ts-1], self.core_supports[ts-1][cs_indices]))
+        self.data[ts] = np.concatenate((self.data[ts-1], self.core_supports[ts-1]))
         # append hypothesis to include classes of the core supports
-        self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], self.core_supports[ts-1][cs_indices])) 
+        self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], self.core_supports[ts-1])) 
         # append the labels to include the class of the core supports
         # receive labeled data from core supports and labels 
-        self.labeled[ts] = np.concatenate((self.labeled[ts-1], self.core_supports[ts-1][cs_indices]))
+        self.labeled[ts] = np.concatenate((self.labeled[ts-1], self.core_supports[ts-1]))
         # append the core supports to accomodate the added core supports from previous ts
-        self.core_supports[ts] = np.concatenate((self.core_supports[ts-1][cs_indices]))
+        # I dont think this is needed
+        # if ts >= 1:
+        #     self.core_supports[ts] = np.concatenate((self.core_supports[ts], self.core_supports[ts-1]))
 
     def classify(self, ts):
         """
@@ -358,10 +367,14 @@ class COMPOSE:
         3. sort the labeled so that the it matches the hypothesis shift
         4. sort the core supports to match hypothesis shift
         5. classify the data via SSL algorithm
-
+        ------------------------------------------
         This is step 4 of the COMPOSE Algorithm:
         Call SSL with L^t, Y^t, and U^t to obtain hypothesis, h^t: X->Y
         """
+        if len(self.hypothesis[ts]) > len(self.data[ts]):
+            diff = len(self.hypothesis[ts]) - len(self.data[ts])
+            self.hypothesis[ts] = self.hypothesis[ts][:-diff]
+
         # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
         self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
         # 2. sort the data to match hypothesis shift
@@ -369,20 +382,21 @@ class COMPOSE:
         # 3. sort labeled to match hypothesis shift
         self.labeled[ts] = np.take_along_axis(self.labeled[ts], sortID, axis=0)
         # 4. sort the core supports to match hypothesis 
-        if ts > 0:
-            self.core_supports[ts-1] = np.take_along_axis(self.core_supports[ts-1],sortID, axis=0)
+        # self.core_supports[ts] = np.take_along_axis(self.core_supports[ts], sortID, axis=0)
+
         # classify 
         # step 4 call SSL with L, Y , U
         t_start = time.time()
         self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
         t_end = time.time() 
+
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
         # get performance metrics of classification 
-        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts][:,-1], \
+        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
                                             dataset= self.selected_dataset , method= self.method , \
-                                            classifier= self.classifier, tstart=t_start, tend=t_end)
-        self.performance_metric = perf_metric.performance_metric()
+                                            classifier= self.classifier, tstart=t_start, tend=t_end) # test[:,-1]
+        self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.hypothesis[ts], test= self.labeled[ts])
         return self.predictions[ts]
 
     def run(self):
@@ -394,65 +408,56 @@ class COMPOSE:
             timesteps = self.data.keys()
             total_time_start = time.time() 
             ts = start
-            
             for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
-                t_start = time.time()
-                
                 # determine if there are any labeled data & add core_suppports from previous timestep
                 # steps 1 - 2
                 if ts == 0: # there will be no core supports @ ts = 0 
                     self.hypothesis[ts] = self.labeled[ts]
+                # if ts != 0 
                 else:
                     # add previous core supports from previous time step
                     self.set_stream(ts)
-                
                 # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}
                 # step 4 call SSL with L^t, Y^t, and U^t
                 unlabeled_data = self.classify(ts) 
-
                 # get core supports 
                 self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
-
-                # after firststep
-                if start != ts:
-                    t_start = time.time()
-                    self.predictions[ts] = self.learn(X_train_l=self.core_supports[ts-1], L_train_l=self.data[ts], X_train_u=self.data[ts], X_test=self.data[ts+1])
-                    # Set D_t or data stream from concatenating the data stream with the predictions - step 3
-                    # {xl, yl } = self.labeled[ts = 0]
-                    # { xu, hu } = concatenate (self.data[ts][:,:-1], self.predictions[ts] ) 
-                    if len(self.data[ts]) > len(self.predictions[ts]):
-                        dif_xu_hu = len(self.data[ts]) - len(self.predictions[ts])
-                        preds_to_add = []
-                        for k in range(dif_xu_hu):
-                            randm_list = np.unique(self.predictions[ts])
-                            rdm_preds = random.choice(randm_list)
-                            preds_to_add = np.append(preds_to_add, rdm_preds)
-                        self.predictions[ts] = np.append(self.predictions[ts], preds_to_add)
-                    # { xu, hu }
-                    if len(self.predictions[ts]) > len(self.data[ts]):
-                        differ = len(self.predictions[ts]) - len(self.data[ts])
-                        preds = list(self.predictions[ts])
-                        for k in range(differ):
-                            preds.pop()
-                        self.predictions[ts] = np.array(preds)
-
-                    xu_hu = np.column_stack((self.data[ts][:,:-1], self.predictions[ts]))
-                    # Dt = { xl , yl } U { xu , hu } 
-                    self.labeled[ts] = np.vstack((self.core_supports[ts-1], self.labeled[ts])) # to_cs , labeled
-                    self.stream[ts] = np.vstack((self.labeled[ts], xu_hu))
-                    # set L^t+1 = 0, Y^t = 0 - step 4 
-                    self.labeled[ts+1] = []
-                    # steps 5 - 7 as it extracts core supports
-                    self.get_core_supports(self.stream[ts])              # create core supports at timestep
-                    # L^t+1 = L^t+1 
-                    self.labeled[ts+1] = self.core_supports[ts]
-                    t_end = time.time()         
-                    elapsed_time = t_end - t_start
-                    self.time_to_predict[ts] = elapsed_time
-                    
-            
-            ## Report out
-            # classifier_perf = cp.ClassifierMetrics(preds = self.predictions, test= self.data, timestep= ts,\
-            #                         method= self.method, classifier= self.classifier, dataset= self.selected_dataset, time_to_predict= self.time_to_predict[ts])
-            return 'Result'
+                
+                # remove core supports from previous time step
+                # remove core supports from data
+                if ts != 0:
+                    df_data_ts = pd.DataFrame(self.data[ts])
+                    df_data_prev = pd.DataFrame(self.data[ts-1])
+                    merge_data_df = df_data_ts.merge(df_data_prev, how='left', indicator= True)
+                    merge_data_df = merge_data_df[merge_data_df['_merge']=='left_only']
+                    self.data[ts] = merge_data_df.to_numpy()
+                    self.data[ts] = self.data[ts][:,:-1]
+                    # remove core supports from hypothesis
+                    df_hypoth_ts = pd.DataFrame(self.hypothesis[ts])
+                    df_hypoth_prev = pd.DataFrame(self.hypothesis[ts-1])
+                    merge_hypoth = df_hypoth_ts.merge(df_hypoth_prev, how='left', indicator=True)
+                    merge_hypoth = merge_hypoth[merge_hypoth['_merge']=='left_only']
+                    self.hypothesis[ts] = merge_hypoth.to_numpy()
+                    self.hypothesis[ts] = self.hypothesis[ts][:,:-1]
+                    # remove core supports from labels
+                    df_label_ts = pd.DataFrame(self.labeled[ts])
+                    df_label_prev = pd.DataFrame(self.labeled[ts-1])
+                    merge_label_df = df_label_ts.merge(df_label_prev, how='left', indicator=True)
+                    merge_label_df = merge_label_df[merge_label_df['_merge']=='left_only']
+                    self.labeled[ts] = merge_label_df.to_numpy()
+                    self.labeled[ts] = self.labeled[ts][:,:-1]
+                    # remove core supports frpm previous core supports
+                    df_cs_ts = pd.DataFrame(self.core_supports[ts])
+                    df_cs_prev = pd.DataFrame(self.core_supports[ts-1])
+                    merge_cs = df_cs_ts.merge(df_cs_prev, how='left', indicator=True)
+                    merge_cs = merge_cs[merge_cs['_merge']=='left_only']
+                    self.core_supports[ts] = merge_cs.to_numpy()
+                    self.core_supports[ts] = self.core_supports[ts][:,:-1]
+                
+            total_time_end = time.time()
+            self.total_time = total_time_end - total_time_start
+            # figure out how to call out functions
+            avg_metrics = cp.PerformanceMetrics(tstart= total_time_start, tend= total_time_end)
+            self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
+            return self.avg_perf_metric

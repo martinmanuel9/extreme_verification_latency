@@ -303,7 +303,7 @@ class CSE:
         support_indices = self.ashape['simplexes'][np.where(self.ashape['core_support']==1)[0]]
         return support_indices
     
-    ## GMM using for Fast COMPOSE
+    ## GMM using for COMPOSE
     def gmm(self):
         x_ul = self.data
         core_support_cutoff = math.ceil(self.N_Instances * self.boundary_opts['p'])
@@ -316,10 +316,13 @@ class CSE:
         # remove infs and NaN
         x_ul_df = pd.DataFrame(x_ul)
         x_ul_df = x_ul_df.replace([np.inf, -np.inf], np.nan).dropna(axis=0)
-
+        
         # creates Gaussian Mixutre Model (GMM)
-        for i in range(1, self.boundary_opts['kl']+1):
-            GM[i] = GMM(n_components = i ).fit(x_ul_df)
+        for i in range(1, self.boundary_opts['kl']+1): 
+            if len(x_ul_df) < i:
+                break
+            else:           
+                GM[i] = GMM(n_components = i ).fit(x_ul_df)
             BIC.append(GM[i].bic(x_ul_df))
         
         # Plots GMM

@@ -68,9 +68,11 @@ class RunExperiment:
         fig_handle = plt.figure()
 
         fig, ax = plt.subplots()
+        result_plot = {}
         for experiment in experiments:
-            df = pd.DataFrame(self.results[experiment])
-            
+            result_plot['Timesteps'] = self.results[experiment]['Timesteps']
+            result_plot['Accuracy'] = self.results[experiment]['Accuracy']
+            df = pd.DataFrame(result_plot)
             df.plot(ax=ax, label=experiment, x='Timesteps', y='Accuracy')
         
         time_stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -100,8 +102,8 @@ class RunExperiment:
                         fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="fast_compose", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = fast_compose_QNS3VM.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-                        fast_compose_QNS3VM.avg_results_dict['Time_Stamp'] = time_stamp 
-                        results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_results_dict.keys(), fast_compose_QNS3VM.avg_results_dict.values())).T
+                        fast_compose_QNS3VM.avg_perf_metric['Time_Stamp'] = time_stamp 
+                        results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_perf_metric.keys(), fast_compose_QNS3VM.avg_perf_metric.values())).T
                         # change the directory to your particular files location
                         self.change_dir()
                         results_fast_compose_qns3vm = 'results_fast_compose_QN_S3VM_'+ time_stamp +'.pkl'
@@ -113,8 +115,8 @@ class RunExperiment:
                         fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = fast_compose_label_prop.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-                        fast_compose_label_prop.avg_results_dict['Time_Stamp'] = time_stamp
-                        results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_results_dict.keys(), fast_compose_label_prop.avg_results_dict.values())).T
+                        fast_compose_label_prop.avg_perf_metric['Time_Stamp'] = time_stamp
+                        results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_perf_metric.keys(), fast_compose_label_prop.avg_perf_metric.values())).T
                         # change the directory to your particular files location
                         self.change_dir()
                         results_fast_compose_lbl_prop = 'results_fast_compose_label_propagation_'+ time_stamp + '.pkl'
@@ -126,8 +128,8 @@ class RunExperiment:
                         reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = reg_compose_label_QN_S3VM.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-                        reg_compose_label_QN_S3VM.avg_results_dict['Time_Stamp'] = time_stamp
-                        results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_results_dict.keys(), reg_compose_label_QN_S3VM.avg_results_dict.values())).T
+                        reg_compose_label_QN_S3VM.avg_perf_metric['Time_Stamp'] = time_stamp
+                        results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_perf_metric.keys(), reg_compose_label_QN_S3VM.avg_perf_metric.values())).T
                         # change the directory to your particular files location
                         self.change_dir()
                         results_compose_qns3vm = 'results_compose_QN_S3VM_'+ time_stamp +'.pkl'
@@ -139,8 +141,8 @@ class RunExperiment:
                         reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = reg_compose_label_prop.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")   
-                        reg_compose_label_prop.avg_results_dict['Time_Stamp'] = time_stamp  
-                        results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_results_dict.keys(), reg_compose_label_prop.avg_results_dict.values())).T
+                        reg_compose_label_prop.avg_perf_metric['Time_Stamp'] = time_stamp  
+                        results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_perf_metric.keys(), reg_compose_label_prop.avg_perf_metric.values())).T
                         # change the directory to your particular files location
                         self.change_dir()
                         results_compose_lbl_prop = 'results_compose_label_propagation_' + time_stamp + '.pkl' 
@@ -176,7 +178,7 @@ class RunExperiment:
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT' ], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D' ], num_cores=0.95)
 run_experiment.run()
 # run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 # run_experiment.run()
