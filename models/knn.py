@@ -43,7 +43,7 @@ class knn:
     """ 
     
 
-    def __init__(self, k, problem: int=0, metric: int=0):
+    def __init__(self, k, problem: int=1, metric: int=0):
         """
             Parameters
             ----------
@@ -81,7 +81,7 @@ class knn:
                 # print(self.y_train[j])
                 distance.append((d, self.y_train[j]))
             # distance = np.array(distance)
-            print(distance)
+            
             distance = np.sort(distance)  # sorting distances in ascending order
             
             # Getting k nearest neighbors

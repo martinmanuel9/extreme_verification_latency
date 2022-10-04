@@ -99,7 +99,7 @@ class RunExperiment:
                 for dataset in self.datasets:
                     experiment = dataset + '_' + j + '_' + i
                     if i == 'fast_compose' and j == 'QN_S3VM':
-                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", method="fast_compose", num_cores= self.num_cores, selected_dataset = dataset)
+                        fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", mode='gmm',  method="fast_compose", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = fast_compose_QNS3VM.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                         fast_compose_QNS3VM.avg_perf_metric['Time_Stamp'] = time_stamp 
@@ -112,7 +112,7 @@ class RunExperiment:
                         print("Results:\n " , results_pkl )
 
                     elif i == 'fast_compose' and j == 'label_propagation':
-                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
+                        fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", mode= 'gmm', method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = fast_compose_label_prop.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                         fast_compose_label_prop.avg_perf_metric['Time_Stamp'] = time_stamp
@@ -125,7 +125,7 @@ class RunExperiment:
                         print("Results:\n" , results_pkl )
                         
                     elif i == 'compose' and j == 'QN_S3VM':
-                        reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", method="a_shape", num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", mode= 'gmm',method="compose", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = reg_compose_label_QN_S3VM.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                         reg_compose_label_QN_S3VM.avg_perf_metric['Time_Stamp'] = time_stamp
@@ -138,7 +138,7 @@ class RunExperiment:
                         print("Results:\n" , results_pkl )
 
                     elif i == 'compose' and j == 'label_propagation':
-                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", method="a_shape", num_cores= self.num_cores, selected_dataset = dataset)
+                        reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", mode= 'gmm', method="compose", num_cores= self.num_cores, selected_dataset = dataset)
                         self.results[experiment] = reg_compose_label_prop.run()
                         time_stamp = time.strftime("%Y%m%d-%H:%M:%S")   
                         reg_compose_label_prop.avg_perf_metric['Time_Stamp'] = time_stamp  
@@ -178,7 +178,7 @@ class RunExperiment:
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D' ], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D' ], num_cores=0.95)
 run_experiment.run()
 # run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 # run_experiment.run()

@@ -34,6 +34,7 @@ College of Engineering
 # SOFTWARE.
 
 from cProfile import run
+from selectors import EpollSelector
 from socketserver import ThreadingUnixDatagramServer
 from matplotlib import pyplot as plt
 import numpy as np
@@ -57,6 +58,7 @@ class COMPOSE:
     def __init__(self, 
                 classifier = 'QN_S3VM', 
                 method= 'fast_compose',
+                mode = 'gmm', 
                 num_cores = 0.8, 
                 selected_dataset = 'UG_2C_2D'): 
         """
@@ -71,7 +73,8 @@ class COMPOSE:
         self.total_time = []
         self.selected_dataset = selected_dataset
         self.classifier = classifier
-        self.method = method                
+        self.method = method   
+        self.mode = mode             
         self.dataset = selected_dataset
         self.predictions = {}                   # predictions from base classifier 
         self.user_data_input = {}
@@ -147,15 +150,14 @@ class COMPOSE:
                 sorter.append(id) 
         self.labeled[ts] = self.labeled[ts][sorter]
         # remove core supports dupes
-        if ts > 1:
+        if ts > 0:
             sorter = []
             for id in sortID:
-                if id > len(self.core_supports[ts]):
+                if id > len(self.core_supports[ts-1]):
                     break
                 else:
                     sorter.append(id) 
-            #TODO out of bounds
-            self.core_supports[ts] = self.core_supports[ts][sorter]
+            self.core_supports[ts-1] = self.core_supports[ts-1][sorter]
         # remove hypothesis dupes
         sorter = []
         for id in sortID:
@@ -206,18 +208,24 @@ class COMPOSE:
             # L^(t+1) = L^(t+1) U CSc
             # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
         # ------------------------------------------------------------
-
-        for c in uniq_class:
-            class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
-            if class_ind is None:
-                extract_cs = cse.CSE(data=self.data[ts], method=self.method)    # gets core support based on first timestep
-            else:
-                extract_cs = cse.CSE(data=self.data[ts][class_ind], method=self.method)    # gets core support based on first timestep
-        t_end = time.time()
-        self.compact_time[ts] = t_end - t_start
-        self.core_supports[ts] = extract_cs.core_support_extract()
-        self.num_cs[ts] = len(self.core_supports[ts])
-
+        if self.method == 'compose':
+            for c in uniq_class:
+                class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
+                if class_ind is None:
+                    extract_cs = cse.CSE(data=self.data[ts], mode=self.mode)    # gets core support based on first timestep
+                else:
+                    extract_cs = cse.CSE(data=self.data[ts][class_ind], mode=self.mode)    # gets core support based on first timestep
+            t_end = time.time()
+            self.compact_time[ts] = t_end - t_start
+            self.core_supports[ts] = extract_cs.core_support_extract()
+            self.num_cs[ts] = len(self.core_supports[ts])
+        elif self.method == 'fast_compose':
+            for c in uniq_class:
+                class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
+                if class_ind is None:
+                    self.core_supports[ts] = self.data[ts]
+                else:
+                    self.core_supports[ts] = self.data[ts][class_ind]
         # set hypothesis dimension as start of method
         to_add = np.zeros((len(self.hypothesis[ts]), np.shape(self.data[ts])[1]-1))
         self.hypothesis[ts] = np.column_stack((to_add, self.hypothesis[ts]))
@@ -422,38 +430,8 @@ class COMPOSE:
                 # step 4 call SSL with L^t, Y^t, and U^t
                 unlabeled_data = self.classify(ts) 
                 # get core supports 
-                self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
-                
-                # remove core supports from previous time step
-                # remove core supports from data
-                if ts != 0:
-                    df_data_ts = pd.DataFrame(self.data[ts])
-                    df_data_prev = pd.DataFrame(self.data[ts-1])
-                    merge_data_df = df_data_ts.merge(df_data_prev, how='left', indicator= True)
-                    merge_data_df = merge_data_df[merge_data_df['_merge']=='left_only']
-                    self.data[ts] = merge_data_df.to_numpy()
-                    self.data[ts] = self.data[ts][:,:-1]
-                    # remove core supports from hypothesis
-                    df_hypoth_ts = pd.DataFrame(self.hypothesis[ts])
-                    df_hypoth_prev = pd.DataFrame(self.hypothesis[ts-1])
-                    merge_hypoth = df_hypoth_ts.merge(df_hypoth_prev, how='left', indicator=True)
-                    merge_hypoth = merge_hypoth[merge_hypoth['_merge']=='left_only']
-                    self.hypothesis[ts] = merge_hypoth.to_numpy()
-                    self.hypothesis[ts] = self.hypothesis[ts][:,:-1]
-                    # remove core supports from labels
-                    df_label_ts = pd.DataFrame(self.labeled[ts])
-                    df_label_prev = pd.DataFrame(self.labeled[ts-1])
-                    merge_label_df = df_label_ts.merge(df_label_prev, how='left', indicator=True)
-                    merge_label_df = merge_label_df[merge_label_df['_merge']=='left_only']
-                    self.labeled[ts] = merge_label_df.to_numpy()
-                    self.labeled[ts] = self.labeled[ts][:,:-1]
-                    # remove core supports frpm previous core supports
-                    df_cs_ts = pd.DataFrame(self.core_supports[ts])
-                    df_cs_prev = pd.DataFrame(self.core_supports[ts-1])
-                    merge_cs = df_cs_ts.merge(df_cs_prev, how='left', indicator=True)
-                    merge_cs = merge_cs[merge_cs['_merge']=='left_only']
-                    self.core_supports[ts] = merge_cs.to_numpy()
-                    self.core_supports[ts] = self.core_supports[ts][:,:-1]
+                if self.method == 'compose':
+                    self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
                 
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start

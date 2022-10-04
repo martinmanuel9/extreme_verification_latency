@@ -48,9 +48,6 @@ class Label_Propagation:
         # define model
         model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
         # fit model on training dataset
-        print('x\n',X)
-        print('labels\n', labels)
-
         model.fit(X, labels)
         # make predictions
         predicted_labels = model.predict(X)

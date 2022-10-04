@@ -54,7 +54,7 @@ from sklearn.model_selection import StratifiedKFold
 import warnings
 
 class CSE:
-    def __init__(self, data=None, method=None):
+    def __init__(self, data=None, mode=None):
         # self.data must be updated as it is taking data as a dictionary 
         self.data = []
         self.boundary = []
@@ -63,7 +63,7 @@ class CSE:
         self.valid_boundary = ['a_shape','gmm','parzen','knn','no_cse']
         self.ashape = {} 
         self.ashape_includes = {}
-        self.method = method
+        self.mode = mode
         utility = util.Util()
 
         if type(data) is dict:
@@ -83,14 +83,14 @@ class CSE:
             print("Please ensure that you pass in data to extract core supports!")
             exit() 
         
-        if self.method == 'fast_compose':
+        if self.mode == 'gmm':
             self.set_boundary('gmm')
             self.core_support = self.gmm()
-        elif self.method == 'parzen':
-            self.set_boundary(self.method)
+        elif self.mode == 'parzen':
+            self.set_boundary(self.mode)
             self.core_support = self.parzen()
-        elif self.method == 'a_shape':
-            self.set_boundary(self.method)
+        elif self.mode == 'a_shape':
+            self.set_boundary(self.mode)
             self.core_support = self.a_shape_compaction()
 
     # Set Boundary Construction Type and Options 
