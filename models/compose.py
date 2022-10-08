@@ -245,60 +245,20 @@ class COMPOSE:
             self.dataset = input('Enter dataset:')
         self.user_data_input = self.dataset
         data_gen = bmdg.COMPOSE_Datagen()
-        # TODO: Need to align with the data generated and inject data and structures
-        dataset_gen = data_gen.gen_dataset(self.dataset)
-        self.dataset = dataset_gen              
-        
-        ts = 0
-
-        ## set a self.data dictionary for each time step 
-        ## self.dataset[0][i] loop the arrays and append them to dictionary
-        for i in range(0, len(self.dataset[0])):
-            self.data[ts] = self.dataset[0][i]
+        # get data, labels, and first core supports synthetically for timestep 0
+        # data is composed of just the features 
+        # labels are the labels 
+        # core supports are the first batch with added labels 
+        data, labels, core_supports = data_gen.gen_dataset(self.dataset)
+        ts = 0 
+        res_data = data[0]
+        print(len(data[0]))
+        for i in range(0, len(data[0])):
+            self.data[ts] = data[0][i]
             ts += 1
-        
-        # filter out labeled and unlabeled from of each timestep
-        for i in self.data:
-            len_of_batch = len(self.data[i])
-            label_batch = []
-            unlabeled_batch = []            
-            for j in range(0, len_of_batch - 1):
-                if self.data[i][j][2] == 1:
-                    label_batch.append(self.data[i][j])
-                    self.labeled[i] = label_batch
-                else:
-                    unlabeled_batch.append(self.data[i][j])
-                    self.unlabeled[i] = unlabeled_batch
 
-        # convert labeled data to match self.data data structure
-        labeled_keys = self.labeled.keys()
-        for key in labeled_keys:        
-            if len(self.labeled[key]) > 1:
-                len_of_components = len(self.labeled[key])
-                array_tuple = []
-                for j in range(0, len_of_components):
-                    array = np.array(self.labeled[key][j])
-                    arr_to_list = array.tolist()
-                    array_tuple.append(arr_to_list)
-                    array = []
-                    arr_to_list = []
-                concat_tuple = np.vstack(array_tuple)
-                self.labeled[key] = concat_tuple
         
-        # convert unlabeled data to match self.data data structure
-        unlabeled_keys = self.unlabeled.keys()
-        for key in unlabeled_keys:        
-            if len(self.unlabeled[key]) > 1:
-                len_of_components = len(self.unlabeled[key])
-                array_tuple = []
-                for j in range(0, len_of_components):
-                    array = np.array(self.unlabeled[key][j])
-                    arr_to_list = array.tolist()
-                    array_tuple.append(arr_to_list)
-                    array = []
-                    arr_to_list = []
-                concat_tuple = np.vstack(array_tuple)    
-                self.unlabeled[key] = concat_tuple 
+
 
     def learn(self, X_train_l, L_train_l, X_train_u, X_test):
         """
