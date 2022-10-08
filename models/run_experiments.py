@@ -123,6 +123,20 @@ class RunExperiment:
                         results_df.to_pickle(results_fast_compose_lbl_prop)
                         results_pkl = pd.read_pickle(results_fast_compose_lbl_prop)
                         print("Results:\n" , results_pkl )
+                    
+                    elif i == 'fast_compose' and j == 'svm':
+                        fast_compose_svm = compose.COMPOSE(classifier="svm", mode= 'gmm', method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
+                        self.results[experiment] = fast_compose_svm.run()
+                        time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                        fast_compose_svm.avg_perf_metric['Time_Stamp'] = time_stamp
+                        results_df = pd.DataFrame.from_dict((fast_compose_svm.avg_perf_metric.keys(), fast_compose_svm.avg_perf_metric.values())).T
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_fast_compose_svm = 'results_fast_compose_svm_'+ time_stamp + '.pkl'
+                        results_df.to_pickle(results_fast_compose_svm)
+                        results_pkl = pd.read_pickle(results_fast_compose_svm)
+                        print("Results:\n" , results_pkl )
+
                         
                     elif i == 'compose' and j == 'QN_S3VM':
                         reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", mode= 'gmm',method="compose", num_cores= self.num_cores, selected_dataset = dataset)
@@ -148,6 +162,19 @@ class RunExperiment:
                         results_compose_lbl_prop = 'results_compose_label_propagation_' + time_stamp + '.pkl' 
                         results_df.to_pickle(results_compose_lbl_prop)
                         results_pkl = pd.read_pickle(results_compose_lbl_prop)
+                        print("Results:\n" , results_pkl )
+
+                    elif i == 'compose' and j == 'svm':
+                        reg_compose_svm = compose.COMPOSE(classifier="svm", mode= 'gmm',method="compose", num_cores= self.num_cores, selected_dataset = dataset)
+                        self.results[experiment] = reg_compose_svm.run()
+                        time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                        reg_compose_svm.avg_perf_metric['Time_Stamp'] = time_stamp
+                        results_df = pd.DataFrame.from_dict((reg_compose_svm.avg_perf_metric.keys(), reg_compose_svm.avg_perf_metric.values())).T
+                        # change the directory to your particular files location
+                        self.change_dir()
+                        results_compose_svm = 'results_compose_QN_S3VM_'+ time_stamp +'.pkl'
+                        results_df.to_pickle(results_compose_svm)
+                        results_pkl = pd.read_pickle(results_compose_svm)
                         print("Results:\n" , results_pkl )
                     
                     elif i == 'scargc' and j == '1nn': 
@@ -178,7 +205,7 @@ class RunExperiment:
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D' ], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['compose'], classifier=['svm'], datasets=[ 'UG_2C_2D' ], num_cores=0.95)
 run_experiment.run()
 # run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 # run_experiment.run()

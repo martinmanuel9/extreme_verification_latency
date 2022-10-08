@@ -43,7 +43,7 @@ import cse
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import qns3vm as ssl
-import benchmark_datagen as bmdg
+import compose_data_gen as bmdg
 import random
 import time 
 import label_propagation as lbl_prop
@@ -52,7 +52,7 @@ import matplotlib.animation as animation
 import math
 import sklearn.metrics as metric
 import classifier_performance as cp
-import jax
+from sklearn.svm import SVC, SVR
 
 class COMPOSE: 
     def __init__(self, 
@@ -65,7 +65,7 @@ class COMPOSE:
         Initialization of Fast COMPOSE
         """
         self.timestep = 0                   # The current timestep of the datase
-        self.n_cores =  num_cores                   # Level of feedback displayed during run {default}
+        self.n_cores =  num_cores           # Level of feedback displayed during run {default}
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.unlabeled = {}
@@ -76,7 +76,7 @@ class COMPOSE:
         self.method = method   
         self.mode = mode             
         self.dataset = selected_dataset
-        self.predictions = {}                   # predictions from base classifier 
+        self.predictions = {}               # predictions from base classifier 
         self.user_data_input = {}
         self.hypothesis = {}                # hypothesis to copy available labels & core supports 
         self.performance_metric = {}
@@ -224,8 +224,12 @@ class COMPOSE:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
                 if class_ind is None:
                     self.core_supports[ts] = self.data[ts]
+                    
                 else:
                     self.core_supports[ts] = self.data[ts][class_ind]
+            t_end = time.time()
+            self.compact_time[ts] = t_end - t_start
+            self.num_cs[ts] = len(self.core_supports[ts])
         # set hypothesis dimension as start of method
         to_add = np.zeros((len(self.hypothesis[ts]), np.shape(self.data[ts])[1]-1))
         self.hypothesis[ts] = np.column_stack((to_add, self.hypothesis[ts]))
@@ -240,7 +244,8 @@ class COMPOSE:
             print('The following datasets are available:\n' , avail_data_opts)
             self.dataset = input('Enter dataset:')
         self.user_data_input = self.dataset
-        data_gen = bmdg.Datagen()
+        data_gen = bmdg.COMPOSE_Datagen()
+        # TODO: Need to align with the data generated and inject data and structures
         dataset_gen = data_gen.gen_dataset(self.dataset)
         self.dataset = dataset_gen              
         
@@ -341,7 +346,10 @@ class COMPOSE:
             ssl_label_propagation = lbl_prop.Label_Propagation(X_train_l, L_train_l, X_train_u)
             preds = ssl_label_propagation.ssl()
             return preds
-        # TODO: KNN 
+        elif self.classifier == 'svm':
+            ssl_svm = SVC(gamma='auto').fit(X_train_u[:,:-1], X_test[:,-1])
+            preds = ssl_svm.predict(X_test[:,:-1])
+            return preds
 
     def set_stream(self, ts):
         """
@@ -420,18 +428,17 @@ class COMPOSE:
                 self.timestep = ts
                 # determine if there are any labeled data & add core_suppports from previous timestep
                 # steps 1 - 2
-                if ts == 0: # there will be no core supports @ ts = 0 
+                if start == ts: # there will be no core supports @ ts = 0 
                     self.hypothesis[ts] = self.labeled[ts]
                 # if ts != 0 
-                else:
+                elif start != ts:
                     # add previous core supports from previous time step
                     self.set_stream(ts)
                 # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}
                 # step 4 call SSL with L^t, Y^t, and U^t
                 unlabeled_data = self.classify(ts) 
                 # get core supports 
-                if self.method == 'compose':
-                    self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
+                self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
                 
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start
