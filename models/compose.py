@@ -249,16 +249,22 @@ class COMPOSE:
         # data is composed of just the features 
         # labels are the labels 
         # core supports are the first batch with added labels 
-        data, labels, core_supports = data_gen.gen_dataset(self.dataset)
+        data, labels, core_supports, self.dataset = data_gen.gen_dataset(self.dataset)
         ts = 0 
-        res_data = data[0]
-        print(len(data[0]))
+        
+        # set data (all the features)
         for i in range(0, len(data[0])):
             self.data[ts] = data[0][i]
             ts += 1
-
         
-
+        # set all the labels 
+        ts = 0
+        for k in range(0, len(labels[0])):
+            self.labeled[ts] = labels[0][k]
+            ts += 1
+        
+        # gets first core supports from synthetic
+        self.core_supports[0] = np.squeeze(core_supports)
 
     def learn(self, X_train_l, L_train_l, X_train_u, X_test):
         """
@@ -330,9 +336,7 @@ class COMPOSE:
         # receive labeled data from core supports and labels 
         self.labeled[ts] = np.concatenate((self.labeled[ts-1], self.core_supports[ts-1]))
         # append the core supports to accomodate the added core supports from previous ts
-        # I dont think this is needed
-        # if ts >= 1:
-        #     self.core_supports[ts] = np.concatenate((self.core_supports[ts], self.core_supports[ts-1]))
+        self.core_supports[ts] = np.concatenate((self.core_supports[ts], self.core_supports[ts-1]))
 
     def classify(self, ts):
         """
@@ -347,9 +351,9 @@ class COMPOSE:
         This is step 4 of the COMPOSE Algorithm:
         Call SSL with L^t, Y^t, and U^t to obtain hypothesis, h^t: X->Y
         """
-        if len(self.hypothesis[ts]) > len(self.data[ts]):
-            diff = len(self.hypothesis[ts]) - len(self.data[ts])
-            self.hypothesis[ts] = self.hypothesis[ts][:-diff]
+        # if len(self.hypothesis[ts]) > len(self.data[ts]):
+        #     diff = len(self.hypothesis[ts]) - len(self.data[ts])
+        #     self.hypothesis[ts] = self.hypothesis[ts][:-diff]
 
         # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
         self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
@@ -386,12 +390,14 @@ class COMPOSE:
             ts = start
             for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
+                # add available labels to hypothesis 
+                if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
+                    lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
+                    self.hypothesis[ts] = self.labeled[ts][lbl_indx]
                 # determine if there are any labeled data & add core_suppports from previous timestep
                 # steps 1 - 2
-                if start == ts: # there will be no core supports @ ts = 0 
-                    self.hypothesis[ts] = self.labeled[ts]
                 # if ts != 0 
-                elif start != ts:
+                if start != ts:
                     # add previous core supports from previous time step
                     self.set_stream(ts)
                 # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}

@@ -52,6 +52,7 @@ class COMPOSE_Datagen:
         self.data = []
         self.labels = []
         self.use = []
+        self.dataset = []
         
     def change_directory(self):
         path = str(Path.home())
@@ -65,6 +66,7 @@ class COMPOSE_Datagen:
             # Unimodal option
             UG_2C_2D =  pd.read_csv('UG_2C_2D.txt', delimiter="," , names=['feat1', 'feat2', 'feat3'])                                                                                        
             UG_2C_2D = UG_2C_2D.to_numpy()
+            self.dataset = UG_2C_2D
             step = 1000
             a = []
             indx = []
@@ -90,13 +92,15 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
+
     
         if self.datatype == 'MG_2C_2D':           
             # multimodal option
             MG_2C_2D = pd.read_csv("MG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])
-            MG_2C_2D = MG_2C_2D.to_numpy()                                                                                     
+            MG_2C_2D = MG_2C_2D.to_numpy()
+            self.dataset = MG_2C_2D                                                                                   
             step = 2000
             a = []
             indx = []
@@ -122,12 +126,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == '1CDT':           
             X1CDT = pd.read_csv("1CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])    
-            X1CDT = X1CDT.to_numpy()                                                                                
+            X1CDT = X1CDT.to_numpy()    
+            self.dataset = X1CDT                                                                             
             step = 160
             a = []
             indx = []
@@ -153,12 +158,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == '2CDT':           
             X2CDT = pd.read_csv("2CDT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])   
-            X2CDT = X2CDT.to_numpy()                                                                                
+            X2CDT = X2CDT.to_numpy()   
+            self.dataset = X2CDT                                                                              
             step = 160
             a = []
             indx = []
@@ -184,12 +190,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
         
         if self.datatype == 'UG_2C_3D':           
             UG_2C_3D = pd.read_csv("UG_2C_3D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3', 'feat4'])     
-            UG_2C_3D = UG_2C_3D.to_numpy()                                                                               
+            UG_2C_3D = UG_2C_3D.to_numpy()   
+            self.dataset = UG_2C_3D                                                                            
             step = 2000
             a = []
             indx = []
@@ -215,12 +222,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
         
         if self.datatype == '1CHT':           
             X1CHT = pd.read_csv("1CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
-            X1CHT = X1CHT.to_numpy()                                                                                
+            X1CHT = X1CHT.to_numpy()  
+            self.dataset = X1CHT                                                                               
             step = 160
             a = []
             indx = []
@@ -246,12 +254,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
         
         if self.datatype == '2CHT':           
             X2CHT = pd.read_csv("2CHT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                      
-            X2CHT = X2CHT.to_numpy()                                                                                
+            X2CHT = X2CHT.to_numpy() 
+            self.dataset = X2CHT                                                                                
             step = 160
             a = []
             indx = []
@@ -277,12 +286,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == '4CR':           
             X4CR = pd.read_csv("4CR.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])  
-            X4CR = X4CR.to_numpy()                                                                                  
+            X4CR = X4CR.to_numpy()   
+            self.dataset = X4CR                                                                               
             step = 400
             a = []
             indx = []
@@ -308,11 +318,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
+
         if self.datatype == '4CREV1':           
             X4CRE_V1 = pd.read_csv("4CRE-V1.txt", delimiter=",", names=['feat1', 'feat2', 'feat3']) 
-            X4CRE_V1 = X4CRE_V1.to_numpy()                                                                                  
+            X4CRE_V1 = X4CRE_V1.to_numpy()   
+            self.dataset = X4CRE_V1                                                                               
             step = 1000
             a = []
             indx = []
@@ -338,11 +350,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
+
         if self.datatype == '4CREV2':           
             X4CRE_V2 = pd.read_csv("4CRE-V2.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                     
-            X4CRE_V2 = X4CRE_V2.to_numpy()                                                                                  
+            X4CRE_V2 = X4CRE_V2.to_numpy()  
+            self.dataset = X4CRE_V2                                                                                
             step = 1000
             a = []
             indx = []
@@ -368,11 +382,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
+
         if self.datatype == '5CVT':           
             X5CVT = pd.read_csv("5CVT.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])                                                                                    
-            X5CVT = X5CVT.to_numpy()                                                                                  
+            X5CVT = X5CVT.to_numpy()  
+            self.dataset = X5CVT                                                                                 
             step = 1000
             a = []
             indx = []
@@ -398,13 +414,15 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
+
         if self.datatype == '1CSURR':           
             X1Csurr = pd.read_csv("1Csurr.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])
             num = 600 * math.floor(len(X1Csurr)/600)
             X1Csurr = X1Csurr[0:num] 
-            X1Csurr = X1Csurr.to_numpy()                                                                             
+            X1Csurr = X1Csurr.to_numpy() 
+            self.dataset = X1Csurr                                                                            
             step = 600
             a = []
             indx = []
@@ -430,7 +448,7 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == '4CE1CF':           
@@ -439,6 +457,7 @@ class COMPOSE_Datagen:
             step = drift_no * math.floor(len(X4CE1CF)/drift_no)
             X4CE1CF = X4CE1CF[0:step]                                                                           
             X4CE1CF = X4CE1CF.to_numpy()
+            self.dataset = X4CE1CF 
             a = []
             indx = []
             for d in range(step-1):
@@ -463,12 +482,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == 'FG_2C_2D':           
             FG_2C_2D = pd.read_csv("FG_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])     
-            FG_2C_2D = FG_2C_2D.to_numpy()                                                                                
+            FG_2C_2D = FG_2C_2D.to_numpy()  
+            self.dataset = FG_2C_2D                                                                               
             step = 2000
             a = []
             indx = []
@@ -494,12 +514,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == 'GEARS_2C_2D':           
             GEARS_2C_2D = pd.read_csv("GEARS_2C_2D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])  
-            GEARS_2C_2D = GEARS_2C_2D.to_numpy()                                                                                  
+            GEARS_2C_2D = GEARS_2C_2D.to_numpy()  
+            self.dataset = GEARS_2C_2D                                                                                
             step = 2000
             a = []
             indx = []
@@ -525,13 +546,14 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == 'keystroke':           
             keystroke = pd.read_csv("keystroke.txt", delimiter=",", names=['feat1', 'feat2', 'feat3','feat4', 
                                     'feat5', 'feat6', 'feat7', 'feat8', 'feat9', 'feat10', 'feat11'])  
-            keystroke = keystroke.to_numpy()                                                                                  
+            keystroke = keystroke.to_numpy() 
+            self.dataset = keystroke                                                                                 
             step = 200
             a = []
             indx = []
@@ -557,13 +579,14 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == 'UG_2C_5D':           
             UG_2C_5D = pd.read_csv("UG_2C_5D.txt", delimiter=",", names=['feat1', 'feat2', 'feat3',
                                     'feat4', 'feat5', 'feat6'])     
-            UG_2C_5D = UG_2C_5D.to_numpy()                                                                                 
+            UG_2C_5D = UG_2C_5D.to_numpy() 
+            self.dataset = UG_2C_5D                                                                                 
             step = 2000
             a = []
             indx = []
@@ -589,12 +612,13 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
         if self.datatype == 'UnitTest':           
             unitTestData = pd.read_csv("unit_test.txt", delimiter=",", names=['feat1', 'feat2', 'feat3'])    
             unitTestData = unitTestData.to_numpy() 
+            self.dataset = unitTestData
             step = 10                                                                          
             a = []
             indx = []
@@ -620,10 +644,10 @@ class COMPOSE_Datagen:
             lbl_data = []
             for i in self.batch(self.labels, step):
                 labels.append(i)
-            lbl_data.append(dataset)
+            lbl_data.append(labels)
             self.labels = lbl_data
 
-        return self.data, self.labels, self.use
+        return self.data, self.labels, self.use, self.dataset
 
     def batch(self, iterable, n=1):
         l = len(iterable)
