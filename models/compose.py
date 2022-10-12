@@ -268,7 +268,7 @@ class COMPOSE:
 
     def learn(self, X_train_l, L_train_l, X_train_u, X_test):
         """
-        Available classifiers : 'label_propagation',  'QN_S3VM'
+        Available classifiers : 'label_propagation',  'QN_S3VM', 'svm'
 
         For QN_S3VM:  
         Sets classifier by getting the classifier object from ssl module
@@ -313,8 +313,8 @@ class COMPOSE:
             preds = ssl_label_propagation.ssl()
             return preds
         elif self.classifier == 'svm':
-            ssl_svm = SVC(gamma='auto').fit(X_train_u[:,:-1], X_test[:,-1])
-            preds = ssl_svm.predict(X_test[:,:-1])
+            ssl_svm = SVC(gamma='auto').fit(X_train_u, X_test)
+            preds = ssl_svm.predict(X_test)
             return preds
 
     def set_stream(self, ts):
@@ -354,20 +354,20 @@ class COMPOSE:
         # if len(self.hypothesis[ts]) > len(self.data[ts]):
         #     diff = len(self.hypothesis[ts]) - len(self.data[ts])
         #     self.hypothesis[ts] = self.hypothesis[ts][:-diff]
-
+        
         # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
         self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
         # 2. sort the data to match hypothesis shift
-        self.data[ts] = np.take_along_axis(self.data[ts], sortID, axis=0)
+        self.data[ts] = self.data[ts][sortID]
         # 3. sort labeled to match hypothesis shift
-        self.labeled[ts] = np.take_along_axis(self.labeled[ts], sortID, axis=0)
+        self.labeled[ts] = self.labeled[ts][sortID]
         # 4. sort the core supports to match hypothesis 
-        # self.core_supports[ts] = np.take_along_axis(self.core_supports[ts], sortID, axis=0)
+        self.core_supports[ts] = self.core_supports[ts][sortID]
 
         # classify 
         # step 4 call SSL with L, Y , U
         t_start = time.time()
-        self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
+        self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts+1], X_test=self.data[ts+1])
         t_end = time.time() 
 
         # obtain hypothesis ht: X-> Y 
@@ -393,10 +393,9 @@ class COMPOSE:
                 # add available labels to hypothesis 
                 if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
                     lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
-                    self.hypothesis[ts] = self.labeled[ts][lbl_indx]
-                # determine if there are any labeled data & add core_suppports from previous timestep
+                    self.hypothesis[ts] = self.labeled[ts][lbl_indx]        
                 # steps 1 - 2
-                # if ts != 0 
+                # if ts != 0 (not the first timestep)
                 if start != ts:
                     # add previous core supports from previous time step
                     self.set_stream(ts)
