@@ -140,7 +140,7 @@ class COMPOSE:
         ts = timestep
         # make sure hypothesis are the labels based on label propagation preds
         # TODO: remove potentially 
-        self.hypothesis[ts] = self.hypothesis[ts][:,-1]
+        # self.hypothesis[ts] = self.hypothesis[ts][:,-1]
         # 1. Remove duplicate data instances 
         # check the data bu rows and remove the duplicate instances keeping track what was removed
         self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
@@ -221,15 +221,18 @@ class COMPOSE:
         # ------------------------------------------------------------
         # c_offset is used to keep track how many instances have been analyzed so each class can be returned in the correct spot after cse
         c_offset = 0       
+        self.data[ts] = np.squeeze(self.data[ts])
         if self.method == 'compose':
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
+                class_ind = class_ind[:,0]
                 if class_ind is None:
                     extract_cs = cse.CSE(data=self.data[ts], mode=self.mode)    # gets core support based on first timestep
                 else:
-                    extract_cs = cse.CSE(data=self.data[ts][class_ind], mode=self.mode)    # gets core support based on first timestep
+                    extract_cs = cse.CSE(data= np.squeeze(self.data[ts][class_ind]), mode=self.mode)    # gets core support based on first timestep
                 self.core_supports[ts] = extract_cs.core_support_extract()
                 inds = np.argwhere(extract_cs.core_support_extract())
+                print(inds)
                 new_cs = self.core_supports[ts][inds + c_offset]
                 new_cs[:,0] = 2 
                 self.core_supports[ts] = new_cs
@@ -252,11 +255,11 @@ class COMPOSE:
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
-        print(self.core_supports[ts])
         
+        print(np.shape(self.core_supports[ts]))
         # set hypothesis dimension as start of method
-        to_add = np.zeros((len(self.hypothesis[ts]), np.shape(self.data[ts])[1]-1))
-        self.hypothesis[ts] = np.column_stack((to_add, self.hypothesis[ts]))
+        # to_add = np.zeros((len(self.hypothesis[ts]), np.shape(self.data[ts])[1]-1))
+        # self.hypothesis[ts] = np.column_stack((to_add, self.hypothesis[ts]))
 
     def set_data(self):
         """
@@ -293,7 +296,6 @@ class COMPOSE:
     def learn(self, X_train_l, L_train_l, X_train_u, X_test):
         """
         Available classifiers : 'label_propagation',  'QN_S3VM', 'svm'
-
         For QN_S3VM:  
         Sets classifier by getting the classifier object from ssl module
         loads classifier based on user input
@@ -422,8 +424,6 @@ class COMPOSE:
             for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
                 # add available labels to hypothesis 
-                print(ts)
-                print(np.shape(self.core_supports[ts]))
                 if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
                     lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
                     self.hypothesis[ts] = self.labeled[ts][lbl_indx]   
