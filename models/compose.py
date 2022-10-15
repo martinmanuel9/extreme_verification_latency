@@ -155,7 +155,7 @@ class COMPOSE:
         if ts > 0:
             sorter = []
             for id in sortID:
-                if id > len(self.core_supports[ts-1]):
+                if id >= len(self.core_supports[ts-1]):
                     break
                 else:
                     sorter.append(id) 
@@ -163,7 +163,7 @@ class COMPOSE:
         # remove hypothesis dupes
         sorter = []
         for id in sortID:
-            if id > len(self.hypothesis[ts]):
+            if id >= len(self.hypothesis[ts]):
                 break
             else:
                 sorter.append(id)
@@ -179,7 +179,7 @@ class COMPOSE:
         # remove unlabeled data indices of removed instances
         sorter = []
         for id in sortID:
-            if id > len(unlabeled):
+            if id >= len(unlabeled):
                 break
             else:
                 sorter.append(id)
@@ -229,13 +229,20 @@ class COMPOSE:
                 else:
                     extract_cs = cse.CSE(data= np.squeeze(self.data[ts][class_ind]), mode=self.mode)    # gets core support based on first timestep
                 self.core_supports[ts] = extract_cs.core_support_extract()
-                inds = np.argwhere(extract_cs.core_support_extract())
+                inds = np.argwhere(self.core_supports[ts][:,0])
                 inds = inds[:,0]
-                new_cs = self.core_supports[ts][inds + c_offset]
+                inds = inds + c_offset
+                sorter = []
+                for ind in inds:
+                    if ind >= len(self.core_supports[ts][:,0]):
+                        break
+                    else:
+                        sorter.append(ind)
+                new_cs = self.core_supports[ts][sorter]
                 new_cs[:,0] = 2 
                 core_supports.append(new_cs)
                 c_offset = c_offset + extract_cs.N_features
-            self.core_supports[ts] = np.squeeze(np.array(core_supports))
+            self.core_supports[ts] = np.array(core_supports)
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
@@ -349,15 +356,18 @@ class COMPOSE:
         # append the current data with the core supports
         # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
         cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
-        prev_cs = self.core_supports[ts-1][cs_indx]
+        cs_indx = np.squeeze(cs_indx)
+        cs_indx = cs_indx[:,-1]
+        self.core_supports[ts-1] = np.squeeze(self.core_supports[ts-1])
+        prev_cs = np.squeeze(self.core_supports[ts-1][cs_indx])
         self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
         # append hypothesis to include classes of the core supports
-        self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], prev_cs)) 
+        self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], prev_cs[:,-1])) 
         # append the labels to include the class of the core supports
         # receive labeled data from core supports and labels 
-        self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs))
+        self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs[:,-1]))
         # append the core supports to accomodate the added core supports from previous ts
-        self.core_supports[ts] = np.concatenate((self.core_supports[ts], prev_cs))
+        self.core_supports[ts] = np.concatenate((self.core_supports[ts-1], prev_cs))
 
     def classify(self, ts):
         """
@@ -379,11 +389,32 @@ class COMPOSE:
         # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
         self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
         # 2. sort the data to match hypothesis shift
-        self.data[ts] = np.squeeze(self.data[ts][sortID])
+        sorter = []
+        # if index is out of range we skip to the next index
+        for id in sortID:
+            if id >= len(self.data[ts]):
+                break
+            else:
+                sorter.append(id)
+        self.data[ts] = np.squeeze(self.data[ts][sorter])
         # 3. sort labeled to match hypothesis shift
-        self.labeled[ts] = np.squeeze(self.labeled[ts][sortID])
+        sorter = []
+        # if index is out of range we skip to the next index
+        for id in sortID:
+            if id >= len(self.labeled[ts]):
+                break
+            else:
+                sorter.append(id)
+        self.labeled[ts] = np.squeeze(self.labeled[ts][sorter])
         # 4. sort the core supports to match hypothesis 
-        self.core_supports[ts] = np.squeeze(self.core_supports[ts][sortID])
+        sorter = []
+        # if index is out of range we skip to the next index
+        for id in sortID:
+            if id >= len(self.core_supports[ts]):
+                break
+            else:
+                sorter.append(id)
+        self.core_supports[ts] = np.squeeze(self.core_supports[ts][sorter])
         # classify 
         # step 4 call SSL with L, Y , U
         t_start = time.time()
@@ -425,6 +456,11 @@ class COMPOSE:
                 unlabeled_data = self.classify(ts) 
                 # get core supports 
                 self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
+                # remove core supports from previous timestep
+                if start != ts:
+                    data_curr = np.array(self.data[ts])
+                    prev_data = np.array(self.data[ts-1])
+                    
 
 
             total_time_end = time.time()
