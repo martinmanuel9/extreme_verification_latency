@@ -75,7 +75,7 @@ class PerformanceMetrics:
 
     def findClassifierMetrics(self, preds, test):
         with np.errstate(divide='ignore'):
-            self.classifier_error[self.ts] =  np.sum(preds[:,-1] != test[:,-1]) / len(preds[:,-1])
+            self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds)
         # self.classifier_accuracy[self.ts] = np.mean(np.argmax(preds) == test)
         self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
         # class_report = metric.classification_report(test, preds)
@@ -83,15 +83,15 @@ class PerformanceMetrics:
         # roc curve
         try:
             self.roc_auc_score[self.ts] = metric.roc_auc_score(test, preds)
-            fpr, tpr, _ = metric.roc_curve(test[:,-1], preds[:,-1], pos_label=1)
+            fpr, tpr, _ = metric.roc_curve(test, preds, pos_label=1)
             self.roc_auc_plot[self.ts] = [fpr, tpr]
         except ValueError:
             self.roc_auc_score[self.ts] = 'Only one class found'
             self.roc_auc_plot[self.ts] = 'Only one class found'
         # F1-score 
-        self.f1_score[self.ts] = metric.f1_score(test[:,-1], preds[:,-1], average=None)
+        self.f1_score[self.ts] = metric.f1_score(test, preds, average=None)
         # Mathews Correlation Coefficient 
-        self.mathews_corr_coeff[self.ts] = metric.matthews_corrcoef(test[:,-1], preds[:,-1])
+        self.mathews_corr_coeff[self.ts] = metric.matthews_corrcoef(test, preds)
         # add to dict
         self.perf_metrics['Dataset'] = self.selected_dataset
         self.perf_metrics['Classifier'] = self.classifier

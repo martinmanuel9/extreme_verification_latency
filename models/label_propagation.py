@@ -38,20 +38,21 @@ import numpy as np
 
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
-        self.X = np.array(X_train)
-        self.labels= np.array(X_labeled) 
-        self.unlabeled = np.array(X_unlabeled)
+        self.X = np.array(X_unlabeled) # self.data
+        self.labels= np.array(X_labeled) # self.labeled
+        self.hypothesis = np.array(X_train) # self.hypothesis
 
     def ssl(self):
-        labels = self.labels[:,-1]
-        X = self.X
+        labels = self.labels
+        hypothesis = self.hypothesis
+        X = self.X[:,:-1] # just the features
         # define model
         model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
         # fit model on training dataset
-        model.fit(X, labels)
+        model.fit(X, np.ravel(hypothesis))
         # make predictions
         predicted_labels = model.predict(X)
         # to match structures 
-        to_add = np.zeros((len(predicted_labels), np.shape(X)[1]-1))
-        predicted_labels = np.column_stack((to_add, predicted_labels))
+        # to_add = np.zeros((len(predicted_labels), np.shape(X)[1]-1))
+        # predicted_labels = np.column_stack((to_add, predicted_labels))
         return predicted_labels

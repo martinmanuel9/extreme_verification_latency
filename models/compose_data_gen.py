@@ -76,7 +76,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = UG_2C_2D[:,:-1]
+            self.data = UG_2C_2D
             self.labels = UG_2C_2D[:,-1]
             self.use = UG_2C_2D[:step]
             self.use[:,-1][indx] = 1
@@ -110,7 +110,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = MG_2C_2D[:,:-1]
+            self.data = MG_2C_2D
             self.labels = MG_2C_2D[:,-1]
             self.use = MG_2C_2D[:step]
             self.use[:,-1][indx] = 1
@@ -142,7 +142,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X1CDT[:,:-1]
+            self.data = X1CDT
             self.labels = X1CDT[:,-1]
             self.use = X1CDT[:step]
             self.use[:,-1][indx] = 1
@@ -174,7 +174,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X2CDT[:,:-1]
+            self.data = X2CDT
             self.labels = X2CDT[:,-1]
             self.use = X2CDT[:step]
             self.use[:,-1][indx] = 1
@@ -206,7 +206,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = UG_2C_3D[:,:-1]
+            self.data = UG_2C_3D
             self.labels = UG_2C_3D[:,-1]
             self.use = UG_2C_3D[:step]
             self.use[:,-1][indx] = 1
@@ -238,7 +238,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X1CHT[:,:-1]
+            self.data = X1CHT
             self.labels = X1CHT[:,-1]
             self.use = X1CHT[:step]
             self.use[:,-1][indx] = 1 
@@ -270,7 +270,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X2CHT[:,:-1]
+            self.data = X2CHT
             self.labels = X1CHT[:,-1]
             self.use = X2CHT[:step]
             self.use[:,-1][indx] = 1   
@@ -302,7 +302,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X4CR[:,:-1]
+            self.data = X4CR
             self.labels = X4CR[:,-1]
             self.use = X4CR[:step]
             self.use[:,-1][indx] = 1  
@@ -334,7 +334,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X4CRE_V1[:,:-1]
+            self.data = X4CRE_V1
             self.labels = X4CRE_V1[:,-1]
             self.use = X4CRE_V1[:step]
             self.use[:,-1][indx] = 1 
@@ -366,7 +366,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X4CRE_V2[:,:-1]
+            self.data = X4CRE_V2
             self.labels = X4CRE_V2[:,-1]
             self.use = X4CRE_V2[:step]
             self.use[:,-1][indx] = 1 
@@ -398,7 +398,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X5CVT[:,:-1]
+            self.data = X5CVT
             self.labels = X5CVT[:,-1]
             self.use = X5CVT[:step]
             self.use[:,-1][indx] = 1
@@ -432,7 +432,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X1Csurr[:,:-1]
+            self.data = X1Csurr
             self.labels = X1Csurr[:,-1]
             self.use = X1Csurr[:step]
             self.use[:,-1][indx] = 1
@@ -466,7 +466,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = X4CE1CF[:,:-1]
+            self.data = X4CE1CF
             self.labels = X4CE1CF[:,-1]
             self.use = X4CE1CF[:step]
             self.use[:,-1][indx] = 1
@@ -498,7 +498,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = FG_2C_2D[:,:-1]
+            self.data = FG_2C_2D
             self.labels = FG_2C_2D[:,-1]
             self.use = FG_2C_2D[:step]
             self.use[:,-1][indx] = 1
@@ -530,7 +530,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = GEARS_2C_2D[:,:-1]
+            self.data = GEARS_2C_2D
             self.labels = GEARS_2C_2D[:,-1]
             self.use = GEARS_2C_2D[:step]
             self.use[:,-1][indx] = 1
@@ -563,7 +563,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = keystroke[:,:-1]
+            self.data = keystroke
             self.labels = keystroke[:,-1]
             self.use = keystroke[:step]
             self.use[:,-1][indx] = 1
@@ -596,7 +596,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = UG_2C_5D[:,:-1]
+            self.data = UG_2C_5D
             self.labels = UG_2C_5D[:,-1]
             self.use = UG_2C_5D[:step]
             self.use[:,-1][indx] = 1       
@@ -628,7 +628,7 @@ class COMPOSE_Datagen:
                 rnd = random.choice(a)
                 indx.append(rnd)
             
-            self.data = UG_2C_5D[:,:-1]
+            self.data = UG_2C_5D
             self.labels = UG_2C_5D[:,-1]
             self.use = UG_2C_5D[:step]
             self.use[:,-1][indx] = 1  

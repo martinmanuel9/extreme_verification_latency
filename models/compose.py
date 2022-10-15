@@ -139,8 +139,6 @@ class COMPOSE:
         """
         ts = timestep
         # make sure hypothesis are the labels based on label propagation preds
-        # TODO: remove potentially 
-        # self.hypothesis[ts] = self.hypothesis[ts][:,-1]
         # 1. Remove duplicate data instances 
         # check the data bu rows and remove the duplicate instances keeping track what was removed
         self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
@@ -223,24 +221,26 @@ class COMPOSE:
         c_offset = 0       
         self.data[ts] = np.squeeze(self.data[ts])
         if self.method == 'compose':
+            core_supports =[]
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
-                class_ind = class_ind[:,0]
                 if class_ind is None:
                     extract_cs = cse.CSE(data=self.data[ts], mode=self.mode)    # gets core support based on first timestep
                 else:
                     extract_cs = cse.CSE(data= np.squeeze(self.data[ts][class_ind]), mode=self.mode)    # gets core support based on first timestep
                 self.core_supports[ts] = extract_cs.core_support_extract()
                 inds = np.argwhere(extract_cs.core_support_extract())
-                print(inds)
+                inds = inds[:,0]
                 new_cs = self.core_supports[ts][inds + c_offset]
                 new_cs[:,0] = 2 
-                self.core_supports[ts] = new_cs
+                core_supports.append(new_cs)
                 c_offset = c_offset + extract_cs.N_features
+            self.core_supports[ts] = np.squeeze(np.array(core_supports))
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
         elif self.method == 'fast_compose':
+            core_supports = []
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
                 if class_ind is None:
@@ -250,16 +250,12 @@ class COMPOSE:
                 inds = np.argwhere(self.core_supports[ts])
                 new_cs = self.core_supports[ts][inds + c_offset]
                 new_cs[:,0] = 2 
-                self.core_supports[ts] = new_cs
+                core_supports.append(new_cs)
                 c_offset = c_offset + extract_cs.N_features
+            self.core_supports[ts] = np.squeeze(np.array(core_supports))
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
-        
-        print(np.shape(self.core_supports[ts]))
-        # set hypothesis dimension as start of method
-        # to_add = np.zeros((len(self.hypothesis[ts]), np.shape(self.data[ts])[1]-1))
-        # self.hypothesis[ts] = np.column_stack((to_add, self.hypothesis[ts]))
 
     def set_data(self):
         """
@@ -278,18 +274,15 @@ class COMPOSE:
         # core supports are the first batch with added labels 
         data, labels, core_supports, self.dataset = data_gen.gen_dataset(self.dataset)
         ts = 0 
-        
         # set data (all the features)
         for i in range(0, len(data[0])):
             self.data[ts] = data[0][i]
             ts += 1
-        
         # set all the labels 
         ts = 0
         for k in range(0, len(labels[0])):
             self.labeled[ts] = labels[0][k]
             ts += 1
-        
         # gets first core supports from synthetic
         self.core_supports[0] = np.squeeze(core_supports)
 
@@ -355,8 +348,7 @@ class COMPOSE:
         """
         # append the current data with the core supports
         # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
-        
-        cs_indx = np.argwhere(self.core_supports[ts][:,0]==2)
+        cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
         prev_cs = self.core_supports[ts-1][cs_indx]
         self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
         # append hypothesis to include classes of the core supports
@@ -366,8 +358,6 @@ class COMPOSE:
         self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs))
         # append the core supports to accomodate the added core supports from previous ts
         self.core_supports[ts] = np.concatenate((self.core_supports[ts], prev_cs))
-
-        # print('set stream \n data:', np.shape(self.data[ts]), '\n', 'labels:', np.shape(self.labeled[ts]), '\n','cs:', np.shape(self.core_supports[ts]))
 
     def classify(self, ts):
         """
@@ -391,18 +381,14 @@ class COMPOSE:
         # 2. sort the data to match hypothesis shift
         self.data[ts] = np.squeeze(self.data[ts][sortID])
         # 3. sort labeled to match hypothesis shift
-        self.labeled[ts] = self.labeled[ts][sortID]
+        self.labeled[ts] = np.squeeze(self.labeled[ts][sortID])
         # 4. sort the core supports to match hypothesis 
         self.core_supports[ts] = np.squeeze(self.core_supports[ts][sortID])
-
-        # print('classify \n data:', np.shape(self.data[ts]), '\n', 'labels:', np.shape(self.labeled[ts]), '\n','cs:', np.shape(self.core_supports[ts]))
-
         # classify 
         # step 4 call SSL with L, Y , U
         t_start = time.time()
-        self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts+1], X_test=self.data[ts+1])
+        self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
         t_end = time.time() 
-
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
         # get performance metrics of classification 
@@ -423,10 +409,11 @@ class COMPOSE:
             ts = start
             for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
                 self.timestep = ts
-                # add available labels to hypothesis 
-                if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
-                    lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
-                    self.hypothesis[ts] = self.labeled[ts][lbl_indx]   
+                # add available labels to hypothesis
+                if ts == 0:
+                    if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
+                        lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
+                        self.hypothesis[ts] = self.labeled[ts][lbl_indx]  
                 # print('run: \n data:', np.shape(self.data[ts]), '\n', 'labels:', np.shape(self.labeled[ts]), '\n','cs:', np.shape(self.core_supports[ts]))     
                 # steps 1 - 2
                 # if ts != 0 (not the first timestep)
@@ -438,7 +425,8 @@ class COMPOSE:
                 unlabeled_data = self.classify(ts) 
                 # get core supports 
                 self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
-                
+
+
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start
             # figure out how to call out functions
