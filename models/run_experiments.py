@@ -34,7 +34,6 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from tkinter import E
 import compose
 from matplotlib import pyplot as plt
 import pandas as pd

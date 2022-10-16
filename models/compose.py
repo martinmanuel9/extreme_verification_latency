@@ -72,7 +72,6 @@ class COMPOSE:
         self.n_cores =  num_cores           # Level of feedback displayed during run {default}
         self.data = {}                      #  array of timesteps each containing a matrix N instances x D features
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
-        self.unlabeled = {}
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.total_time = []
         self.selected_dataset = selected_dataset
@@ -143,7 +142,8 @@ class COMPOSE:
         # make sure hypothesis are the labels based on label propagation preds
         # 1. Remove duplicate data instances 
         # check the data bu rows and remove the duplicate instances keeping track what was removed
-        self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
+        print(ts)
+        self.data[ts], sortID = np.unique(self.data[ts].astype(float), axis=0, return_index=True)
         # remove labels of removed instances
         sorter = []
         # if index is out of range we skip to the next index
@@ -196,7 +196,24 @@ class COMPOSE:
         # match data with sort 
         self.data[ts] = self.data[ts][sortID]
         # match labeles with sort 
-        self.labeled[ts] = self.labeled[ts][sortID]
+        if self.labeled[ts].size == 0:
+            self.labeled[ts] = self.labeled[ts-1]
+            sorter = []
+            for id in sortID:
+                if id >= len(self.labeled[ts]):
+                    break
+                else:
+                    sorter.append(id)
+            self.labeled[ts] = self.labeled[ts][sorter]
+        else:
+            sorter = []
+            for id in sortID:
+                if id >= len(self.labeled[ts]):
+                    break
+                else:
+                    sorter.append(id)
+            self.labeled[ts] = self.labeled[ts][sorter]
+
         # match core supports with sort 
         if ts > 0:
             sorter = []
@@ -441,8 +458,16 @@ class COMPOSE:
         # get performance metrics of classification 
         perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
                                             dataset= self.selected_dataset , method= self.method , \
-                                            classifier= self.classifier, tstart=t_start, tend=t_end) # test[:,-1]
-        self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.hypothesis[ts], test= self.labeled[ts])
+                                            classifier= self.classifier, tstart=t_start, tend=t_end) 
+        # make sure that preds and test have same dim
+        if self.labeled[ts] is None:
+            self.labeled[ts] = np.array(1, dtype = object)
+        if len(self.hypothesis[ts]) > len(self.labeled[ts]):
+            class_perf_hypoth = self.hypothesis[ts][0:len(self.labeled[ts])]
+            self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= class_perf_hypoth, test= self.labeled[ts])
+        else:
+            self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.hypothesis[ts], test= self.labeled[ts])
+        
         return self.predictions[ts]
 
     def run(self):

@@ -38,12 +38,12 @@ import numpy as np
 
 class Label_Propagation:
     def __init__(self, X_train, X_labeled, X_unlabeled):
-        self.X = np.array(X_unlabeled) # self.data
-        self.labels= np.array(X_labeled) # self.labeled
-        self.hypothesis = np.array(X_train) # self.hypothesis
-        # self.X = self.X.astype(int)
-        # self.labels = self.labels.astype(int)
-        # self.hypothesis = self.hypothesis.astype(int)
+        self.X = X_unlabeled # self.data
+        self.labels= X_labeled # self.labeled
+        self.hypothesis = X_train # self.hypothesis
+        self.X = self.X.astype(int)
+        self.labels = self.labels.astype(int)
+        self.hypothesis = self.hypothesis.astype(int)
 
     def ssl(self):
         labels = self.labels
@@ -52,7 +52,11 @@ class Label_Propagation:
         # define model
         model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
         # fit model on training dataset
-        model.fit(X, np.ravel(hypothesis))
+        if len(X) < len(hypothesis):
+            hypothesis = hypothesis[0:len(X)]
+            model.fit(X, np.ravel(hypothesis))
+        else:
+            model.fit(X, np.ravel(hypothesis))
         # make predictions
         predicted_labels = model.predict(X)
         return predicted_labels
