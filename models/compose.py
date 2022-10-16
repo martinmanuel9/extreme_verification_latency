@@ -34,6 +34,8 @@ College of Engineering
 # SOFTWARE.
 
 from cProfile import run
+from distutils import core
+import enum
 from selectors import EpollSelector
 from socketserver import ThreadingUnixDatagramServer
 from telnetlib import TSPEED
@@ -159,7 +161,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id) 
-            self.core_supports[ts-1] = self.core_supports[ts-1][sorter]
+            self.core_supports[ts-1] = self.core_supports[ts-1][sorter] 
         # remove hypothesis dupes
         sorter = []
         for id in sortID:
@@ -168,14 +170,16 @@ class COMPOSE:
             else:
                 sorter.append(id)
         self.hypothesis[ts] = self.hypothesis[ts][sorter]
-        # remove dupes from core supports
-        sorter = []
-        for id in sortID:
-            if id > len(self.core_supports[ts]):
-                break
-            else:
-                sorter.append(id)
-        self.core_supports[ts] = self.core_supports[ts][sorter]
+
+        # # remove dupes from core supports
+        # sorter = []
+        # for id in sortID:
+        #     if id > len(self.core_supports[ts]):
+        #         break
+        #     else:
+        #         sorter.append(id)
+        # self.core_supports[ts-1] = self.core_supports[ts-1][sorter]
+        
         # remove unlabeled data indices of removed instances
         sorter = []
         for id in sortID:
@@ -221,7 +225,7 @@ class COMPOSE:
         c_offset = 0       
         self.data[ts] = np.squeeze(self.data[ts])
         if self.method == 'compose':
-            core_supports =[]
+            core_supports = np.zeros((1, np.shape(self.data[ts])[1]))
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
                 if class_ind is None:
@@ -238,28 +242,42 @@ class COMPOSE:
                         break
                     else:
                         sorter.append(ind)
-                new_cs = self.core_supports[ts][sorter]
+                new_cs = np.squeeze(self.core_supports[ts][sorter])
                 new_cs[:,0] = 2 
-                core_supports.append(new_cs)
+                core_supports = np.vstack((core_supports, new_cs))
                 c_offset = c_offset + extract_cs.N_features
-            self.core_supports[ts] = np.array(core_supports)
+            # core_supports = np.array(core_supports, dtype=object)
+            core_supports = np.squeeze(core_supports)
+            core_supports = np.delete(core_supports, 0, axis=0)
+            self.core_supports[ts] = core_supports
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
         elif self.method == 'fast_compose':
-            core_supports = []
+            core_supports = np.zeros((1, np.shape(self.data[ts])[1]))
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
                 if class_ind is None:
                     self.core_supports[ts] = self.data[ts]
                 else:
                     self.core_supports[ts] = self.data[ts][class_ind]
-                inds = np.argwhere(self.core_supports[ts])
-                new_cs = self.core_supports[ts][inds + c_offset]
+                inds = np.argwhere(self.core_supports[ts][:,0])
+                inds = inds[:,0]
+                inds = inds + c_offset
+                sorter = []
+                for ind in inds:
+                    if ind >= len(self.core_supports[ts][:,0]):
+                        break
+                    else:
+                        sorter.append(ind)
+                new_cs = np.squeeze(self.core_supports[ts][sorter])
                 new_cs[:,0] = 2 
-                core_supports.append(new_cs)
+                core_supports = np.vstack((core_supports, new_cs))
                 c_offset = c_offset + extract_cs.N_features
-            self.core_supports[ts] = np.squeeze(np.array(core_supports))
+            # core_supports = np.array(core_supports, dtype=object)
+            core_supports = np.squeeze(core_supports)
+            core_supports = np.delete(core_supports, 0, axis=0)
+            self.core_supports[ts] = core_supports
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
@@ -357,9 +375,7 @@ class COMPOSE:
         # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
         cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
         cs_indx = np.squeeze(cs_indx)
-        cs_indx = cs_indx[:,-1]
-        self.core_supports[ts-1] = np.squeeze(self.core_supports[ts-1])
-        prev_cs = np.squeeze(self.core_supports[ts-1][cs_indx])
+        prev_cs = self.core_supports[ts-1][cs_indx]
         self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
         # append hypothesis to include classes of the core supports
         self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], prev_cs[:,-1])) 
@@ -367,7 +383,7 @@ class COMPOSE:
         # receive labeled data from core supports and labels 
         self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs[:,-1]))
         # append the core supports to accomodate the added core supports from previous ts
-        self.core_supports[ts] = np.concatenate((self.core_supports[ts-1], prev_cs))
+        self.core_supports[ts] = np.concatenate((self.core_supports[ts-1], prev_cs)) 
 
     def classify(self, ts):
         """
@@ -458,11 +474,33 @@ class COMPOSE:
                 self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
                 # remove core supports from previous timestep
                 if start != ts:
-                    data_curr = np.array(self.data[ts])
-                    prev_data = np.array(self.data[ts-1])
-                    
-
-
+                    df_data_ts = pd.DataFrame(self.data[ts])
+                    df_data_prev = pd.DataFrame(self.data[ts-1])
+                    merge_data_df = df_data_ts.merge(df_data_prev, how='left', indicator= True)
+                    merge_data_df = merge_data_df[merge_data_df['_merge']=='left_only']
+                    self.data[ts] = merge_data_df.to_numpy()
+                    self.data[ts] = np.squeeze(self.data[ts][:,:-1])
+                    # remove core supports from hypothesis
+                    df_hypoth_ts = pd.DataFrame(self.hypothesis[ts])
+                    df_hypoth_prev = pd.DataFrame(self.hypothesis[ts-1])
+                    merge_hypoth = df_hypoth_ts.merge(df_hypoth_prev, how='left', indicator=True)
+                    merge_hypoth = merge_hypoth[merge_hypoth['_merge']=='left_only']
+                    self.hypothesis[ts] = merge_hypoth.to_numpy()
+                    self.hypothesis[ts] = np.squeeze(self.hypothesis[ts][:,:-1])
+                    # remove core supports from labels
+                    df_label_ts = pd.DataFrame(self.labeled[ts])
+                    df_label_prev = pd.DataFrame(self.labeled[ts-1])
+                    merge_label_df = df_label_ts.merge(df_label_prev, how='left', indicator=True)
+                    merge_label_df = merge_label_df[merge_label_df['_merge']=='left_only']
+                    self.labeled[ts] = merge_label_df.to_numpy()
+                    self.labeled[ts] = np.squeeze(self.labeled[ts][:,:-1])
+                    # remove core supports frpm previous core supports
+                    df_cs_ts = pd.DataFrame(self.core_supports[ts])
+                    df_cs_prev = pd.DataFrame(self.core_supports[ts-1])
+                    merge_cs = df_cs_ts.merge(df_cs_prev, how='left', indicator=True)
+                    merge_cs = merge_cs[merge_cs['_merge']=='left_only']
+                    self.core_supports[ts] = merge_cs.to_numpy()
+                    self.core_supports[ts] = np.squeeze(self.core_supports[ts][:,:-1])
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start
             # figure out how to call out functions

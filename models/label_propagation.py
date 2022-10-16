@@ -41,6 +41,9 @@ class Label_Propagation:
         self.X = np.array(X_unlabeled) # self.data
         self.labels= np.array(X_labeled) # self.labeled
         self.hypothesis = np.array(X_train) # self.hypothesis
+        # self.X = self.X.astype(int)
+        # self.labels = self.labels.astype(int)
+        # self.hypothesis = self.hypothesis.astype(int)
 
     def ssl(self):
         labels = self.labels
@@ -52,7 +55,4 @@ class Label_Propagation:
         model.fit(X, np.ravel(hypothesis))
         # make predictions
         predicted_labels = model.predict(X)
-        # to match structures 
-        # to_add = np.zeros((len(predicted_labels), np.shape(X)[1]-1))
-        # predicted_labels = np.column_stack((to_add, predicted_labels))
         return predicted_labels
