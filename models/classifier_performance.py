@@ -74,8 +74,8 @@ class PerformanceMetrics:
         self.perf_metrics = {}
 
     def findClassifierMetrics(self, preds, test):
-        # with np.errstate(divide='ignore'):
-        self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds)
+        with np.errstate(divide='ignore'):
+            self.classifier_error[self.ts] =  np.sum(preds != test) / len(preds)
         self.classifier_accuracy[self.ts] = 1 - self.classifier_error[self.ts]
         # class_report = metric.classification_report(test, preds)
 
