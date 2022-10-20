@@ -37,7 +37,7 @@ College of Engineering
 import compose
 from matplotlib import pyplot as plt
 import pandas as pd
-import pickle5 as pickle 
+import pickle as pickle 
 import time
 import scargc
 import os
@@ -200,7 +200,7 @@ class RunExperiment:
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['compose', 'fast_compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT' ], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT' ], num_cores=0.95)
 run_experiment.run()
 # run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 # run_experiment.run()

@@ -46,17 +46,18 @@ class Label_Propagation:
         self.hypothesis = self.hypothesis.astype(int)
 
     def ssl(self):
-        labels = self.labels
-        hypothesis = self.hypothesis
-        X = self.X[:,:-1] # just the features
-        # define model
-        model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
-        # fit model on training dataset
-        if len(X) < len(hypothesis):
-            hypothesis = hypothesis[0:len(X)]
-            model.fit(X, np.ravel(hypothesis))
-        else:
-            model.fit(X, np.ravel(hypothesis))
-        # make predictions
-        predicted_labels = model.predict(X)
+        with np.errstate(divide='ignore'):
+            labels = self.labels
+            hypothesis = self.hypothesis
+            X = self.X[:,:-1] # just the features
+            # define model
+            model = LabelPropagation(kernel='knn', n_neighbors=4, gamma=30, max_iter=2000)
+            # fit model on training dataset
+            if len(X) < len(hypothesis):
+                hypothesis = hypothesis[0:len(X)]
+                model.fit(X, np.ravel(hypothesis))
+            else:
+                model.fit(X, np.ravel(hypothesis))
+            # make predictions
+            predicted_labels = model.predict(X)
         return predicted_labels

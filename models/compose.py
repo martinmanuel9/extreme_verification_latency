@@ -246,7 +246,10 @@ class COMPOSE:
                     else:
                         sorter.append(ind)
                 new_cs = np.squeeze(self.core_supports[ts][sorter])
-                new_cs[:,0] = 2 
+                if new_cs.ndim < 2:
+                    new_cs[0] = 2
+                elif new_cs.ndim > 1:
+                    new_cs[:,0] = 2 
                 core_supports = np.vstack((core_supports, new_cs))
                 c_offset = c_offset + extract_cs.N_features
             # core_supports = np.array(core_supports, dtype=object)
@@ -276,7 +279,7 @@ class COMPOSE:
                 new_cs = np.squeeze(self.core_supports[ts][sorter])
                 new_cs[:,0] = 2 
                 core_supports = np.vstack((core_supports, new_cs))
-                c_offset = c_offset + extract_cs.N_features
+                c_offset = c_offset + (np.shape(self.data)[1] - 1)
             # core_supports = np.array(core_supports, dtype=object)
             core_supports = np.squeeze(core_supports)
             core_supports = np.delete(core_supports, 0, axis=0)
