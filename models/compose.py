@@ -279,7 +279,7 @@ class COMPOSE:
                 new_cs = np.squeeze(self.core_supports[ts][sorter])
                 new_cs[:,0] = 2 
                 core_supports = np.vstack((core_supports, new_cs))
-                c_offset = c_offset + (np.shape(self.data)[1] - 1)
+                c_offset = c_offset + (np.shape(self.data[ts])[1] - 1)
             # core_supports = np.array(core_supports, dtype=object)
             core_supports = np.squeeze(core_supports)
             core_supports = np.delete(core_supports, 0, axis=0)
@@ -488,34 +488,9 @@ class COMPOSE:
                 self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
 
                 # remove core supports from previous timestep
-                # if start != ts:
-                #     df_data_ts = pd.DataFrame(self.data[ts])
-                #     df_data_prev = pd.DataFrame(self.data[ts-1])
-                #     merge_data_df = df_data_ts.merge(df_data_prev, how='left', indicator= True)
-                #     merge_data_df = merge_data_df[merge_data_df['_merge']=='left_only']
-                #     self.data[ts] = merge_data_df.to_numpy()
-                #     self.data[ts] = np.squeeze(self.data[ts][:,:-1])
-                #     # remove core supports from hypothesis
-                #     df_hypoth_ts = pd.DataFrame(self.hypothesis[ts])
-                #     df_hypoth_prev = pd.DataFrame(self.hypothesis[ts-1])
-                #     merge_hypoth = df_hypoth_ts.merge(df_hypoth_prev, how='left', indicator=True)
-                #     merge_hypoth = merge_hypoth[merge_hypoth['_merge']=='left_only']
-                #     self.hypothesis[ts] = merge_hypoth.to_numpy()
-                #     self.hypothesis[ts] = np.squeeze(self.hypothesis[ts][:,:-1])
-                #     # remove core supports from labels
-                #     df_label_ts = pd.DataFrame(self.labeled[ts])
-                #     df_label_prev = pd.DataFrame(self.labeled[ts-1])
-                #     merge_label_df = df_label_ts.merge(df_label_prev, how='left', indicator=True)
-                #     merge_label_df = merge_label_df[merge_label_df['_merge']=='left_only']
-                #     self.labeled[ts] = merge_label_df.to_numpy()
-                #     self.labeled[ts] = np.squeeze(self.labeled[ts][:,:-1])
-                #     # remove core supports frpm previous core supports
-                #     df_cs_ts = pd.DataFrame(self.core_supports[ts])
-                #     df_cs_prev = pd.DataFrame(self.core_supports[ts-1])
-                #     merge_cs = df_cs_ts.merge(df_cs_prev, how='left', indicator=True)
-                #     merge_cs = merge_cs[merge_cs['_merge']=='left_only']
-                #     self.core_supports[ts] = merge_cs.to_numpy()
-                #     self.core_supports[ts] = np.squeeze(self.core_supports[ts][:,:-1])
+                
+
+
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start
             # figure out how to call out functions
