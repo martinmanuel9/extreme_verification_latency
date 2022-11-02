@@ -138,95 +138,96 @@ class COMPOSE:
             2. Sort the classes prior to extracting core supports 
             3. Extract the core supports
         """
-        ts = timestep
-        # make sure hypothesis are the labels based on label propagation preds
-        # 1. Remove duplicate data instances 
-        # check the data bu rows and remove the duplicate instances keeping track what was removed
-        self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
-        # remove labels of removed instances
-        sorter = []
-        # if index is out of range we skip to the next index
-        for id in sortID:
-            if id > len(self.labeled[ts]):
-                break
-            else:
-                sorter.append(id) 
-        self.labeled[ts] = self.labeled[ts][sorter]
-        # remove core supports dupes
-        sorter = []
-        for id in sortID:
-            if id >= len(self.core_supports[ts]):
-                break
-            else:
-                sorter.append(id) 
-        self.core_supports[ts] = self.core_supports[ts][sorter] 
-        # remove hypothesis dupes
-        sorter = []
-        for id in sortID:
-            if id >= len(self.hypothesis[ts]):
-                break
-            else:
-                sorter.append(id)
-        self.hypothesis[ts] = self.hypothesis[ts][sorter]
-        # remove unlabeled data indices of removed instances
-        sorter = []
-        for id in sortID:
-            if id >= len(unlabeled):
-                break
-            else:
-                sorter.append(id)
-        unlabeled = unlabeled[sorter]
-
-        # Sort by the classes
-        uniq_class = np.unique(self.hypothesis[ts])     # determine number of classes
-        # sort by the class
-        self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
-        # match data with sort 
-        self.data[ts] = self.data[ts][sortID]
-        # match labeles with sort 
-        if self.labeled[ts].size == 0:
-            self.labeled[ts] = self.labeled[ts-1]
-            sorter = []
-            for id in sortID:
-                if id >= len(self.labeled[ts]):
-                    break
-                else:
-                    sorter.append(id)
-            self.labeled[ts] = self.labeled[ts][sorter]
-        else:
-            sorter = []
-            for id in sortID:
-                if id >= len(self.labeled[ts]):
-                    break
-                else:
-                    sorter.append(id)
-            self.labeled[ts] = self.labeled[ts][sorter]
-        # match core supports with sort 
-        sorter = []
-        # if the sortID is larger than any index in the available core supports
-        for i in range(len(sortID)):
-            if len(self.core_supports[ts])-1 < sortID[i]:
-                pass
-            else:
-                sorter.append(sortID[i])
-        self.core_supports[ts] = self.core_supports[ts][sorter]
-        # match unlabeled with sort
-        unlabeled = unlabeled[sortID]
-        t_start = time.time()
-        # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
-        # ------------------------------------------------------------
-        # step 3 in this method to extract core supports 
-        # step 7 -9 
-        # for each class:  
-            # call CSE for core supports, 
-            # add core supports to labeled data
-            # L^(t+1) = L^(t+1) U CSc
-            # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
-        # ------------------------------------------------------------
-        # c_offset is used to keep track how many instances have been analyzed so each class can be returned in the correct spot after cse
-        c_offset = 0       
-        self.data[ts] = np.squeeze(self.data[ts])
         if self.method == 'compose':
+            ts = timestep
+            # make sure hypothesis are the labels based on label propagation preds
+            # 1. Remove duplicate data instances 
+            # check the data bu rows and remove the duplicate instances keeping track what was removed
+            self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
+            # remove labels of removed instances
+            sorter = []
+            # if index is out of range we skip to the next index
+            for id in sortID:
+                if id >= len(self.labeled[ts]):
+                    break
+                else:
+                    sorter.append(id) 
+            self.labeled[ts] = self.labeled[ts][sorter]
+            # remove core supports dupes
+            sorter = []
+            for id in sortID:
+                if id >= len(self.core_supports[ts]):
+                    break
+                else:
+                    sorter.append(id) 
+            self.core_supports[ts] = self.core_supports[ts][sorter] 
+            # remove hypothesis dupes
+            sorter = []
+            for id in sortID:
+                if id >= len(self.hypothesis[ts]):
+                    break
+                else:
+                    sorter.append(id)
+            self.hypothesis[ts] = self.hypothesis[ts][sorter]
+            # remove unlabeled data indices of removed instances
+            sorter = []
+            for id in sortID:
+                if id >= len(unlabeled):
+                    break
+                else:
+                    sorter.append(id)
+            unlabeled = unlabeled[sorter]
+
+            # Sort by the classes
+            uniq_class = np.unique(self.hypothesis[ts])     # determine number of classes
+            # sort by the class
+            self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
+            # match data with sort 
+            self.data[ts] = self.data[ts][sortID]
+            # match labeles with sort 
+            if self.labeled[ts].size == 0:
+                self.labeled[ts] = self.labeled[ts-1]
+                sorter = []
+                for id in sortID:
+                    if id >= len(self.labeled[ts]):
+                        break
+                    else:
+                        sorter.append(id)
+                self.labeled[ts] = self.labeled[ts][sorter]
+            else:
+                sorter = []
+                for id in sortID:
+                    if id >= len(self.labeled[ts]):
+                        break
+                    else:
+                        sorter.append(id)
+                self.labeled[ts] = self.labeled[ts][sorter]
+            # match core supports with sort 
+            sorter = []
+            # if the sortID is larger than any index in the available core supports
+            for i in range(len(sortID)):
+                if len(self.core_supports[ts])-1 < sortID[i]:
+                    pass
+                else:
+                    sorter.append(sortID[i])
+            self.core_supports[ts] = self.core_supports[ts][sorter]
+            # match unlabeled with sort
+            unlabeled = unlabeled[sortID]
+            t_start = time.time()
+            # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
+            # ------------------------------------------------------------
+            # step 3 in this method to extract core supports 
+            # step 7 -9 
+            # for each class:  
+                # call CSE for core supports, 
+                # add core supports to labeled data
+                # L^(t+1) = L^(t+1) U CSc
+                # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
+            # ------------------------------------------------------------
+            # c_offset is used to keep track how many instances have been analyzed so each class can be returned in the correct spot after cse
+            c_offset = 0       
+            self.data[ts] = np.squeeze(self.data[ts])
+            # For compose we do core support extraction
             core_supports = np.zeros((1, np.shape(self.data[ts])[1]))
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
@@ -257,30 +258,109 @@ class COMPOSE:
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
+
         elif self.method == 'fast_compose':
-            core_supports = np.zeros((1, np.shape(self.data[ts])[1]))
-            # core_supports = np.squeeze(np.zeros((1, np.shape(self.data[ts])[1])))
-            for c in uniq_class:
-                class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
-                # set cs to be the hypothesis/predictions 
-                self.core_supports[ts] = self.data[ts][class_ind]
-                inds = np.argwhere(self.core_supports[ts])
-                inds = inds[:,0]
-                inds = inds + c_offset
+            ts = timestep
+            # make sure hypothesis are the labels based on label propagation preds
+            # 1. Remove duplicate data instances 
+            # check the data by rows and remove the duplicate instances keeping track what was removed
+            self.data[ts], sortID = np.unique(self.data[ts], axis=0, return_index=True)
+            # remove labels of removed instances
+            sorter = []
+            # if index is out of range we skip to the next index
+            for id in sortID:
+                if id >= len(self.labeled[ts]):
+                    break
+                else:
+                    sorter.append(id) 
+            self.labeled[ts] = self.labeled[ts][sorter]
+            # remove core supports dupes
+            sorter = []
+            for id in sortID:
+                if id >= len(self.core_supports[ts]):
+                    break
+                else:
+                    sorter.append(id) 
+            self.core_supports[ts] = self.core_supports[ts][sorter] 
+            # remove hypothesis dupes
+            sorter = []
+            for id in sortID:
+                if id >= len(self.hypothesis[ts]):
+                    break
+                else:
+                    sorter.append(id)
+            self.hypothesis[ts] = self.hypothesis[ts][sorter]
+            # remove unlabeled data indices of removed instances
+            sorter = []
+            for id in sortID:
+                if id >= len(unlabeled):
+                    break
+                else:
+                    sorter.append(id)
+            unlabeled = unlabeled[sorter]
+
+            # Sort by the classes
+            uniq_class = np.unique(self.hypothesis[ts])     # determine number of classes
+            # sort by the class
+            self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
+            # match data with sort 
+            self.data[ts] = self.data[ts][sortID]
+            # match labeles with sort 
+            if self.labeled[ts].size == 0:
+                self.labeled[ts] = self.labeled[ts-1]
                 sorter = []
-                for ind in inds:
-                    if ind >= len(self.core_supports[ts]):
+                for id in sortID:
+                    if id >= len(self.labeled[ts]):
                         break
                     else:
-                        sorter.append(ind)
-                new_cs = np.squeeze(self.core_supports[ts][sorter])
-                new_cs[:,0] = 2 
+                        sorter.append(id)
+                self.labeled[ts] = self.labeled[ts][sorter]
+            else:
+                sorter = []
+                for id in sortID:
+                    if id >= len(self.labeled[ts]):
+                        break
+                    else:
+                        sorter.append(id)
+                self.labeled[ts] = self.labeled[ts][sorter]
+            # match core supports with sort 
+            sorter = []
+            # if the sortID is larger than any index in the available core supports
+            for i in range(len(sortID)):
+                if len(self.core_supports[ts])-1 < sortID[i]:
+                    pass
+                else:
+                    sorter.append(sortID[i])
+            self.core_supports[ts] = self.core_supports[ts][sorter]
+            # match unlabeled with sort
+            unlabeled = unlabeled[sortID]
+            t_start = time.time()
+            # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
+            # ------------------------------------------------------------
+            # step 3 in this method to extract core supports 
+            # step 7 -9 
+            # for each class:  
+                # call CSE for core supports, 
+                # add core supports to labeled data
+                # L^(t+1) = L^(t+1) U CSc
+                # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
+            # ------------------------------------------------------------
+            # c_offset is used to keep track how many instances have been analyzed so each class can be returned in the correct spot after cse
+            c_offset = 0       
+            self.data[ts] = np.squeeze(self.data[ts])
+            # D_t = {{(x_ut,ht(x_ut)) :x ∈ Ut∀u}}
+            # step 7 for fast compose
+            core_supports = np.zeros((1, np.shape(self.data[ts])[1]))
+            for c in uniq_class:
+                class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
+                new_cs = self.data[ts][class_ind]
+                new_cs[:,0] = 2
                 core_supports = np.vstack((core_supports, new_cs))
-                c_offset = c_offset + (np.shape(self.data[ts])[1] - 1)
-            # core_supports = np.array(core_supports, dtype=object)
             core_supports = np.squeeze(core_supports)
             core_supports = np.delete(core_supports, 0, axis=0)
             self.core_supports[ts] = core_supports
+            # add to labeled data for next time step
+            self.labeled[ts] = np.concatenate((self.labeled[ts], self.core_supports[ts][:,-1]))
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
             self.num_cs[ts] = len(self.core_supports[ts])
@@ -361,9 +441,9 @@ class COMPOSE:
             preds = ssl_svm.predict(X_train_u)
             return preds
 
-    def set_stream(self, ts):
+    def set_stream_compose(self, ts):
         """
-        The intent of the method is so when ts!=1 we add the information of core supports from the previous timestep
+        The intent of the method for compose is so when ts!=1 we add the information of core supports from the previous timestep
         ts = current timestep. This method should not be invoked unless it is after timestep 1 
         This method will conduct the following:
         1. append the current data stream with the core supports 
@@ -372,34 +452,29 @@ class COMPOSE:
         4. append the core supports to accomodate the added core supports of the previous timestep 
         """
         # append the current data with the core supports
+        # if compose :
         # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
-        if self.method == 'compose':
-            cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
-            cs_indx = np.squeeze(cs_indx)
-            prev_cs = self.core_supports[ts-1][cs_indx]
-            self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
-            # append hypothesis to include classes of the core supports
-            self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], prev_cs[:,-1])) 
-            # append the labels to include the class of the core supports
-            # receive labeled data from core supports and labels 
-            self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs[:,-1]))
-            # append the core supports to accomodate the added core supports from previous ts
-            self.core_supports[ts] = np.concatenate((self.core_supports[ts-1], prev_cs))
-        # D_t = {{(xtu,ht(xtu)) :x ∈U t∀u}}
-        elif self.method == 'fast_compose':
-            # core supports are just the predictions aka hypothesis found in get core supports
-            cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
-            cs_indx = np.squeeze(cs_indx)
-            prev_cs = self.core_supports[ts-1][cs_indx]
-            print(prev_cs)
-            self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
-            # append hypothesis to include classes of the core supports
-            self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], prev_cs[:,-1])) 
-            # append the labels to include the class of the core supports
-            # receive labeled data from core supports and labels 
-            self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs[:,-1]))
-            # append the core supports to accomodate the added core supports from previous ts
-            self.core_supports[ts] = np.concatenate((self.core_supports[ts-1], prev_cs))
+        cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
+        cs_indx = np.squeeze(cs_indx)
+        prev_cs = self.core_supports[ts-1][cs_indx]
+        self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
+        # append hypothesis to include classes of the core supports
+        self.hypothesis[ts] = np.concatenate((self.hypothesis[ts-1], prev_cs[:,-1])) 
+        # append the labels to include the class of the core supports
+        # receive labeled data from core supports and labels 
+        self.labeled[ts] = np.concatenate((self.labeled[ts-1], prev_cs[:,-1]))
+        # append the core supports to accomodate the added core supports from previous ts
+        self.core_supports[ts] = np.concatenate((self.core_supports[ts-1], prev_cs))
+
+    def set_stream_fast_compose(self, ts):
+        """
+        The intent of the method for fast compose 
+        # D_t = {{(x_ut,ht(x_ut)) :x ∈ Ut∀u}}
+        """
+        # sets the same dim to add unlabeled and hypothesis
+        to_add = np.zeros((len(self.hypothesis[ts]), (np.shape(self.data[ts])[1] - 1)))
+        hypoth = np.column_stack((to_add, self.hypothesis[ts]))
+        self.data[ts] = np.vstack((self.data[ts], hypoth))
 
     def classify(self, ts):
         """
@@ -414,10 +489,6 @@ class COMPOSE:
         This is step 4 of the COMPOSE Algorithm:
         Call SSL with L^t, Y^t, and U^t to obtain hypothesis, h^t: X->Y
         """
-        # if len(self.hypothesis[ts]) > len(self.data[ts]):
-        #     diff = len(self.hypothesis[ts]) - len(self.data[ts])
-        #     self.hypothesis[ts] = self.hypothesis[ts][:-diff]
-        
         # 1. sort the hypothesis so unlabeled data is at the bottom; we do this by sorting in descending order
         self.hypothesis[ts], sortID = -np.sort(-self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(-self.hypothesis[ts], kind="heapsort", axis=0)
         # 2. sort the data to match hypothesis shift
@@ -457,7 +528,7 @@ class COMPOSE:
         # get performance metrics of classification 
         perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
                                             dataset= self.selected_dataset , method= self.method , \
-                                            classifier= self.classifier, tstart=t_start, tend=t_end) 
+                                            classifier= self.classifier, tstart=t_start, tend=t_end)
         # make sure that preds and test have same dim
         if self.labeled[ts] is None:
             self.labeled[ts] = np.array(1)
@@ -479,22 +550,42 @@ class COMPOSE:
             total_time_start = time.time() 
             ts = start
             for ts in range(0, len(timesteps)-1):     # iterate through all timesteps from the start to the end of the available data
-                self.timestep = ts
-                # add available labels to hypothesis
-                if ts == 0:
-                    if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
-                        lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
-                        self.hypothesis[ts] = self.labeled[ts][lbl_indx]  
-                # steps 1 - 2
-                # if ts != 0 (not the first timestep)
-                if start != ts:
-                    # add previous core supports from previous time step
-                    self.set_stream(ts)
-                # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}
-                # step 4 call SSL with L^t, Y^t, and U^t
-                unlabeled_data = self.classify(ts) 
-                # get core supports 
-                self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
+                if self.method == 'compose':
+                    self.timestep = ts
+                    # add available labels to hypothesis
+                    if ts == 0:
+                        if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
+                            lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
+                            self.hypothesis[ts] = self.labeled[ts][lbl_indx]  
+                    # steps 1 - 2
+                    # if ts != 0 (not the first timestep)
+                    if start != ts:
+                        # add previous core supports from previous time step
+                        self.set_stream_compose(ts)
+                    # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}
+                    # step 4 call SSL with L^t, Y^t, and U^t
+                    unlabeled_data = self.classify(ts) 
+                    # get core supports 
+                    self.get_core_supports(timestep= ts , unlabeled= unlabeled_data)
+                
+                elif self.method == 'fast_compose':
+                    self.timestep = ts
+                    # add available labels to hypothesis
+                    if ts == 0:
+                        if np.sum(self.core_supports[ts][:,-1] == 1) >= 1:
+                            lbl_indx = np.argwhere(self.core_supports[ts][:,-1] == 1)
+                            self.hypothesis[ts] = self.labeled[ts][lbl_indx]  
+                    # steps 1 - 2 
+                    if start != ts:
+                        # add previous core supports from previous time step
+                        self.set_stream_compose(ts)
+                    # step 3 receive unlabeled data U^t = { xu^t in X, u = 1,..., N}
+                    # step 4 call SSL with L^t, Y^t, and U^t
+                    hypoth = self.classify(ts) 
+                    # step 5 set D_t = {{(x_ut,ht(x_ut)) :x ∈ Ut∀u}}
+                    self.set_stream_fast_compose(ts)
+                    # get core supports and add to to labeled data for next time step 
+                    self.get_core_supports(timestep= ts , unlabeled= hypoth)
 
             total_time_end = time.time()
             self.total_time = total_time_end - total_time_start

@@ -176,11 +176,11 @@ class CSE:
         else:
             simplexes = Delaunay(self.data,qhull_options='Qbb Qc Qz Qx Q12' )   # set the output simplexes to the Delaunay Triangulation - WAS: qhull_options='Qbb Qc Qz Qx Q12'
                                                                                 # ”Qbb Qc Qz Qx Q12” for ndim > 4 for qhull options
-            
+            self.ashape_includes = np.squeeze(np.zeros((1,len(simplexes.simplices))))
+
             for sID in range(0,len(simplexes.simplices)):
                 if self.boundary_opts['alpha'] > self.calc_radius(simplexes.simplices[sID]):
                     self.ashape_includes[sID] = 1
-            
         self.ashape['simplexes'] = simplexes.simplices                                    # adds tuple to simplexes and includes after Tesselation
         
     # calculate the radius 
@@ -231,7 +231,8 @@ class CSE:
         
         ## Compaction - shrinking of alpha shapes -- referred to as ONION Method -- peels layers
         self.ashape['N_start_instances'] = np.shape(self.data)[0] 
-        self.ashape['N_core_supports'] = math.ceil((np.shape(self.data)[0]) * self.boundary_opts['p'])  # deseired core supports   
+        self.ashape['N_core_supports'] = math.ceil((np.shape(self.data)[0]) * self.boundary_opts['p'])  # deseired core supports  
+        # may not be needed
         self.ashape['core_support'] = np.ones(self.ashape['N_start_instances'])  # binary vector indicating instance of core support is or not
         too_many_core_supports = True                                  # Flag denoting if the target number of coresupports has been obtained
         
