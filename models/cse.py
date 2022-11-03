@@ -239,42 +239,29 @@ class CSE:
         # Remove layers and compactions
         while sum(self.ashape['core_support']) >= self.ashape['N_core_supports'] and too_many_core_supports == True:
             # find d-1 simplexes
-            if not list(self.ashape_includes.values()):
+            if not self.ashape_includes.all():
                 self.ashape_includes[0] = 1 
             
-            Tid = np.tile(np.array(list(self.ashape_includes.values())), (np.shape(self.ashape['simplexes'])[1],1))
+            Tid = np.tile(np.array(self.ashape_includes), (np.shape(self.ashape['simplexes'])[1],1))
             
-            edges = []
+            edges = np.zeros((1, np.shape(self.ashape['simplexes'])[1]))
             nums = []
+            sortID = np.squeeze(np.argwhere(self.ashape_includes == 1))
             for i in range(np.shape(self.ashape['simplexes'])[1]):
                 nums.append(i)
             
             for ic in range(np.shape(self.ashape['simplexes'])[1]):
-                if len(self.ashape_includes) < len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])):
-                    dif_len = int(len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])) - len(self.ashape_includes))
-                    lastKey = list(self.ashape_includes.keys())[-1]
-                    for k in range(lastKey, (lastKey+dif_len+1)):
-                        self.ashape_includes[k] = 1
-                    edges.append(self.ashape['simplexes'][np.array(list(self.ashape_includes.values())), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
-                elif  len(np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])) < len(self.ashape_includes):
-                    needed = len(self.ashape_includes) 
-                    numbers = []
-                    for k in range(0, needed):
-                        numbers.append(k)
-                    edges.append(self.ashape['simplexes'][ np.array(numbers) , np.array(list(self.ashape_includes.values())) ])
-                else:
-                    edges.append(self.ashape['simplexes'][np.array(list(self.ashape_includes.values())), np.array(nums[:np.shape(self.ashape['simplexes'])[1]-1])])
-                
-                nums = nums[-1:] + nums[:-1]                        # shifts each row to the right
+                edges = np.vstack((edges, self.ashape['simplexes'][sortID]))
+                nums = nums[-1:] + nums[:-1]    # shifts each row to the right
+
+            edges = np.delete(edges, 0, axis=0)
+            num = np.shape(self.ashape['simplexes'])[1]-1
+            edges = edges[:,:num]
             
-            edges = np.array(edges)
-            edges = np.sort(edges)                                  # sort the d-1 simplexes so small node is on left in each row
-            edges = np.sort(edges, axis=0)                          # sort rows of d-1 simplexes in adjacent row 
-            Sid = []
-            for i in range(np.shape(edges)[0]):
-                Sid.append(i)
-            
-            Sid.sort(reverse=True)
+            edges = np.sort(edges, axis=1)  # sort the d-1 simplexes so small node is on left in each row
+            edges, Sid = np.sort(edges, kind='heapsort', axis=0) , np.argsort(edges, kind='heapsort', axis=0)   # sort rows of d-1 simplexes in adjacent row 
+            Sid = Sid[:,0]
+            print(Tid)
             Tid = Tid[Sid]                                                      # sort the simplex identifiers to match  
             consec_edges = np.sum(diff(edges,n=1, axis=0), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
             consec_edges[1] = 0
