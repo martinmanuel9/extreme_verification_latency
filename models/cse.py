@@ -233,17 +233,18 @@ class CSE:
         self.ashape['N_start_instances'] = np.shape(self.data)[0] 
         self.ashape['N_core_supports'] = math.ceil((np.shape(self.data)[0]) * self.boundary_opts['p'])  # deseired core supports  
         # may not be needed
-        self.ashape['core_support'] = np.ones(self.ashape['N_start_instances'])  # binary vector indicating instance of core support is or not
+        self.ashape['core_support'] = np.array(self.data)
+        # self.ashape['core_support'] = np.ones(self.ashape['N_start_instances'])  # binary vector indicating instance of core support is or not
         too_many_core_supports = True                                  # Flag denoting if the target number of coresupports has been obtained
         
         # Remove layers and compactions
-        while sum(self.ashape['core_support']) >= self.ashape['N_core_supports'] and too_many_core_supports == True:
+        while len(self.ashape['core_support']) >= self.ashape['N_core_supports'] and too_many_core_supports == True:
             # find d-1 simplexes
             if not self.ashape_includes.all():
                 self.ashape_includes[0] = 1 
-            
-            Tid = np.tile(np.array(self.ashape_includes), (np.shape(self.ashape['simplexes'])[1],1))
-            
+            indx = np.squeeze(np.argwhere(self.ashape_includes == 1))
+            simpx_shape = np.shape(self.ashape['simplexes'])[1]
+            Tid = np.tile(indx , (simpx_shape , 1))
             edges = np.zeros((1, np.shape(self.ashape['simplexes'])[1]))
             nums = []
             sortID = np.squeeze(np.argwhere(self.ashape_includes == 1))
@@ -261,34 +262,30 @@ class CSE:
             edges = np.sort(edges, axis=1)  # sort the d-1 simplexes so small node is on left in each row
             edges, Sid = np.sort(edges, kind='heapsort', axis=0) , np.argsort(edges, kind='heapsort', axis=0)   # sort rows of d-1 simplexes in adjacent row 
             Sid = Sid[:,0]
-            print(Tid)
-            Tid = Tid[Sid]                                                      # sort the simplex identifiers to match  
-            consec_edges = np.sum(diff(edges,n=1, axis=0), axis=1)              # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
-            consec_edges[1] = 0
-            consec_edges = np.insert(consec_edges, np.where(consec_edges == 0)[0], 0)   # throw a zero mark on the subsequent row (N+1) as well
-            ashape_includes = np.array(list(self.ashape_includes.values()))
-            ashape_includes[Tid[np.where(consec_edges!=0)]] = 0
-            for u in (np.where(ashape_includes==0)[0]):
-                self.ashape_includes[u]= 0
-            
-            ashape_includes = np.array(list(self.ashape_includes.values()))
+            sorter = []
+            for i in Sid:
+                if i >= len(Tid):
+                    pass
+                else:
+                    sorter.append(i)
+            Tid = Tid[sorter]                                          # sort the simplex identifiers to match 
+            consec_edges = np.sum(diff(edges,n=1, axis=0), axis=1)     # find which d-1 simplexes are duplicates - a zero in row N indicates row N and N+1 
+            consec_edge_indx = np.argwhere(consec_edges == 0)
+            consec_edges = np.squeeze(consec_edges[consec_edge_indx])
+            consec_edges = np.append(consec_edges, 0) # throw a zero mark on the subsequent row (N+1) as well
+            indx = Tid[np.argwhere(consec_edges != 0)]
+            self.ashape_includes[indx] = 0
             # determine how many points are remaining 
-            points_remaining = []
-            for d in range(len(self.ashape['simplexes'][np.where(ashape_includes == 1)[0]])):
-                points_remaining = np.append(points_remaining, self.ashape['simplexes'][np.where(ashape_includes == 1)[0]][d][0]) 
-            points_remaining = np.unique(points_remaining)
-            
-            N_instance_index = []
+            points_remaining = np.unique(self.ashape['simplexes'][np.argwhere(self.ashape_includes == 1)])
+            difference = np.setdiff1d(np.arange(self.ashape['N_start_instances']), points_remaining)
             if len(points_remaining) >= self.ashape['N_core_supports']:
-                for i in range(self.ashape['N_start_instances']):
-                    N_instance_index.append(i)
-                set_diff = np.setdiff1d(np.array(N_instance_index),np.array(points_remaining))
-                self.ashape['core_support'][set_diff] = 0
+                self.ashape['core_support'][difference] = 0
             else:
                 too_many_core_supports = False
-        
         # return core supports 
-        support_indices = self.ashape['simplexes'][np.where(self.ashape['core_support']==1)[0]]
+        indices= np.squeeze(np.argwhere(self.ashape['core_support'] == 1))
+        indices = indices[:,0]
+        support_indices = self.ashape['core_support'][indices]
         return support_indices
     
     ## GMM using for COMPOSE

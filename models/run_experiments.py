@@ -203,7 +203,7 @@ class RunExperiment:
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['a_shape'], datasets=[ 'UG_2C_2D' ], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['a_shape'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT '], num_cores=0.95)
 run_experiment.run()
 # run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
 # run_experiment.run()
