@@ -33,14 +33,6 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from cProfile import run
-from distutils import core
-import enum
-from selectors import EpollSelector
-from socketserver import ThreadingUnixDatagramServer
-from telnetlib import TSPEED
-from wsgiref.headers import tspecials
-from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import cse 
@@ -54,7 +46,6 @@ import label_propagation as lbl_prop
 import util as ut
 import matplotlib.animation as animation
 import math
-import sklearn.metrics as metric
 import classifier_performance as cp
 from sklearn.svm import SVC, SVR
 

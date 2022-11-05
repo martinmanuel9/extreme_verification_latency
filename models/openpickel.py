@@ -39,24 +39,29 @@ from matplotlib import pyplot as plt
 from pathlib import Path
 import numpy as np
 
-# change the directory to your particular files location
-path = str(Path.home())
-path = path + "/extreme_verification_latency/results"
-os.chdir(path)
+class OpenResults:
+    def run(self):
+        # change the directory to your particular files location
+        path = str(Path.home())
+        path = path + "/extreme_verification_latency/results"
+        os.chdir(path)
 
-list_dir = os.listdir(path)
+        list_dir = os.listdir(path)
 
-for i in range(len(list_dir)):
-    result = pickel.load(open(list_dir[i], "rb"))
-    print(result, "\n")
+        for i in range(len(list_dir)):
+            result = pickel.load(open(list_dir[i], "rb"))
+            print(result, "\n")
 
-plot_path = str(Path.home())
-plot_path = plot_path + "/extreme_verification_latency/plots"
-os.chdir(plot_path)
+        plot_path = str(Path.home())
+        plot_path = plot_path + "/extreme_verification_latency/plots"
+        os.chdir(plot_path)
 
-plot_dir = os.listdir(plot_path)
+        plot_dir = os.listdir(plot_path)
 
-for j in range(len(plot_dir)):
-    plotter = pickel.load(open(plot_dir[j], "rb"))
-    
-    plotter.show()
+        for j in range(len(plot_dir)):
+            plotter = pickel.load(open(plot_dir[j], "rb"))
+            
+            plotter.show()
+
+open_results = OpenResults()
+open_results.run()
