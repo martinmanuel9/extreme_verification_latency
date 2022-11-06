@@ -1,3 +1,4 @@
+#%%
 #!/usr/bin/env python 
 
 """
@@ -33,11 +34,15 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pickle5 as pickel 
+import pickle as pickle 
 import os
+import matplotlib
+import matplotlib.backend_bases
+import matplotlib.backends
+import numpy as np
 from matplotlib import pyplot as plt
 from pathlib import Path
-import numpy as np
+import pandas as pd
 
 class OpenResults:
     def run(self):
@@ -45,23 +50,35 @@ class OpenResults:
         path = str(Path.home())
         path = path + "/extreme_verification_latency/results"
         os.chdir(path)
-
         list_dir = os.listdir(path)
-
         for i in range(len(list_dir)):
-            result = pickel.load(open(list_dir[i], "rb"))
+            result = pickle.load(open(list_dir[i], "rb"))
             print(result, "\n")
 
+        ## plot results 
         plot_path = str(Path.home())
         plot_path = plot_path + "/extreme_verification_latency/plots"
         os.chdir(plot_path)
-
         plot_dir = os.listdir(plot_path)
-
         for j in range(len(plot_dir)):
-            plotter = pickel.load(open(plot_dir[j], "rb"))
-            
-            plotter.show()
+            plot_data = pickle.load(open(plot_dir[j], 'rb'))
+            fig_handle = plt.figure()
+            fig, ax = plt.subplots()
+            experiments = plot_data.keys()
+            result_plot = {}
+            for experiment in experiments:
+                result_plot['Timesteps'] = plot_data[experiment]['Timesteps']
+                result_plot['Accuracy'] = plot_data[experiment]['Accuracy']
+                df = pd.DataFrame(result_plot)
+                df.plot(ax=ax, label=experiment, x='Timesteps', y='Accuracy')
+            plt.title('Accuracy over Timesteps of ' + plot_dir[j] )
+            plt.xlabel('Timesteps')
+            plt.tight_layout()
+            plt.legend
+            plt.ylabel('% Accuracy')
+            plt.gcf().set_size_inches(15,10)  
+            plt.show()
+
 
 open_results = OpenResults()
 open_results.run()

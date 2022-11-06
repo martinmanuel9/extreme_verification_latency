@@ -60,9 +60,13 @@ class RunExperiment:
         os.chdir(path)
 
     def plot_results(self):
+        # change the directory to your particular files location
+        self.change_dir()
+        path = str(Path.home())
+        path = path + "/extreme_verification_latency/plots"
+        os.chdir(path)
         experiments = self.results.keys()
         fig_handle = plt.figure()
-
         fig, ax = plt.subplots()
         result_plot = {}
         for experiment in experiments:
@@ -70,24 +74,18 @@ class RunExperiment:
             result_plot['Accuracy'] = self.results[experiment]['Accuracy']
             df = pd.DataFrame(result_plot)
             df.plot(ax=ax, label=experiment, x='Timesteps', y='Accuracy')
-        
+            
         time_stamp = time.strftime("%Y%m%d-%H%M%S")
         plt.title('Accuracy over timesteps' + time_stamp )
         plt.xlabel('Timesteps')
         plt.tight_layout()
         plt.legend
         plt.ylabel('% Accuracy')
-        plt.gcf().set_size_inches(15,10)
+        plt.gcf().set_size_inches(15,10)  
         plt.show()
-        
-        # change the directory to your particular files location
-        self.change_dir()
-        result_plot_pkl = 'results_plot_' + time_stamp + '.pkl'
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/plots"
-        os.chdir(path) 
-        with open(result_plot_pkl, 'wb') as result_plot:
-            pickle.dump(fig_handle, result_plot)
+        results_pkl = 'result_plot_data_' + f'{time_stamp}' + '.pkl'
+        with open(f'{results_pkl}', 'wb') as result_data:
+            pickle.dump(self.results, result_data)
 
     def run(self):
         

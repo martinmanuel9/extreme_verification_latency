@@ -1,55 +1,37 @@
-import pandas as pd
+#%%
+import pickle as pickle 
+import os
+import matplotlib
+import matplotlib.backend_bases
+import matplotlib.backends
 import numpy as np
+from matplotlib import pyplot as plt
+from pathlib import Path
+import pandas as pd
+import time
 
-core_supports = np.array([[8.0395,7.1068,2],[ 3.4 , 3.56, 2], [4.5, 6.5, 1]])
-print(core_supports.ndim)
-if core_supports.ndim < 2:
-    print(core_supports[0])
-elif core_supports.ndim > 1:
-    print(core_supports[:,0])
-# [6.7342,6.0806,2],
-# [7.9506,5.8297,2],
-# [0.7497,3.9809,1],
-# [1.9354,2.7201,1],
-# [9.6936,6.9247,2],
-# [2.783,3.749,1]]
-# core_supports = np.array(core_supports)
+plot_path = str(Path.home())
+plot_path = plot_path + "/extreme_verification_latency/plots"
+os.chdir(plot_path)
+plot_dir = os.listdir(plot_path)
+for j in range(len(plot_dir)):
+    plot_data = pickle.load(open(plot_dir[j], 'rb'))
+    fig_handle = plt.figure()
+    fig, ax = plt.subplots()
+    experiments = plot_data.keys()
+    result_plot = {}
+    for experiment in experiments:
+        result_plot['Timesteps'] = plot_data[experiment]['Timesteps']
+        result_plot['Accuracy'] = plot_data[experiment]['Accuracy']
+        df = pd.DataFrame(result_plot)
+        df.plot(ax=ax, label=experiment, x='Timesteps', y='Accuracy')
+    time_stamp = time.strftime("%Y%m%d-%H%M%S")
+    plt.title('Accuracy over Timesteps of ' + plot_dir[j] )
+    plt.xlabel('Timesteps')
+    plt.tight_layout()
+    plt.legend
+    plt.ylabel('% Accuracy')
+    plt.gcf().set_size_inches(15,10)  
+    plt.show()
 
-# inds = [0, 2, 4, 1 , 3, 5]
-
-# new_cs = core_supports[inds]
-# new_cs[:,0] = 2
-
-# core_supports = np.vstack((core_supports, new_cs))
-
-# data = [[8.1701,7.1787,2],
-# [0.43516,3.4016,1],
-# [1.8724,4.131,1],
-# [2.9611,3.6599,1],
-# [7.5151,7.3718,2],
-# [1.3327,2.3199,1],
-# [6.4374,6.5557,2],
-# [8.063,5.8075,2],
-# [3.074,2.658,1],
-# [0.11293,2.593,1],
-# [4.2846,4.2881,1],
-# [5.807,7.4121,2],
-# [8.8401,5.5467,2],
-# [3.3451,3.1571,1],
-# [2.3313,3.2758,1],
-# [2.5291,2.7912,1],
-# [8.4709,7.5066,2],
-# [1.0657,2.939,1],
-# [8.1208,7.9935,2],
-# [1.8475,2.0061,1],
-# [1.944,3.337,1],
-# [8.7281,7.0704,2],
-# [8.3185,7.2903,2],
-# [1.1319,4.0114,1],
-# [2.6884,3.4198,1],
-# [7.6525,6.3162,2]]
-
-# data = np.array(data)
-
-# indx = np.argwhere(core_supports[:,0]==2)
-# print(data[indx])
+# %%
