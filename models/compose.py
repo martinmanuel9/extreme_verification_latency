@@ -403,22 +403,22 @@ class COMPOSE:
             random_gen = random.Random()
             random_gen.seed(0)
 
-            X_L_train = []
-            X_train_l = np.array(X_train_l)
-            for i in range(0, len(X_train_l)):
-                add = np.array(X_train_l[i])
-                X_L_train.append(add)
-            X_train_l = X_L_train
+            # X_L_train = []
+            # X_train_l = np.array(X_train_l)
+            # for i in range(0, len(X_train_l)):
+            #     add = np.array(X_train_l[i])
+            #     X_L_train.append(add)
+            # X_train_l = X_L_train
             
-            L_l_train = []
-            L_train_l = np.array(L_train_l)
-            for i in range(0, len(L_train_l)):
-                add = np.array(L_train_l[i]) 
-                L_l_train.append(add)
-            L_train_l = L_l_train
-            L_train_l = np.array(L_train_l).astype(int)
-            
-            model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u, random_gen)
+            # L_l_train = []
+            # L_train_l = np.array(L_train_l)
+            # for i in range(0, len(L_train_l)):
+            #     add = np.array(L_train_l[i]) 
+            #     L_l_train.append(add)
+            # L_train_l = L_l_train
+            # L_train_l = np.array(L_train_l).astype(int)
+
+            model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u[:,-1], random_gen)
             model.train()
             preds = model.getPredictions(X_test)
             return preds

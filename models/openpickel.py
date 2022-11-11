@@ -82,3 +82,4 @@ class OpenResults:
 
 open_results = OpenResults()
 open_results.run()
+# %%

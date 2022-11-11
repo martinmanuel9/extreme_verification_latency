@@ -93,7 +93,7 @@ class RunExperiment:
             for j in self.classifier:
                 for dataset in self.datasets:
                     for mode in self.modes:
-                        experiment = dataset + '_' + j + '_' + i
+                        experiment = dataset + '_' + mode + '_' + j + '_' + i
                         if i == 'fast_compose' and j == 'QN_S3VM':
                             fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", mode= mode,  method="fast_compose", num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = fast_compose_QNS3VM.run()
@@ -102,7 +102,7 @@ class RunExperiment:
                             results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_perf_metric.keys(), fast_compose_QNS3VM.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_fast_compose_qns3vm = 'results_fast_compose_QN_S3VM_'+ time_stamp +'.pkl'
+                            results_fast_compose_qns3vm = 'results_'+ f'{experiment}' + '.pkl'
                             results_df.to_pickle(results_fast_compose_qns3vm)
                             results_pkl = pd.read_pickle(results_fast_compose_qns3vm)
                             print("Results:\n " , results_pkl )
@@ -115,7 +115,7 @@ class RunExperiment:
                             results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_perf_metric.keys(), fast_compose_label_prop.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_fast_compose_lbl_prop = 'results_fast_compose_label_propagation_'+ time_stamp + '.pkl'
+                            results_fast_compose_lbl_prop = 'results_'+ f'{experiment}' +  '.pkl'
                             results_df.to_pickle(results_fast_compose_lbl_prop)
                             results_pkl = pd.read_pickle(results_fast_compose_lbl_prop)
                             print("Results:\n" , results_pkl )
@@ -128,7 +128,7 @@ class RunExperiment:
                             results_df = pd.DataFrame.from_dict((fast_compose_svm.avg_perf_metric.keys(), fast_compose_svm.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_fast_compose_svm = 'results_fast_compose_svm_'+ time_stamp + '.pkl'
+                            results_fast_compose_svm = 'results_'+ f'{experiment}' + '.pkl'
                             results_df.to_pickle(results_fast_compose_svm)
                             results_pkl = pd.read_pickle(results_fast_compose_svm)
                             print("Results:\n" , results_pkl )
@@ -142,7 +142,7 @@ class RunExperiment:
                             results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_perf_metric.keys(), reg_compose_label_QN_S3VM.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_compose_qns3vm = 'results_compose_QN_S3VM_'+ time_stamp +'.pkl'
+                            results_compose_qns3vm = 'results_'+ f'{experiment}' +'.pkl'
                             results_df.to_pickle(results_compose_qns3vm)
                             results_pkl = pd.read_pickle(results_compose_qns3vm)
                             print("Results:\n" , results_pkl )
@@ -155,7 +155,7 @@ class RunExperiment:
                             results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_perf_metric.keys(), reg_compose_label_prop.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_compose_lbl_prop = 'results_compose_label_propagation_' + time_stamp + '.pkl' 
+                            results_compose_lbl_prop = 'results_' + f'{experiment}' + '.pkl' 
                             results_df.to_pickle(results_compose_lbl_prop)
                             results_pkl = pd.read_pickle(results_compose_lbl_prop)
                             print("Results:\n" , results_pkl )
@@ -168,7 +168,7 @@ class RunExperiment:
                             results_df = pd.DataFrame.from_dict((reg_compose_svm.avg_perf_metric.keys(), reg_compose_svm.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_compose_svm = 'results_compose_QN_S3VM_'+ time_stamp +'.pkl'
+                            results_compose_svm = 'results_'+ f'{experiment}' +'.pkl'
                             results_df.to_pickle(results_compose_svm)
                             results_pkl = pd.read_pickle(results_compose_svm)
                             print("Results:\n" , results_pkl )
@@ -181,7 +181,7 @@ class RunExperiment:
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_scargc_1nn = 'results_scargc_1nn_'+ time_stamp + '.pkl'
+                            results_scargc_1nn = 'results_'+ f'{experiment}' + '.pkl'
                             results_df.to_pickle(results_scargc_1nn)
                             results_pkl = pd.read_pickle(results_scargc_1nn)
                             print("Results:\n", results_df)
@@ -194,15 +194,16 @@ class RunExperiment:
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                             # change the directory to your particular files location
                             self.change_dir()
-                            results_scargc_svm = 'results_scargc_svm_'+ time_stamp + '.pkl' 
+                            results_scargc_svm = 'results_'+ f'{experiment}' + '.pkl' 
                             results_df.to_pickle(results_scargc_svm)
                             results_pkl = pd.read_pickle(results_scargc_svm)
                             print("Results:\n", results_df)
         
         self.plot_results()
 
-run_experiment = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['a_shape'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
+run_experiment = RunExperiment(experiements=['compose'], classifier=['QN_S3VM'], modes=['gmm'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
 run_experiment.run()
-# run_experiment = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
-# run_experiment.run()
+
+# run_experiment1 = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
+# run_experiment1.run()
 #%%

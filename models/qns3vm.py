@@ -97,7 +97,6 @@ class QN_S3VM:
     def __init__(self, X_l, L_l, X_u, random_generator = None, ** kw):
         """
         Initializes the model. Detects automatically if dense or sparse data is provided.
-
         Keyword arguments:
         X_l -- patterns of labeled part of the data
         L_l -- labels of labeled part of the data
@@ -111,10 +110,10 @@ class QN_S3VM:
         numR -- implementation of subset of regressors. If None is provided, all patterns are used
                 (no approximation). Must fulfill 0 <= numR <= len(X_l) + len(X_u) (default None)
         estimate_r -- desired ratio for positive and negative assigments for
-                      unlabeled patterns (-1.0 <= estimate_r <= 1.0). If estimate_r=None,
-                      then L_l is used to estimate this ratio (in case len(L_l) >=
-                      minimum_labeled_patterns_for_estimate_r. Otherwise use estimate_r = 0.0
-                      (default None)
+                    unlabeled patterns (-1.0 <= estimate_r <= 1.0). If estimate_r=None,
+                    then L_l is used to estimate this ratio (in case len(L_l) >=
+                    minimum_labeled_patterns_for_estimate_r. Otherwise use estimate_r = 0.0
+                    (default None)
         minimum_labeled_patterns_for_estimate_r -- see above (default 0)
         BFGS_m -- BFGS parameter (default 50)
         BFGS_maxfun -- BFGS parameter, maximum number of function calls (default 500)
@@ -138,7 +137,6 @@ class QN_S3VM:
     def train(self):
         """
         Training phase.
-
         Returns:
         The computed partition for the unlabeled patterns.
         """
@@ -147,11 +145,9 @@ class QN_S3VM:
     def getPredictions(self, X, real_valued=False):
         """
         Computes the predicted labels for a given set of patterns
-
         Keyword arguments:
         X -- The set of patterns
         real_valued -- If True, then the real prediction values are returned
-
         Returns:
         The predictions for the list X of patterns.
         """
@@ -160,10 +156,8 @@ class QN_S3VM:
     def predict(self, x):
         """
         Predicts a label (-1 or +1) for the pattern
-
         Keyword arguments:
         x -- The pattern
-
         Returns:
         The prediction for x.
         """
@@ -172,10 +166,8 @@ class QN_S3VM:
     def predictValue(self, x):
         """
         Computes f(x) for a given pattern (see Representer Theorem)
-
         Keyword arguments:
         x -- The pattern
-
         Returns:
         The (real) prediction value for x.
         """
@@ -197,7 +189,6 @@ class QN_S3VM_Dense:
 
     """
     BFGS optimizer for semi-supervised support vector machines (S3VM).
-
     Dense Data
     """
     parameters = {
@@ -224,23 +215,15 @@ class QN_S3VM_Dense:
         """
         self.__random_generator = random_generator
         self.__X_l, self.__X_u, self.__L_l = X_l, X_u, L_l
-        if len(X_l) > len(L_l):
-            dif_x_l = len(X_l) - len(L_l)
-            X_l = list(X_l)
-            for r in range(dif_x_l):
-                X_l.pop(0)
-            X_l = np.array(X_l)
-        else:
-            dif_x_l = len(L_l) - len(X_l)
-            L_l = list(L_l)
-            for r in range(dif_x_l):
-                L_l.pop(0)
-            L_l = np.array(L_l)
 
         assert len(X_l) == len(L_l)
-        self.__X = cp.deepcopy(self.__X_l)
-        self.__X.extend(cp.deepcopy(self.__X_u)) 
-        self.__size_l, self.__size_u, self.__size_n = len(X_l), len(X_u), len(X_l) + len(X_u)
+
+        # self.__X = cp.deepcopy(self.__X_l)
+        self.__X = np.squeeze(self.__X_l)
+        # self.__X.extend(cp.deepcopy(self.__X_u)) 
+        self.__X = np.hstack((self.__X, self.__X_u))
+        
+        self.__size_l, self.__size_u, self.__size_n = len(X_l), len(X_u), (len(X_l) + len(X_u))
         self.__matrices_initialized = False
         self.__setParameters( ** kw)
         self.__kw = kw
@@ -248,7 +231,6 @@ class QN_S3VM_Dense:
     def train(self):
         """
         Training phase.
-
         Returns:
         The computed partition for the unlabeled patterns.
         """
@@ -268,11 +250,9 @@ class QN_S3VM_Dense:
     def getPredictions(self, X, real_valued=False):
         """
         Computes the predicted labels for a given set of patterns
-
         Keyword arguments:
         X -- The set of patterns
         real_valued -- If True, then the real prediction values are returned
-
         Returns:
         The predictions for the list X of patterns.
         """
@@ -334,7 +314,7 @@ class QN_S3VM_Dense:
             assert (self.__numR <= len(self.__X)) and (self.__numR > 0)
         else:
             self.__numR = len(self.__X)
-        self.__regressors_indices = sorted(self.__random_generator.sample( range(0,len(self.__X)), self.__numR ))
+        self.__regressors_indices = sorted(self.__random_generator.sample(range(0,len(self.__X)), self.__numR ))
         self.__dim = self.__numR + 1 # add bias term b
         self.__minimum_labeled_patterns_for_estimate_r = float(self.parameters['minimum_labeled_patterns_for_estimate_r'])
         # If reliable estimate is available or can be estimated, use it, otherwise
@@ -393,10 +373,13 @@ class QN_S3VM_Dense:
         if self.__matrices_initialized == False:
             logging.debug("Initializing matrices...")
             # Initialize labels
-            x = arr.array('i')
             
-            for l in self.__L_l:
-                x.append(l)
+            # potential delete 
+            # x = arr.array('i')
+            # for l in self.__L_l:
+            #     x.append(l)
+
+            x = np.array(self.__L_l)
             # self.__YL = mat(x, dtype=np.float64) # old code
             self.__YL = np.array(x, dtype=np.float64)
             # self.__YL = self.__YL.transpose()    # old code
@@ -409,27 +392,45 @@ class QN_S3VM_Dense:
                 self.__kernel = RBFKernel(self.__sigma)
             
             # self.__Xreg = (mat(self.__X)[self.__regressors_indices,:].tolist())   # old code
-            self.__Xreg = (np.array(self.__X)[self.__regressors_indices,:].tolist())
-
-            self.__KLR = self.__kernel.computeKernelMatrix(self.__X_l,self.__Xreg, symmetric=False)
-            self.__KUR = self.__kernel.computeKernelMatrix(self.__X_u,self.__Xreg, symmetric=False)
+            # self.__Xreg = np.array(self.__X)[self.__regressors_indices,:].tolist()
+            self.__Xreg = self.__X[self.__regressors_indices]
+            self.__KLR = self.__kernel.computeKernelMatrix(self.__X_l, self.__Xreg, symmetric=False)
+            self.__KUR = self.__kernel.computeKernelMatrix(self.__X_u, self.__Xreg, symmetric=False)
             # self.__KNR = cp.deepcopy(bmat([[self.__KLR], [self.__KUR]])) # old code
-            self.__KNR = cp.deepcopy(np.bmat([[self.__KLR], [self.__KUR]]))
-            self.__KRR = self.__KNR[self.__regressors_indices,:]
+            # self.__KNR = np.bmat([[self.__KLR], [self.__KUR]])
+            self.__KNR = np.vstack((self.__KLR, self.__KUR)) # was hstack
+            # self.__KNR = np.bmat([[self.__KLR], [self.__KUR]])
+            # self.__KRR = self.__KNR[self.__regressors_indices,:]
+            regress_indx  = []
+            for l in self.__regressors_indices:
+                if l >= len(self.__KNR):
+                    break
+                else:
+                    regress_indx.append(l)
+            self.__KRR = self.__KNR[regress_indx]
             # Center patterns in feature space (with respect to approximated mean of unlabeled patterns in the feature space)
             subset_unlabled_indices = sorted(self.__random_generator.sample( range(0,len(self.__X_u)), min(self.__max_unlabeled_subset_size, len(self.__X_u)) ))
             # self.__X_u_subset = (mat(self.__X_u)[subset_unlabled_indices,:].tolist()) # old code
-            self.__X_u_subset = (np.array(self.__X_u)[subset_unlabled_indices,:].tolist())
+            # self.__X_u_subset = (np.array(self.__X_u)[subset_unlabled_indices,:].tolist())
+            self.__X_u_subset = self.__X_u[subset_unlabled_indices]
             self.__KNU_bar = self.__kernel.computeKernelMatrix(self.__X, self.__X_u_subset, symmetric=False)
-            self.__KNU_bar_horizontal_sum = (1.0 / len(self.__X_u_subset)) * self.__KNU_bar.sum(axis=1)
+            self.__KNU_bar_horizontal_sum = (1.0 / len(self.__X_u_subset)) * np.sum(self.__KNU_bar)
             self.__KU_barR = self.__kernel.computeKernelMatrix(self.__X_u_subset, self.__Xreg, symmetric=False)
             self.__KU_barR_vertical_sum = (1.0 / len(self.__X_u_subset)) * self.__KU_barR.sum(axis=0)
             self.__KU_barU_bar = self.__kernel.computeKernelMatrix(self.__X_u_subset, self.__X_u_subset, symmetric=False)
             self.__KU_barU_bar_sum = (1.0 / (len(self.__X_u_subset)))**2 * self.__KU_barU_bar.sum()
             self.__KNR = self.__KNR - self.__KNU_bar_horizontal_sum - self.__KU_barR_vertical_sum + self.__KU_barU_bar_sum
-            self.__KRR = self.__KNR[self.__regressors_indices,:]
+            # self.__KRR = self.__KNR[self.__regressors_indices,:]
+            regress_indx = []
+            for l in self.__regressors_indices:
+                if l >= len(self.__KRR):
+                    break
+                else:
+                    regress_indx.append(l)
+            self.__KRR = self.__KNR[regress_indx]
             self.__KLR = self.__KNR[range(0,len(self.__X_l)),:]
-            self.__KUR = self.__KNR[range(len(self.__X_l),len(self.__X)),:]
+            # self.__KUR = self.__KNR[range(len(self.__X_l),len(self.__X)),:]
+            self.__KUR = self.__KNR[range(len(self.__X_l),len(self.__KNR)),:]
             self.__matrices_initialized = True
 
     def __getFitness(self,c):
@@ -441,8 +442,15 @@ class QN_S3VM_Dense:
         c = np.array([c])
         b = c[:,self.__dim-1].T
         c_new = c[:,0:self.__dim-1].T
-        preds_labeled = self.__surrogate_gamma*(1.0 - multiply(self.__YL, self.__KLR * c_new + b))
-        preds_unlabeled = self.__KUR * c_new + b
+        # needed to multipy KLR
+        c_new = np.squeeze(c_new)
+        idx = np.argwhere(self.__KLR[0])
+        idx = idx[:,0]
+        preds_labeled = self.__surrogate_gamma*(1.0 - multiply(self.__YL, self.__KLR * c_new[idx] + b))
+        # needed to multiply KUR
+        idx = np.argwhere(self.__KUR)
+        idx = idx[:,0]
+        preds_unlabeled = self.__KUR * c_new[idx] + b
         # This vector has a "one" for each "numerically instable" entry; "zeros" for "good ones".
         preds_labeled_conflict_indicator = np.sign(np.sign(preds_labeled/self.__breakpoint_for_exp - 1.0) + 1.0)
         # This vector has a one for each good entry and zero otherwise
@@ -458,8 +466,10 @@ class QN_S3VM_Dense:
         term1 = (1.0/(self.__surrogate_gamma*self.__size_l)) * np.sum(preds_labeled_final)
         preds_unlabeled_squared = multiply(preds_unlabeled,preds_unlabeled)
         term2 = (float(self.__lamU)/float(self.__size_u))*np.sum(np.exp(-self.__s * preds_unlabeled_squared))
-        term3 = self.__lam * (c_new.T * self.__KRR * c_new)
-        print((term1+term2+term3)[0,0])
+        # neede to multiply KRR
+        idx = np.argwhere(self.__KRR[0])
+        idx = idx[:,0]
+        term3 = self.__lam * (c_new.T[idx] * self.__KRR * c_new[idx])
         return (term1 + term2 + term3)[0,0]
 
     def __getFitness_Prime(self,c):
@@ -471,7 +481,10 @@ class QN_S3VM_Dense:
         c = np.array([c])
         b = c[:,self.__dim-1].T
         c_new = c[:,0:self.__dim-1].T
-        preds_labeled = self.__surrogate_gamma * (1.0 - multiply(self.__YL, self.__KLR * c_new + b))
+        # needed to multiply KLR 
+        idx = np.argwhere(self.__KLR[0])
+        idx = idx[:,0]
+        preds_labeled = self.__surrogate_gamma * (1.0 - multiply(self.__YL, self.__KLR * c_new[idx] + b))
         preds_unlabeled = (self.__KUR * c_new + b)
         # This vector has a "one" for each "numerically instable" entry; "zeros" for "good ones".
         preds_labeled_conflict_indicator = np.sign(np.sign(preds_labeled/self.__breakpoint_for_exp - 1.0) + 1.0)
@@ -488,9 +501,19 @@ class QN_S3VM_Dense:
         preds_unlabeled_squared_exp_f = np.exp(-self.__s * preds_unlabeled_squared_exp_f)
         preds_unlabeled_squared_exp_f = multiply(preds_unlabeled_squared_exp_f, preds_unlabeled)
         term1 = (-1.0/self.__size_l) * (term1.T * self.__KLR).T
-        term2 = ((-2.0 * self.__s * self.__lamU)/float(self.__size_u)) * (preds_unlabeled_squared_exp_f.T * self.__KUR).T
-        term3 = 2*self.__lam*(self.__KRR * c_new)
-        return array((term1 + term2 + term3).T)[0]
+        # needed to multiply KUR
+        idx = np.argwhere(self.__KUR)
+        idx = idx[:,0]
+        term2 = ((-2.0 * self.__s * self.__lamU)/float(self.__size_u)) * (preds_unlabeled_squared_exp_f[idx].T * self.__KUR).T
+        # needed to multiply KRR
+        self.__KRR = self.__KRR.tolist()
+        self.__KRR.pop()
+        self.__KRR = np.array(self.__KRR)
+        idx = np.argwhere(self.__KRR[1])
+        idx = idx[:,0]
+        term3 = 2 * self.__lam * (self.__KRR * c_new[idx])
+        # needed to add terms
+        return np.array((term1 + term2 + term3).T)[0]
 
     def __recomputeModel(self, indi):
         # self.__c = mat(indi[0]).T     # old code
@@ -502,7 +525,7 @@ class QN_S3VM_Dense:
             return preds.flatten(1).tolist()[0]
         else:
             # return np.sign(np.sign(preds)+0.1).flatten(1).tolist()[0]
-            return np.sign(np.sign(preds)+0.1).flatten().tolist()[0]
+            return np.sign(np.sign(preds)+0.1).flatten()[0]
 
     def __check_matrix(self, M):
         smallesteval = scipy.linalg.eigvalsh(M, eigvals=(0,0))[0]
@@ -549,9 +572,13 @@ class QN_S3VM_Sparse:
         # We vertically stack the data matrices into one big matrix
         X = sparse.vstack([X_l, X_u])
         self.__size_l, self.__size_u, self.__size_n = X_l.shape[0], X_u.shape[0], X_l.shape[0]+ X_u.shape[0]
-        x = arr.array('i')
-        for l in L_l:
-            x.append(int(l))
+        
+        # potential deletion 
+        # x = arr.array('i')
+        # for l in L_l:
+        #     x.append(int(l))
+        
+        x = np.array(L_l)
         # self.__YL = mat(x, dtype=np.float64)  # old code
         self.__YL = np.array(x, dtype=np.float64)
         # self.__YL = self.__YL.transpose()     # old code
@@ -688,8 +715,8 @@ class QN_S3VM_Sparse:
 
     def __localSearch(self, start):
         c_opt, f_opt, d = optimize.fmin_l_bfgs_b(self.__getFitness, start, m=self.__BFGS_m, \
-                                     fprime=self.__getFitness_Prime, maxfun=self.__BFGS_maxfun,\
-                                     factr=self.__BFGS_factr, pgtol=self.__BFGS_pgtol, iprint=self.__BFGS_verbose)
+                                    fprime=self.__getFitness_Prime, maxfun=self.__BFGS_maxfun,\
+                                    factr=self.__BFGS_factr, pgtol=self.__BFGS_pgtol, iprint=self.__BFGS_verbose)
         self.__needed_function_calls += int(d['funcalls'])
         return c_opt
 
@@ -778,14 +805,27 @@ class LinearKernel():
         Computes the kernel matrix
         """
         logging.debug("Starting Linear Kernel Matrix Computation...")
+        # make sure data 1 == data 2
+        # print(np.shape(data1), np.shape(data2))
+        if len(data1) > len(data2):
+            datInx = np.argwhere(data2)
+            datInx = datInx[:,0]
+            # print('data1>', np.shape(datInx))
+            data1 = data1[datInx]
+        elif len(data2) > len(data1):
+            datInx = np.argwhere(data1)
+            datInx = datInx[:,0]
+            # print('data2>', np.shape(datInx))
+            data2 = data2[datInx]
+        # print(np.shape(data1), np.shape(data2))
         # self._data1 = mat(data1)      # old code
-        self._data1 = np.array(data1)
+        self._data1 = data1
         # self._data2 = mat(data2)      # old code
-        self._data2 = np.array(data2)
+        self._data2 = data2
         
-        assert self._data1.shape[1] == (self._data2.T).shape[0]
+        assert np.shape(self._data1)[0] == np.shape(self._data2.T)[0]
         try:
-            return np.dot(self._data1, self._data2.T) # used to be self._data1 * self._data2.T
+            return self._data1 * self._data2.T 
         except Exception as e:
             logging.error("Error while computing kernel matrix: " + str(e))
             import traceback
