@@ -470,7 +470,7 @@ class QN_S3VM_Dense:
         idx = np.argwhere(self.__KRR[0])
         idx = idx[:,0]
         term3 = self.__lam * (c_new.T[idx] * self.__KRR * c_new[idx])
-        return (term1 + term2 + term3)[0,0]
+        return (term1 + term2 + term3)[0,0] 
 
     def __getFitness_Prime(self,c):
         # Check whether the function is called from the bfgs solver
@@ -512,8 +512,7 @@ class QN_S3VM_Dense:
         idx = np.argwhere(self.__KRR[1])
         idx = idx[:,0]
         term3 = 2 * self.__lam * (self.__KRR * c_new[idx])
-        # needed to add terms
-        return np.array((term1 + term2 + term3).T)[0]
+        return np.array((term1 + term2 + term3).T)[0] 
 
     def __recomputeModel(self, indi):
         # self.__c = mat(indi[0]).T     # old code

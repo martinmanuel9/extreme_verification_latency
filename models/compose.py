@@ -428,6 +428,7 @@ class COMPOSE:
             preds = ssl_label_propagation.ssl()
             return preds
         elif self.classifier == 'svm':
+            print(np.unique(X_train_l))
             ssl_svm = SVC(gamma='auto').fit(X_train_u[:,:-1], X_train_l)
             preds = ssl_svm.predict(X_train_u)
             return preds
