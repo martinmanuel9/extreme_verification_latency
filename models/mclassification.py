@@ -32,21 +32,16 @@ College of Engineering
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import numpy as np
 import benchmark_datagen as bdg
 from sklearn.cluster import Birch
 
+class SetData:
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self._initialize()
 
-class MClassification(): 
-    def __init__(self, 
-                classifier, 
-                method): 
-        """
-        """
-        self.classifier = classifier
-        self.mcluster = {}
-        self._set_data()
-
-    def _set_data(self):
+    def _initialize(self):
         set_data = bdg.Datagen()
         data_gen = set_data.gen_dataset(self.dataset)
         data ={}
@@ -91,6 +86,21 @@ class MClassification():
         
         self.X = labeled    # set of all labels as a dict per timestep ; we only need X[0] for initial labels
         self.Y = data       # data stream
+
+class MClassification(): 
+    def __init__(self, 
+                classifier, 
+                method): 
+        """
+        """
+        self.classifier = classifier
+        self.mcluster = {}
+
+    def _initialize(self):
+        """
+        Get initial labeled data T 
+        Begin MC for the labeled data
+        """
 
     def create_mclusters(self):
         """
