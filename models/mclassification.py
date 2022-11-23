@@ -35,12 +35,16 @@ College of Engineering
 
 import numpy as np
 import benchmark_datagen as bdg
+import compose_data_gen as cbdg
 from sklearn.cluster import Birch, KMeans
 from sklearn.mixture import GaussianMixture as GMM
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
 from scipy import stats
 from matplotlib import pyplot as plt
+from matplotlib import patches as mpatches
+from matplotlib.axes._axes import _log as matplotlib_axes_logger
+matplotlib_axes_logger.setLevel('ERROR')
 
 class MClassification(): 
     def __init__(self, 
@@ -56,55 +60,33 @@ class MClassification():
         self.method = method
         self.class_cluster = {}
         self.mcluster = {}
+        self.X = {}
+        self.Y = {}
+        self.T = {}
         self._initialize()
         
     
     def _setData(self):
-        set_data = bdg.Datagen()
-        data_gen = set_data.gen_dataset(self.dataset)
-        data ={}
-        labeled = {}
-        unlabeled = {}
-        ts = 0
-
-        # set a self.data dictionary for each time step 
-        # self.dataset[0][i] loop the arrays and append them to dictionary
-        # data is the datastream 
-        for i in range(0, len(data_gen[0])):
-            data[ts] = data_gen[0][i]
-            ts += 1
-
-        # filter out labeled and unlabeled from of each timestep
-        for i in data:
-            len_of_batch = len(data[i])
-            label_batch = []
-            unlabeled_batch = []            
-            for j in range(0, len_of_batch - 1):
-                if data[i][j][2] == 1:              # will want to say that label == 1
-                    label_batch.append(data[i][j])
-                    labeled[i] = label_batch
-                else:
-                    unlabeled_batch.append(data[i][j])
-                    unlabeled[i] = unlabeled_batch
-
-        # convert labeled data to match self.data data structure
-        labeled_keys = labeled.keys()
-        for key in labeled_keys:        
-            if len(labeled[key]) > 1:
-                len_of_components = len(labeled[key])
-                array_tuple = []
-                for j in range(0, len_of_components):
-                    array = np.array(labeled[key][j])
-                    arr_to_list = array.tolist()
-                    array_tuple.append(arr_to_list)
-                    array = []
-                    arr_to_list = []
-                concat_tuple = np.vstack(array_tuple)
-                labeled[key] = concat_tuple
         
-        self.Y = labeled        # set of all labels as a dict per timestep ; we only need X[0] for initial labels
-        self.X = data           # data stream
-        self.T = labeled[0]     # initial labeled set    
+        data_gen = cbdg.COMPOSE_Datagen()
+        # get data, labels, and first labels synthetically for timestep 0
+        # data is composed of just the features 
+        # labels are the labels 
+        # core supports are the first batch with added labels 
+        data, labels, first_labels, dataset = data_gen.gen_dataset(self.dataset)
+        ts = 0 
+        # set dataset (all the data features and labels)
+        for i in range(0, len(data[0])):
+            self.X[ts] = data[0][i]
+            ts += 1
+        # set all the labels 
+        ts = 0
+        for k in range(0, len(labels[0])):
+            self.Y[ts] = labels[0][k]
+            ts += 1
+        # gets first core supports from synthetic
+        self.T = np.squeeze(first_labels)
+
 
     def _initialize(self):
         """
@@ -114,10 +96,11 @@ class MClassification():
         self._setData()
         # initial set of cluster based on inital labeled data T; using next time step from datastream for preds
         if self.method == 'kmeans':
-            kmeans_model = KMeans(n_clusters=self.NClusters)
+            clusters = np.max(np.unique(self.T[:,-1])).astype(int) + 1
+            kmeans_model = KMeans(n_clusters= clusters)
+            self.centroid, self.centroid_radii = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(self.T), x= self.X[0] , y=self.T )
             kmeans_model.fit(self.T)
-            self._euclidean_distance(inCluster = kmeans_model, fitCluster = kmeans_model.fit(self.T), x= self.X[0] , y=self.T )
-            self.preds = kmeans_model.predict(self.Y[1])
+            self.preds = kmeans_model.predict(self.X[1])
             self.cluster = kmeans_model.cluster_centers_
         elif self.method == 'gmm':
             gmm_model = GMM(n_components=self.NClusters)
@@ -135,6 +118,7 @@ class MClassification():
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class.
+
         for i in range(self.NClusters):
                 xhat = self.X[i][self.preds]
                 mode_val,_ = stats.mode(xhat)
@@ -177,20 +161,36 @@ class MClassification():
 
         return predicted_label
 
-    def _euclidean_distance(self, inCluster, fitCluster, x, y):
+    def _create_centroid(self, inCluster, fitCluster, x, y):
         """
         inCluster = cluster model 
         fitCluster = fitted model
         x = datastream
         y = label
         """
-        
+        cluster_centroids = {}
+        cluster_radii = {}
         if self.method == 'kmeans':
-            cluster_centroids = {}
-            cluster_radii = {} 
-            for cluster in list(y):
+            for cluster in list(set(y[:,-1].astype(int))):
                 cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
                 cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
+
+            fig, ax = plt.subplots(1,figsize=(7,5))
+            plot_iter = list(set(y[:,-1].astype(int)))
+            for i in plot_iter:
+
+                plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label = i)
+                art = mpatches.Circle(cluster_centroids[i],cluster_radii[1], edgecolor='b', fill=False)
+                ax.add_patch(art)
+
+            #Plotting the centroids of the clusters
+            plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
+
+            plt.legend()
+            plt.tight_layout()
+            plt.show()
+
+            return cluster_centroids, cluster_radii
         elif self.method == 'gmm':
             pass # need to determine how to calc radii for gmm 
         elif self.method == 'birch':
@@ -218,6 +218,6 @@ class MClassification():
         
 
 # test mclass
-run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D').run()
+run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D').run()
 
 # %%
