@@ -59,6 +59,9 @@ class MClassification():
         self.NClusters = NClusters
         self.method = method
         self.class_cluster = {}
+        self.centroid = {}
+        self.centroid_radii = {}
+        self.clusters = {}
         self.mcluster = {}
         self.X = {}
         self.Y = {}
@@ -96,24 +99,22 @@ class MClassification():
         self._setData()
         # initial set of cluster based on inital labeled data T; using next time step from datastream for preds
         if self.method == 'kmeans':
-            clusters = np.max(np.unique(self.T[:,-1])).astype(int) + 1
+            clusters = np.max(np.unique(self.T[:,-1])).astype(int) + 1 # adding an additional cluster
             kmeans_model = KMeans(n_clusters= clusters)
-            self.centroid, self.centroid_radii = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(self.T), x= self.X[0] , y=self.T )
+            self.centroid[0], self.centroid_radii[0] = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(self.T), x= self.X[0] , y=self.T )
             kmeans_model.fit(self.T)
             self.preds = kmeans_model.predict(self.X[1])
-            self.cluster = kmeans_model.cluster_centers_
+            self.clusters[0] = kmeans_model.cluster_centers_
         elif self.method == 'gmm':
             gmm_model = GMM(n_components=self.NClusters)
-            gmm_model.fit(self.T)
-            self.fitCluster = gmm_model.fit(self.T)
+            gmm_model.fit(self.T) 
             self.preds = gmm_model.predict(self.Y[1])
-            self.cluster = self.preds
+            self.clusters[0] = self.preds
         elif self.method == 'birch':
             birch_model = Birch(branching_factor=50, n_clusters= self.NClusters)
             birch_model.fit(self.T)
-            self.fitCluster = birch_model.fit(self.T) 
             self.preds = birch_model.predict(self.Y[1])
-            self.cluster = self.preds
+            self.clusters[0] = self.preds
 
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
@@ -124,10 +125,10 @@ class MClassification():
                 mode_val,_ = stats.mode(xhat)
                 self.class_cluster[i] = mode_val
 
-    def _create_mclusters(self, inCluster, fitCluster):
+    def _create_mclusters(self, inCluster, yhat):
         """
         Clustering options:
-        1. k-meansthanj
+        1. k-means
         2. GMM 
         3. Balanced Iterative Reducing and Clustering using Hierarchies (BIRCH)
         
@@ -137,6 +138,19 @@ class MClassification():
         SS = square sum of data points 
         y = label for a set of data points
         """
+        # develop microcluster based on inputs 
+        mcluster = {}
+        N = len(inCluster)
+        LS = np.sum(inCluster)
+        SS = 0
+        for s in range(len(inCluster)):
+            SS += s ** 2
+        mcluster['N'] = N
+        mcluster['LS'] = LS
+        mcluster['SS'] = SS
+        mcluster['yhat'] = yhat
+
+        return mcluster
         
     def _classify(self, trainData, trainLabel, testData):
         """
@@ -145,11 +159,12 @@ class MClassification():
         1. K Nearest Neighbor
         2. Support Vector Machine
         """
+        
         if len(trainData) >= len(trainLabel):
-            indx = np.unique(np.argwhere(trainLabel)[:,0])
+            indx = np.unique(np.argwhere(~np.isnan(trainLabel))[:,0])
             trainData = trainData[indx]
         elif len(trainLabel) >= len(trainData):
-            indx = np.unique(np.argwhere(trainData)[:,0])
+            indx = np.unique(np.argwhere(~np.isnan(trainData))[:,0])
             trainLabel = trainLabel[indx]
         
         if self.classifier == 'knn':
@@ -196,14 +211,19 @@ class MClassification():
         elif self.method == 'birch':
             pass # need to determine how calc radii for birch
 
+    def _append_mcluster(self, yhat, inCentroid, inRadii):
+        """
+        Method determines if yhat (preds) can be appended to the mcluster based on the radii that was determined by the original mcluster 
+        We determine the yhat based on euclidean distance 
+        """
     def run(self):
         """
         Micro-Cluster Classification
         """
         """
-        1. Get first set of labeled data T 
-        2. Create MCs of the labeled data of first data T
-        3. classify 
+        1. Get first set of labeled data T  # done
+        2. Create MCs of the labeled data of first data T # done 
+        3. classify  # done 
             a. predicted label yhat_t for the x_t from stream is given by the nearest MC by euclidean distance 
             b. determine if the added x_t to the MC exceeds the maximum radius of the MC
                 1.) if the added x_t to the MC does not exceed the MC radius -> update the (N, LS, SS )
@@ -211,8 +231,10 @@ class MClassification():
             c. The 
         """
 
-        past_centroid = self.cluster
+        past_centroid = self.clusters[0]
         yhat = self._classify(trainData=self.T, trainLabel=self.preds, testData=self.X[1])
+        self.mcluster[0] = self._create_mclusters(inCluster= past_centroid, yhat= yhat)
+        
         
         # temp_current_cluster = KMeans(n_clusters=self.NClusters, init=past_centroid, n_init=1).fit(self.X[0]).cluster_centers_
         
