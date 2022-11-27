@@ -22,10 +22,11 @@ clusters_radii= dict()
 '''looping over clusters and calculate Euclidian distance of 
 each point within that cluster from its centroid and 
 pick the maximum which is the radius of that cluster'''
+print(np.shape(estimator.cluster_centers_))
 for cluster in list(set(y)):
     clusters_centroids[cluster]=list(zip(estimator.cluster_centers_[:, 0],estimator.cluster_centers_[:,1]))[cluster]
     clusters_radii[cluster] = max([np.linalg.norm(np.subtract(i,clusters_centroids[cluster])) for i in zip(x[y_kmeans == cluster, 0],x[y_kmeans == cluster, 1])])
-    print(clusters_radii)
+    
 
 #Visualising the clusters and cluster circles
 
