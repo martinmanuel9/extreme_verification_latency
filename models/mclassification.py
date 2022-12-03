@@ -102,34 +102,6 @@ class MClassification():
         """
         self._setData()
 
-        # initial set of cluster based on inital labeled data T; using next time step from datastream for preds
-        # if self.method == 'kmeans':
-        #     clusters = np.max(np.unique(self.T[:,-1])).astype(int) # adding an additional cluster
-        #     kmeans_model = KMeans(n_clusters= clusters)
-        #     # computes cluster centers and radii of cluster for initial ts
-        #     self.microCluster[0] = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(self.T), x= self.X[0] , y=self.T)
-        #     # predict closes cluster center for each self.T belongs to
-        #     self.preds[0] = kmeans_model.fit_predict(self.T)
-        #     self.clusters[0] = kmeans_model.cluster_centers_
-        # elif self.method == 'gmm':
-        #     gmm_model = GMM(n_components=self.NClusters)
-        #     gmm_model.fit(self.T) 
-        #     self.preds = gmm_model.predict(self.Y[1])
-        #     self.clusters[0] = self.preds
-        # elif self.method == 'birch':
-        #     birch_model = Birch(branching_factor=50, n_clusters= self.NClusters)
-        #     birch_model.fit(self.T)
-        #     self.preds = birch_model.predict(self.Y[1])
-        #     self.clusters[0] = self.preds
-
-        # # for each of the clusters, find the labels of the data samples in the clusters
-        # # then look at the labels from the initially labeled data that are in the same
-        # # cluster. assign the cluster the label of the most frequent class.
-        # for i in range(self.NClusters):
-        #         xhat = self.X[i][self.preds]
-        #         mode_val,_ = stats.mode(xhat)
-        #         self.class_cluster[i] = mode_val
-
     def _cluster(self, X, y, ts):
         if self.method == 'kmeans':
             clusters = np.max(np.unique(y[:,-1])).astype(int) # adding an additional cluster
