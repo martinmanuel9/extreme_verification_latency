@@ -87,7 +87,7 @@ class PerformanceMetrics:
         except ValueError:
             self.roc_auc_score[self.ts] = 'Only one class found'
             self.roc_auc_plot[self.ts] = 'Only one class found'
-        # F1-score 
+        # F1-score
         self.f1_score[self.ts] = metric.f1_score(test.astype(int), preds.astype(int), average=None) 
         # Mathews Correlation Coefficient 
         self.mathews_corr_coeff[self.ts] = metric.matthews_corrcoef(test.astype(int), preds.astype(int))

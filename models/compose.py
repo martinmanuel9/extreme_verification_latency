@@ -39,7 +39,7 @@ import cse
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import qns3vm as ssl
-import compose_data_gen as bmdg
+import datagen_synthetic as bmdg
 import random
 import time 
 import label_propagation as lbl_prop

@@ -34,13 +34,15 @@ College of Engineering
 # SOFTWARE.
 
 import numpy as np
-import benchmark_datagen as bdg
-import compose_data_gen as cbdg
+import pandas as pd
+import datagen_synthetic as cbdg
 from sklearn.cluster import Birch, KMeans
 from sklearn.mixture import GaussianMixture as GMM
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
+import classifier_performance as cp
 from scipy import stats
+import time 
 from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
@@ -58,8 +60,13 @@ class MClassification():
         self.dataset = dataset
         self.NClusters = NClusters
         self.method = method
+        self.cluster_centers ={}
+        self.preds = {}
         self.class_cluster = {}
         self.clusters = {}
+        self.total_time = []
+        self.performance_metric = {}
+        self.avg_perf_metric = {}
         self.microCluster = {}
         self.X = {}
         self.Y = {}
@@ -94,30 +101,60 @@ class MClassification():
         Begin MC for the labeled data
         """
         self._setData()
+
         # initial set of cluster based on inital labeled data T; using next time step from datastream for preds
+        # if self.method == 'kmeans':
+        #     clusters = np.max(np.unique(self.T[:,-1])).astype(int) # adding an additional cluster
+        #     kmeans_model = KMeans(n_clusters= clusters)
+        #     # computes cluster centers and radii of cluster for initial ts
+        #     self.microCluster[0] = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(self.T), x= self.X[0] , y=self.T)
+        #     # predict closes cluster center for each self.T belongs to
+        #     self.preds[0] = kmeans_model.fit_predict(self.T)
+        #     self.clusters[0] = kmeans_model.cluster_centers_
+        # elif self.method == 'gmm':
+        #     gmm_model = GMM(n_components=self.NClusters)
+        #     gmm_model.fit(self.T) 
+        #     self.preds = gmm_model.predict(self.Y[1])
+        #     self.clusters[0] = self.preds
+        # elif self.method == 'birch':
+        #     birch_model = Birch(branching_factor=50, n_clusters= self.NClusters)
+        #     birch_model.fit(self.T)
+        #     self.preds = birch_model.predict(self.Y[1])
+        #     self.clusters[0] = self.preds
+
+        # # for each of the clusters, find the labels of the data samples in the clusters
+        # # then look at the labels from the initially labeled data that are in the same
+        # # cluster. assign the cluster the label of the most frequent class.
+        # for i in range(self.NClusters):
+        #         xhat = self.X[i][self.preds]
+        #         mode_val,_ = stats.mode(xhat)
+        #         self.class_cluster[i] = mode_val
+
+    def _cluster(self, X, y, ts):
         if self.method == 'kmeans':
-            clusters = np.max(np.unique(self.T[:,-1])).astype(int) # adding an additional cluster
+            clusters = np.max(np.unique(y[:,-1])).astype(int) # adding an additional cluster
             kmeans_model = KMeans(n_clusters= clusters)
             # computes cluster centers and radii of cluster for initial ts
-            self.microCluster[0] = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(self.T), x= self.X[0] , y=self.T)
+            self.microCluster[ts] = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(y), x= X[ts] , y= y)
             # predict closes cluster center for each self.T belongs to
-            self.preds = kmeans_model.fit_predict(self.T)
-            self.clusters[0] = kmeans_model.cluster_centers_
+            self.clusters[ts] = kmeans_model.fit_predict(y)
+            self.cluster_centers[ts] = kmeans_model.cluster_centers_
         elif self.method == 'gmm':
             gmm_model = GMM(n_components=self.NClusters)
-            gmm_model.fit(self.T) 
-            self.preds = gmm_model.predict(self.Y[1])
-            self.clusters[0] = self.preds
+            gmm_model.fit(y) 
+            self.clusters[ts] = gmm_model.predict(self.Y[ts+1])
+            self.cluster_centers[ts] = self.clusters[ts]
         elif self.method == 'birch':
             birch_model = Birch(branching_factor=50, n_clusters= self.NClusters)
             birch_model.fit(self.T)
-            self.preds = birch_model.predict(self.Y[1])
-            self.clusters[0] = self.preds
+            self.clusters[ts] = birch_model.predict(self.Y[ts+1])
+            self.cluster_centers[ts] = self.clusters[ts]
+
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class.
         for i in range(self.NClusters):
-                xhat = self.X[i][self.preds]
+                xhat = self.X[i][self.clusters[ts]]
                 mode_val,_ = stats.mode(xhat)
                 self.class_cluster[i] = mode_val
 
@@ -125,8 +162,6 @@ class MClassification():
         """
         Clustering options:
         1. k-means
-        2. GMM 
-        3. Balanced Iterative Reducing and Clustering using Hierarchies (BIRCH)
         
         MC is defined as a 4 tuple (N, LS, SS, y) where:
         N = number of data points in a cluster
@@ -180,14 +215,14 @@ class MClassification():
         """
         cluster_centroids = {}
         cluster_radii = {}
-        length = len(list(set(y[:,-1].astype(int))))
+        length = len(np.unique(list(set(y[:,-1].astype(int)))))
         if self.method == 'kmeans':
             for cluster in range(length):
                 cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
                 cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
             # print(cluster_radii)
             fig, ax = plt.subplots(1,figsize=(7,5))
-            clust_iter = len(list(set(y[:,-1].astype(int))))
+            clust_iter = len(np.unique(list(set(y[:,-1].astype(int)))))
             # creates cluster data
             mcluster = {}
             for c in range(clust_iter):
@@ -212,13 +247,14 @@ class MClassification():
         elif self.method == 'birch':
             pass # need to determine how calc radii for birch
 
-    def _append_mcluster(self, yhat,inData, inMicroCluster):
+    def _append_mcluster(self, yhat,inData, inMicroCluster, ts):
         """
         Method determines if yhat (preds) can be appended to the mcluster based on the radii that was determined by the original mcluster 
         We determine the yhat based on euclidean distance 
         """
         preds = yhat
         data = inData
+        step = ts
         currentClusterPoints = {}
         centroids = {}
         for mcKey in inMicroCluster['MC'].keys():
@@ -235,32 +271,71 @@ class MClassification():
         addToPreds = np.zeros((np.shape(data)[0], (np.shape(data)[1]-1)))
         preds = np.column_stack((addToPreds, preds))
         yhatCluster = self._create_centroid(inCluster = yhatKmeans, fitCluster = yhatKmeans.fit_predict(data), x= data , y=preds)
+        self.microCluster[step] = yhatCluster
+
+
         yhatClusterPoints ={}
         for yhkey in yhatCluster['MC'].keys():
             yhatClusterPoints[yhkey] = yhatCluster['MC'][yhkey]['ClusterPoints']
+
+        ## TODO: Is below really needed?? as we do a kmeans and we will classifiy p
         # calculate euclidean distance 
-        to_append = []
         to_newMC = []
         addToMC = {}
+        indx_toAppend = {}
+        indx_toNewMC = {}
         for t in thresholds:
             addToMC[t] = []
+            indx_toAppend[t] = []
+            indx_toNewMC[t] = []
         # original centroid centers 
         for c in centroids:
-            # go through cluster of the clustered yhat (preds) created
+        # go through cluster of the clustered yhat (preds) created
+            to_append = []
+            indx_Append = []
+            indx_NewMC = []
             for yhatClust in yhatClusterPoints: 
                 # go through each point of each cluster 
-                for l in range(0, len(yhatClusterPoints[yhatClust])):
-                    point = yhatClusterPoints[yhatClust][l:,:-1]
+                points = yhatClusterPoints[yhatClust][:,:-1]
+                for l in range(0, len(points)):
+                    point = points[l]
                     dist = np.linalg.norm(centroids[c] - point)
                     # compare dist and point for each radii of each origial centroid center
                     for t in thresholds:
                         if dist > thresholds[t]:
+                            indx_NewMC.append(l)
                             to_newMC.append(point)
                         elif dist <= thresholds[t]:
+                            indx_Append.append(l)
                             to_append.append(point)
-                        addToMC[t].append(to_append)
-        # TODO: Need to clean added to MC
-        print(np.shape(to_newMC))
+            to_append = np.array(to_append)   
+            indx_NewMC = np.array(indx_NewMC)
+            indx_Append = np.array(indx_Append)
+            indx_toAppend[c] = np.unique(indx_Append)
+            indx_toNewMC[c] = np.unique(indx_NewMC)
+            addToMC[c] = to_append
+        to_newMC = np.array(to_newMC) 
+        # add new cluster points to associated MCs
+        for mc in currentClusterPoints:
+            yhatIndx = indx_toAppend[mc]
+            currentClusterPoints[mc] = np.vstack((currentClusterPoints[mc], yhatClusterPoints[mc][yhatIndx])) 
+
+        newMC = []
+        for p in yhatClusterPoints:
+            newMC.append(yhatClusterPoints[p][indx_toNewMC[p]])
+        newMC = np.array(newMC)
+        newMC = newMC.reshape(-1,np.shape(currentClusterPoints[0])[1])
+        # update centroid 
+        mcluster = self._updateCentroid(inCurrentClusters= currentClusterPoints, inNewClusters= newMC, x = data, y= preds)
+
+    def _updateCentroid(self, inCurrentClusters, inNewClusters, x, y):
+        cluster_centroids = {}
+        cluster_radii = {}
+        length = max(inCurrentClusters.keys()) + 1 
+        inCurrentClusters[length] = inCurrentClusters
+        #TODO: create centroid for new mc ???
+        
+
 
     def run(self):
         """
@@ -275,18 +350,40 @@ class MClassification():
                 1.) if the added x_t to the MC does not exceed the MC radius -> update the (N, LS, SS )
                 2.) if the added x_t to the MC exceeds radius -> new MC carrying yhat_t is created to carry x_t
         """
+        timesteps = self.X.keys()
 
-        predictedCluster = self.clusters[0]
-        # classify based on the clustered predictions (self.preds) done in the init step
-        yhat = self._classify(trainData=self.T, trainLabel=self.preds, testData=self.X[1])
-        # determine if added x_t to MC exceeds radii of MC
-        self._append_mcluster(yhat = yhat, inData= self.X[1], inMicroCluster= self.microCluster[0])
-        
-        
-        # temp_current_cluster = KMeans(n_clusters=self.NClusters, init=past_centroid, n_init=1).fit(self.X[0]).cluster_centers_
-        
+        for ts in range(0, len(timesteps) - 1):
+            total_start = time.time()
+            if ts == 0:
+                self.microCluster[ts] = self._cluster(X= self.X, y= self.T, ts=ts )
+                t_start = time.time()
+                # classify based on the clustered predictions (self.preds) done in the init step
+                self.preds[ts] = self._classify(trainData=self.T, trainLabel= self.clusters[ts], testData=self.X[ts])
+                t_end = time.time()
+                perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts][:,-1], \
+                                                dataset= self.dataset , method= self.method , \
+                                                classifier= self.classifier, tstart=t_start, tend=t_end)
+                self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+            # determine if added x_t to MC exceeds radii of MC
+            else:
+                self.microCluster[ts] = self._cluster(X= self.X, y= self.X[ts-1], ts=ts )
+                t_start = time.time()
+                # classify based on the clustered predictions (self.preds) done in the init step
+                self.preds[ts] = self._classify(trainData=self.X[ts], trainLabel=self.clusters[ts], testData=self.X[ts+1])
+                t_end = time.time()
+                perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
+                                                dataset= self.dataset , method= self.method , \
+                                                classifier= self.classifier, tstart=t_start, tend=t_end)
+                self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+                #TODO: what to do with this:
+                # self._append_mcluster(yhat = self.preds[ts], inData= self.X[ts], inMicroCluster= self.microCluster[ts], ts= ts)
 
+            total_end = time.time()
+        self.total_time = total_start - total_end
+        avg_metrics = cp.PerformanceMetrics(tstart= total_start, tend= total_end)
+        self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
+        print(self.avg_perf_metric)
 # test mclass
-run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D').run()
+run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D').run()
 
 #%%
