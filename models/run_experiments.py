@@ -40,6 +40,7 @@ import pandas as pd
 import pickle as pickle 
 import time
 import scargc
+import mclassification as mclass
 import os
 import time
 from pathlib import Path 
@@ -189,7 +190,7 @@ class RunExperiment:
                         elif i == 'scargc' and j == 'svm': 
                             scargc_svm_data = scargc.SetData(dataset= dataset)
                             run_scargc_svm = scargc.SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= dataset)
-                            self.results[experiment] = run_scargc_svm.run(Xts = scargc_svm_data.X[0], Yts = scargc_svm_data.Y)              # .X[0] only get initial training set
+                            self.results[experiment] = run_scargc_svm.run(Xts = scargc_svm_data.X[0], Yts = scargc_svm_data.Y)     # .X[0] only get initial training set
                             results_df = pd.DataFrame.from_dict((run_scargc_svm.avg_results.keys(), run_scargc_svm.avg_results.values())).T
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
                             # change the directory to your particular files location
@@ -198,12 +199,44 @@ class RunExperiment:
                             results_df.to_pickle(results_scargc_svm)
                             results_pkl = pd.read_pickle(results_scargc_svm)
                             print("Results:\n", results_df)
+
+                        elif i == 'mclassification' and j == 'knn':
+                            mclass_knn = mclass.MClassification(classifier= 'knn', dataset= dataset, method = 'kmeans')
+                            self.results[experiment] = mclass_knn.run()
+                            time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            mclass_knn.avg_perf_metric['Time_Stamp'] = time_stamp
+                            results_df = pd.DataFrame.from_dict((mclass_knn.avg_perf_metric.keys(), mclass_knn.avg_perf_metric.values())).T
+                            # change the directory to your particular files location
+                            self.change_dir()
+                            results_mclass_knn = 'results_'+ f'{experiment}' +'.pkl'
+                            results_df.to_pickle(results_mclass_knn)
+                            results_pkl = pd.read_pickle(results_mclass_knn)
+                            print("Results:\n" , results_pkl )
+
+                        elif i == 'mclassification' and j == 'svm':
+                            mclass_svm = mclass.MClassification(classifier= 'svm', dataset= dataset, method = 'kmeans')
+                            self.results[experiment] = mclass_svm.run()
+                            time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            mclass_svm.avg_perf_metric['Time_Stamp'] = time_stamp
+                            results_df = pd.DataFrame.from_dict((mclass_svm.avg_perf_metric.keys(), mclass_svm.avg_perf_metric.values())).T
+                            # change the directory to your particular files location
+                            self.change_dir()
+                            results_mclass_svm = 'results_'+ f'{experiment}' +'.pkl'
+                            results_df.to_pickle(results_mclass_svm)
+                            results_pkl = pd.read_pickle(results_mclass_svm)
+                            print("Results:\n" , results_pkl ) 
+
         
         self.plot_results()
+# run compose
+# run_compose = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
+# run_compose.run()
 
-run_experiment = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
-run_experiment.run()
+# run mclassification
+run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'])
+run_mclass.run()
 
-# run_experiment1 = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
-# run_experiment1.run()
+# run scargc 
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
+# run_scargc.run()
 #%%

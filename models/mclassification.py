@@ -205,10 +205,10 @@ class MClassification():
                 art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
                 ax.add_patch(art)
             #Plotting the centroids of the clusters
-            plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'black', label = 'Centroids')
+            plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
             plt.legend()
             plt.tight_layout()
-            plt.show()
+            # plt.show()
             # package for return
             microCluster = {}
             microCluster['MC'] = mcluster
@@ -354,7 +354,7 @@ class MClassification():
         self.total_time = total_start - total_end
         avg_metrics = cp.PerformanceMetrics(tstart= total_start, tend= total_end)
         self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
-        print(self.avg_perf_metric)
+        return self.avg_perf_metric
 # test mclass
 run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D').run()
 
