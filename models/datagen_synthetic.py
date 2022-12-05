@@ -42,7 +42,7 @@ import math
 from pathlib import Path
 
 
-class COMPOSE_Datagen:
+class Synthetic_Datagen:
     def __init__(self) -> None:
         # Unimodal, Multimodal, 1cdt, 2cdt, Unimodal3D,  1cht, 2cht, 4cr, 4crev1,4crev2
         # 5cvt, 1csurr, 4ce1cf, fg2c2d, gears2c2d, keystroke, Unimodal5D, noaa, custom
@@ -56,7 +56,7 @@ class COMPOSE_Datagen:
         
     def change_directory(self):
         path = str(Path.home())
-        path = path + '/extreme_verification_latency/data/files/'
+        path = path + '/extreme_verification_latency/data/synthetic_data/'
         os.chdir(path)
 
     def gen_dataset(self, datatype):

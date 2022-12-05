@@ -366,7 +366,7 @@ class COMPOSE:
             print('The following datasets are available:\n' , avail_data_opts)
             self.dataset = input('Enter dataset:')
         self.user_data_input = self.dataset
-        data_gen = bmdg.COMPOSE_Datagen()
+        data_gen = bmdg.Synthetic_Datagen()
         # get data, labels, and first core supports synthetically for timestep 0
         # data is composed of just the features 
         # labels are the labels 

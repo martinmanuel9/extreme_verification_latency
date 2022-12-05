@@ -242,8 +242,8 @@ class RunExperiment:
                             print("Results:\n" , results_pkl ) 
         self.plot_results()
 ## run compose
-# run_compose = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
-# run_compose.run()
+run_compose = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
+run_compose.run()
 
 # ## run mclassification
 # run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'])

@@ -53,7 +53,7 @@ class Datagen:
         
     def change_directory(self):
         path = str(Path.home())
-        path = path + '/extreme_verification_latency/data/files/'
+        path = path + '/extreme_verification_latency/data/synthetic_data/'
         os.chdir(path)
 
     def gen_dataset(self, datatype):

@@ -76,7 +76,7 @@ class MClassification():
     
     def _setData(self):
         
-        data_gen = cbdg.COMPOSE_Datagen()
+        data_gen = cbdg.Synthetic_Datagen()
         # get data, labels, and first labels synthetically for timestep 0
         # data is composed of just the features 
         # labels are the labels 
