@@ -237,13 +237,13 @@ class MClassification():
         thresholds = inMicroCluster['Threshold']
         # determine cluster for data for yhat 
         yhatClusters = np.max(np.unique(data[:,-1]).astype(int))
-        
         yhatKmeans = KMeans(n_clusters=yhatClusters)
         # need to add this for create centroid method to take preds
         addToPreds = np.zeros((np.shape(data)[0], (np.shape(data)[1]-1)))
         preds = np.column_stack((addToPreds, preds))
         yhatCluster = self._create_centroid(inCluster = yhatKmeans, fitCluster = yhatKmeans.fit_predict(data), x= data , y=preds)
-        self.microCluster[step] = yhatCluster
+        # TODO: This may not make sense to do
+        # self.microCluster[step] = yhatCluster
 
 
         yhatClusterPoints ={}
@@ -287,18 +287,26 @@ class MClassification():
             indx_toNewMC[c] = np.unique(indx_NewMC)
             addToMC[c] = to_append
         to_newMC = np.array(to_newMC) 
+
         # add new cluster points to associated MCs
         for mc in currentClusterPoints:
             yhatIndx = indx_toAppend[mc]
+            if len(yhatIndx) > np.shape(yhatClusterPoints[mc])[0]:
+                indx = []
+                for i in range(0, np.shape(yhatClusterPoints[mc])[0]):
+                    indx.append(yhatIndx[i])
+                yhatIndx = indx
+            
             currentClusterPoints[mc] = np.vstack((currentClusterPoints[mc], yhatClusterPoints[mc][yhatIndx])) 
 
-        newMC = []
-        for p in yhatClusterPoints:
-            newMC.append(yhatClusterPoints[p][indx_toNewMC[p]])
-        newMC = np.array(newMC)
-        newMC = newMC.reshape(-1,np.shape(currentClusterPoints[0])[1])
-        # update centroid 
-        mcluster = self._updateCentroid(inCurrentClusters= currentClusterPoints, inNewClusters= newMC, x = data, y= preds)
+        if len(indx_NewMC) > 0:
+            newMC = []
+            for p in yhatClusterPoints:
+                newMC.append(yhatClusterPoints[p][indx_toNewMC[p].astype(int)])
+            newMC = np.array(newMC)
+            # newMC = newMC.reshape(-1,np.shape(currentClusterPoints[0])[1])
+            # update centroid 
+            mcluster = self._updateCentroid(inCurrentClusters= currentClusterPoints, inNewClusters= newMC, x = data, y= preds)
 
     def _updateCentroid(self, inCurrentClusters, inNewClusters, x, y):
         cluster_centroids = {}
@@ -327,7 +335,7 @@ class MClassification():
         for ts in range(0, len(timesteps) - 1):
             total_start = time.time()
             if ts == 0:
-                self.microCluster[ts] = self._cluster(X= self.X, y= self.T, ts=ts )
+                self._cluster(X= self.X, y= self.T, ts=ts )
                 t_start = time.time()
                 # classify based on the clustered predictions (self.preds) done in the init step
                 self.preds[ts] = self._classify(trainData=self.T, trainLabel= self.clusters[ts], testData=self.X[ts])
@@ -338,7 +346,7 @@ class MClassification():
                 self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
             # determine if added x_t to MC exceeds radii of MC
             else:
-                self.microCluster[ts] = self._cluster(X= self.X, y= self.X[ts-1], ts=ts )
+                self._cluster(X= self.X, y= self.X[ts-1], ts=ts )
                 t_start = time.time()
                 # classify based on the clustered predictions (self.preds) done in the init step
                 self.preds[ts] = self._classify(trainData=self.X[ts], trainLabel=self.clusters[ts], testData=self.X[ts+1])
@@ -356,6 +364,6 @@ class MClassification():
         self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
         return self.avg_perf_metric
 # test mclass
-run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D').run()
+# run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D').run()
 
 #%%

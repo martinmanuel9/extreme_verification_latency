@@ -142,7 +142,18 @@ class PerformanceMetrics:
             avg_roc_auc_score = 'Only one class found'
         else:
             avg_roc_auc_score = np.array(sum(roc_auc_scores) / len(roc_auc_scores))
-        avg_f1_score = np.array(sum(self.f1_score.values())/ len(self.f1_score))
+        # print(np.divide(list(self.f1_score.values()), len(self.f1_score)))
+        f1_scores = []
+        first = np.shape(self.f1_score[0])[0]
+        for s in self.f1_score.values():
+            if np.shape(s)[0] > first:
+                break
+            else:
+                f1_scores.append(s)
+        f1_scores = np.array(f1_scores)
+        # print(type(np.divide(list(self.f1_score.values()), len(self.f1_score))))
+        # avg_f1_score = np.array(sum(self.f1_score.values()/ len(self.f1_score)))
+        avg_f1_score = np.array(sum(f1_scores/ len(self.f1_score)))
         avg_matt_corrcoeff = np.array(sum(self.mathews_corr_coeff.values())/ len(self.mathews_corr_coeff))
         self.avg_results['Dataset'] = self.selected_dataset
         self.avg_results['Classifier'] = self.classifier

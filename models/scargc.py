@@ -46,6 +46,7 @@ from sklearn.svm import SVC, SVR
 from tqdm import tqdm
 import math
 import benchmark_datagen as bdg
+import classifier_performance as cp
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 import time
@@ -138,6 +139,11 @@ class SCARGC:
         self._initialize()
         self.T = 0
         self.dataset = dataset
+        self.performance_metric = {}
+        self.avg_perf_metric = {}
+        self.preds = {}
+
+        # TODO remove
         self.class_error = {}
         self.accuracy = {}
         self.roc_auc_score = {}
@@ -175,10 +181,9 @@ class SCARGC:
                 yhat = self.Y[i][labels]
                 mode_val,_ = stats.mode(yhat)
                 self.class_cluster[i] = mode_val
-
         
-    def classification_error(self, preds, L_test):
-        return np.sum(preds != L_test)/len(preds)
+    # def classification_error(self, preds, L_test):
+    #     return np.sum(preds != L_test)/len(preds)
 
     def run(self, Xts, Yts): 
         '''
@@ -216,13 +221,15 @@ class SCARGC:
                     xts_array.pop()
                 Xts = np.array(xts_array)
             elif len(Yts[0]) > len(Xts):
-                dif = int(len(Yts[0]) - len(Xts))
+                dif = int(len(Yts[0]) - len(Xts[0]))
                 xts_array = list(Yts[0])
                 for i in range(dif):
                     xts_array.pop()
                 Yts[0] = np.array(xts_array)
-            svn_clf = SVC(gamma='auto').fit(Xts[:,:-1], Yts[0][:,-1])
+            
+            svn_clf = SVC(gamma='auto').fit(Xts[0][:,:-1], Yts[0][:,-1])
             predicted_label = svn_clf.predict(Yts[1][:,:-1])
+            self.preds[0] = predicted_label
             
         self.T = len(Yts)      
 
@@ -249,14 +256,14 @@ class SCARGC:
                     Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
             elif self.classifier == 'svm': 
                 if t == 0:
-                    Xt, Yt = np.array(labeled_data_labels), np.array(Yts[t])                   # Xt = train labels ; Yt = train data
+                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                   # Xt = train labels ; Yt = train data
                     Xe, Ye = np.array(Xts), np.array(Yts[t+1])                                 # Xe = test labels ; Ye = test data
                 else:
                     Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
                     Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
     
             
-            time_to_predict_start = time.time()
+            t_start = time.time()
         
             if self.resample:
                 N = len(Yt)
@@ -295,6 +302,7 @@ class SCARGC:
                 # remove extra dimensions from pool label
                 pool_label = np.squeeze(pool_label)
                 predicted_label = np.squeeze(predicted_label)
+                self.preds[t] = predicted_label
                 
                 if self.classifier == '1nn':
                     pool_label = np.concatenate((pool_label, predicted_label))
@@ -361,50 +369,57 @@ class SCARGC:
                 #     if t>0:
                 #         predicted_label = predicted_label[:,-1]
                 
-                self.class_error[t] = self.classification_error(preds= predicted_label , L_test= Ye )
-                self.accuracy[t] = 1 - self.class_error[t] 
+                # self.class_error[t] = self.classification_error(preds= predicted_label , L_test= Ye )
+                # self.accuracy[t] = 1 - self.class_error[t] 
                 
-                
-                # self.roc_auc_score[t] = metrics.roc_auc_score(Ye, predicted_label)
-            
-                # self.f1_score[t] = metrics.f1_score(np.array(Ye), np.array(predicted_label))
                 
                 # reset 
                 pool_data = np.zeros(np.shape(pool_data)[1])
                 pool_label = np.zeros(np.shape(pool_data))
                 pool_index = 0    
             
-            time_to_predict_end = time.time() 
-            self.time_to_predict[t] = time_to_predict_end - time_to_predict_start
+            t_end = time.time() 
+            perf_metric = cp.PerformanceMetrics(timestep= t, preds= self.preds[t], test= Ye, \
+                                                dataset= self.dataset , method= '' , \
+                                                classifier= self.classifier, tstart=t_start, tend=t_end)
+            self.performance_metric[t] = perf_metric.findClassifierMetrics(preds= self.preds[t], test= Ye)
 
         total_time_end = time.time()
+
         self.total_time = total_time_end - total_time_start
-        return self.results_logs()
+        avg_metrics = cp.PerformanceMetrics(tstart= total_time_start, tend= total_time_end)
+        self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
+        return self.avg_perf_metric
     
-    def results_logs(self):
-        avg_error = np.array(sum(self.class_error.values()) / len(self.class_error))
-        avg_accuracy = np.array(sum(self.accuracy.values()) / len(self.accuracy))
-        avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
-        # avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
-        # avg_f1_score = np.array(sum(self.f1_score.values()) / len(self.f1_score))
-        self.avg_results['Dataset'] = self.dataset
-        self.avg_results['Classifier'] = 'SCARGC'
-        self.avg_results['Method'] = self.classifier
-        self.avg_results['Average_Error'] = avg_error
-        self.avg_results['Average_Accuracy'] = avg_accuracy
-        # self.avg_results['roc_auc_score'] = avg_roc_auc_score
-        # self.avg_results['f1_score'] = avg_f1_score
-        self.avg_results['Avg_Exec_Time'] = avg_exec_time
-        self.avg_results['Total_Exec_Time'] = self.total_time
-        time_stamp = time.strftime("%Y%m%d-%H%M%S")
-        self.avg_results['Time_Stamp'] = time_stamp
+    # def results_logs(self):
+        # avg_error = np.array(sum(self.class_error.values()) / len(self.class_error))
+        # avg_accuracy = np.array(sum(self.accuracy.values()) / len(self.accuracy))
+        # avg_exec_time = np.array(sum(self.time_to_predict.values()) / len(self.time_to_predict))
+        # # avg_roc_auc_score = np.array(sum(self.roc_auc_score.values()) / len(self.roc_auc_score))
+        # # avg_f1_score = np.array(sum(self.f1_score.values()) / len(self.f1_score))
+        # self.avg_results['Dataset'] = self.dataset
+        # self.avg_results['Classifier'] = 'SCARGC'
+        # self.avg_results['Method'] = self.classifier
+        # self.avg_results['Average_Error'] = avg_error
+        # self.avg_results['Average_Accuracy'] = avg_accuracy
+        # # self.avg_results['roc_auc_score'] = avg_roc_auc_score
+        # # self.avg_results['f1_score'] = avg_f1_score
+        # self.avg_results['Avg_Exec_Time'] = avg_exec_time
+        # self.avg_results['Total_Exec_Time'] = self.total_time
+        # time_stamp = time.strftime("%Y%m%d-%H%M%S")
+        # self.avg_results['Time_Stamp'] = time_stamp
         
-        # print(self.avg_results)
+        # # print(self.avg_results)
 
-        # accuracy scores 
-        df = pd.DataFrame.from_dict((self.accuracy.keys(), self.accuracy.values())).T
-        accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
-        x = accuracy_scores['Timesteps']
-        y = accuracy_scores['Accuracy']
+        # # accuracy scores 
+        # df = pd.DataFrame.from_dict((self.accuracy.keys(), self.accuracy.values())).T
+        # accuracy_scores = pd.DataFrame(df.values, columns=['Timesteps', 'Accuracy'])
+        # x = accuracy_scores['Timesteps']
+        # y = accuracy_scores['Accuracy']
 
-        return accuracy_scores
+        # return accuracy_scores
+
+# scargc_svm_data = SetData(dataset= 'UG_2C_2D')
+# run_scargc_svm = SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= 'UG_2C_2D')
+# results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
+# print(results)

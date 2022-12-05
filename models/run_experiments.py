@@ -99,7 +99,8 @@ class RunExperiment:
                             fast_compose_QNS3VM = compose.COMPOSE(classifier="QN_S3VM", mode= mode,  method="fast_compose", num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = fast_compose_QNS3VM.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-                            fast_compose_QNS3VM.avg_perf_metric['Time_Stamp'] = time_stamp 
+                            fast_compose_QNS3VM.avg_perf_metric['Experiment'] = i + '_' + j
+                            fast_compose_QNS3VM.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((fast_compose_QNS3VM.avg_perf_metric.keys(), fast_compose_QNS3VM.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
@@ -112,6 +113,7 @@ class RunExperiment:
                             fast_compose_label_prop = compose.COMPOSE(classifier="label_propagation", mode= mode, method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = fast_compose_label_prop.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            fast_compose_label_prop.avg_perf_metric['Experiment'] = i + '_' + j
                             fast_compose_label_prop.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((fast_compose_label_prop.avg_perf_metric.keys(), fast_compose_label_prop.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -125,6 +127,7 @@ class RunExperiment:
                             fast_compose_svm = compose.COMPOSE(classifier="svm", mode= mode, method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = fast_compose_svm.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            fast_compose_svm.avg_perf_metric['Experiment'] = i + '_' + j
                             fast_compose_svm.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((fast_compose_svm.avg_perf_metric.keys(), fast_compose_svm.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -139,6 +142,7 @@ class RunExperiment:
                             reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", mode= mode ,method="compose", num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = reg_compose_label_QN_S3VM.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            reg_compose_label_QN_S3VM.avg_perf_metric['Experiment'] = i + '_' + j
                             reg_compose_label_QN_S3VM.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((reg_compose_label_QN_S3VM.avg_perf_metric.keys(), reg_compose_label_QN_S3VM.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -151,7 +155,8 @@ class RunExperiment:
                         elif i == 'compose' and j == 'label_propagation':
                             reg_compose_label_prop = compose.COMPOSE(classifier="label_propagation", mode= mode, method="compose", num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = reg_compose_label_prop.run()
-                            time_stamp = time.strftime("%Y%m%d-%H:%M:%S")   
+                            time_stamp = time.strftime("%Y%m%d-%H:%M:%S")  
+                            reg_compose_label_prop.avg_perf_metric['Experiment'] = i + '_' + j 
                             reg_compose_label_prop.avg_perf_metric['Time_Stamp'] = time_stamp  
                             results_df = pd.DataFrame.from_dict((reg_compose_label_prop.avg_perf_metric.keys(), reg_compose_label_prop.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -165,6 +170,7 @@ class RunExperiment:
                             reg_compose_svm = compose.COMPOSE(classifier="svm", mode= mode ,method="compose", num_cores= self.num_cores, selected_dataset = dataset)
                             self.results[experiment] = reg_compose_svm.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            reg_compose_svm.avg_perf_metric['Experiment'] = i + '_' + j 
                             reg_compose_svm.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((reg_compose_svm.avg_perf_metric.keys(), reg_compose_svm.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -175,11 +181,16 @@ class RunExperiment:
                             print("Results:\n" , results_pkl )
                         
                         elif i == 'scargc' and j == '1nn': 
+                            # scargc_svm_data = SetData(dataset= 'UG_2C_2D')
+                            # run_scargc_svm = SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= 'UG_2C_2D')
+                            # results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
                             scargc_1nn_data = scargc.SetData(dataset= dataset)
-                            run_scargc_1nn = scargc.SCARGC(Xinit= scargc_1nn_data.X, Yinit= scargc_1nn_data.Y , classifier = '1nn', dataset= dataset)
+                            run_scargc_1nn = scargc.SCARGC(Xinit= scargc_1nn_data.X[0], Yinit= scargc_1nn_data.Y , classifier = '1nn', dataset= dataset)
                             self.results[experiment] = run_scargc_1nn.run(Xts = scargc_1nn_data.X, Yts = scargc_1nn_data.Y)
-                            results_df = pd.DataFrame.from_dict((run_scargc_1nn.avg_results.keys(), run_scargc_1nn.avg_results.values())).T
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            run_scargc_1nn.avg_perf_metric['Experiment'] = i + '_' + j
+                            run_scargc_1nn.avg_perf_metric['Time_Stamp'] = time_stamp
+                            results_df = pd.DataFrame.from_dict((run_scargc_1nn.avg_perf_metric.keys(), run_scargc_1nn.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
                             results_scargc_1nn = 'results_'+ f'{experiment}' + '.pkl'
@@ -190,9 +201,11 @@ class RunExperiment:
                         elif i == 'scargc' and j == 'svm': 
                             scargc_svm_data = scargc.SetData(dataset= dataset)
                             run_scargc_svm = scargc.SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= dataset)
-                            self.results[experiment] = run_scargc_svm.run(Xts = scargc_svm_data.X[0], Yts = scargc_svm_data.Y)     # .X[0] only get initial training set
-                            results_df = pd.DataFrame.from_dict((run_scargc_svm.avg_results.keys(), run_scargc_svm.avg_results.values())).T
+                            self.results[experiment] = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)     # .X[0] only get initial training set
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            run_scargc_svm.avg_perf_metric['Experiment'] = i + '_' + j
+                            run_scargc_svm.avg_perf_metric['Time_Stamp'] = time_stamp
+                            results_df = pd.DataFrame.from_dict((run_scargc_svm.avg_perf_metric.keys(), run_scargc_svm.avg_perf_metric.values())).T
                             # change the directory to your particular files location
                             self.change_dir()
                             results_scargc_svm = 'results_'+ f'{experiment}' + '.pkl' 
@@ -204,6 +217,7 @@ class RunExperiment:
                             mclass_knn = mclass.MClassification(classifier= 'knn', dataset= dataset, method = 'kmeans')
                             self.results[experiment] = mclass_knn.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            mclass_knn.avg_perf_metric['Experiment'] = i + '_' + j
                             mclass_knn.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((mclass_knn.avg_perf_metric.keys(), mclass_knn.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -217,6 +231,7 @@ class RunExperiment:
                             mclass_svm = mclass.MClassification(classifier= 'svm', dataset= dataset, method = 'kmeans')
                             self.results[experiment] = mclass_svm.run()
                             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                            mclass_knn.avg_perf_metric['Experiment'] = i + '_' + j
                             mclass_svm.avg_perf_metric['Time_Stamp'] = time_stamp
                             results_df = pd.DataFrame.from_dict((mclass_svm.avg_perf_metric.keys(), mclass_svm.avg_perf_metric.values())).T
                             # change the directory to your particular files location
@@ -225,18 +240,16 @@ class RunExperiment:
                             results_df.to_pickle(results_mclass_svm)
                             results_pkl = pd.read_pickle(results_mclass_svm)
                             print("Results:\n" , results_pkl ) 
-
-        
         self.plot_results()
-# run compose
+## run compose
 # run_compose = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.95)
 # run_compose.run()
 
-# run mclassification
-run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'])
-run_mclass.run()
+# ## run mclassification
+# run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'])
+# run_mclass.run()
 
-# run scargc 
-# run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], datasets=[ 'UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], num_cores=0.9)
-# run_scargc.run()
+## run scargc 
+run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'])
+run_scargc.run()
 #%%
