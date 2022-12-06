@@ -44,14 +44,14 @@ from pathlib import Path
 
 class UNSW_NB15_Datagen:   
     def __init__(self) -> None:
-        self.data_gen()
+        self.import_data()
 
     def change_directory(self):
         path = str(Path.home())
         path = path + '/extreme_verification_latency/data/UNSW_NB15/'
         os.chdir(path)
 
-    def data_gen(self):
+    def import_data(self):
         self.change_directory()
         self.trainSet = pd.read_csv('UNSW_NB15_training-set.csv')
         self.testSet = pd.read_csv('UNSW_NB15_testing-set.csv')
@@ -65,7 +65,6 @@ class UNSW_NB15_Datagen:
         flow_features = ['proto', 'label'] # ['scrip', 'sport','dstip','dsport'] were not found in the csv file
         self.flowFeatTrain = self.trainSet[flow_features]
         self.flowFeatTest = self.testSet[flow_features]
-        
 
     def basic_features(self):
         basic_features = ['state', 'dur', 'sbytes', 'dbytes', 'sttl', 'dttl', 'sloss','dloss','service','sload', 'dload', 'spkts', 'dpkts', 'label']
@@ -87,6 +86,85 @@ class UNSW_NB15_Datagen:
                                 'ct_dst_ltm', 'ct_src_ltm', 'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'ct_dst_src_ltm', 'label' ]
         self.generateFeatTrain = self.trainSet[generated_features]
         self.generateFeatTest = self.testSet[generated_features]
+    
+    def batch(self, iterable, n=1):
+        l = len(iterable)
+        for ndx in range(0, l, n):
+            yield np.array(iterable[ndx:min(ndx + n, l)])
+
+    def create_dataset(self, train, test):
+        self.trainDict = {}
+        self.testDict = {}
+        train_stepsize = 820
+        test_stepsize = 1750
+        trainSet = train.to_numpy()
+        testSet = test.to_numpy()
         
+        a = []
+        indx = []
+        for d in range(train_stepsize-1):
+            a.append(d)
+        for v in range(int(0.5 * len(a))):
+            rnd = random.choice(a)
+            indx.append(rnd)
+
+        self.trainDataset = trainSet
+        self.trainData = trainSet
+        self.trainLabels = trainSet[:,-1]
+        self.trainUse = trainSet[:train_stepsize]
+        self.trainUse[:,-1][indx] = 1
+
+        self.testDataset = testSet
+        self.testData = testSet
+        self.testLabels = testSet[:,-1]
+        self.testUse = testSet[:test_stepsize]
+        self.testUse[:,-1][indx] = 1
+
+        trainDataset = []
+        X_train = []
+        for i in self.batch(self.trainData, train_stepsize):
+            trainDataset.append(i)
+        X_train.append(trainDataset)
+        self.trainData = np.array(X_train, dtype=object)
+
+        testDataset = []
+        y_test = []
+        for i in self.batch(self.testData, test_stepsize):
+            testDataset.append(i)
+        y_test.append(testDataset)
+        self.testData = np.array(y_test, dtype=object)
+
+        trainLabels = []
+        lblTrainData = []
+        for i in self.batch(self.trainLabels, train_stepsize):
+            trainLabels.append(i)
+        lblTrainData.append(trainLabels)
+        self.trainLabels = lblTrainData
+
+        testLabels = []
+        lblTestData = []
+        for i in self.batch(self.testLabels, test_stepsize):
+            testLabels.append(i)
+        lblTestData.append(trainLabels)
+        self.testLabels = lblTestData
+
+        self.trainDict['Dataset'] = self.trainDataset
+        self.trainDict['Data'] = self.trainData
+        self.trainDict['Labels'] = self.trainLabels
+        self.trainDict['Use'] = self.trainUse
+
+        self.testDict['Dataset'] = self.testDataset
+        self.testDict['Data'] = self.testData
+        self.testDict['Labels'] = self.testLabels
+        self.testDict['Use'] = self.testUse
+
+        return self.trainDict, self.testDict
+
+## set up the dataset generation 
+# dataset = UNSW_NB15_Datagen()
+# gen_train_features = dataset.generateFeatTrain
+# gen_test_features =dataset.generateFeatTest 
+# X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
+
 
 

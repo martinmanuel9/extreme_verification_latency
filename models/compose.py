@@ -40,6 +40,7 @@ from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import qns3vm as ssl
 import datagen_synthetic as bmdg
+import unsw_nb15_datagen as unsw
 import random
 import time 
 import label_propagation as lbl_prop
@@ -55,7 +56,8 @@ class COMPOSE:
                 method= 'fast_compose',
                 mode = 'gmm', 
                 num_cores = 0.8, 
-                selected_dataset = 'UG_2C_2D'): 
+                selected_dataset = 'UG_2C_2D',
+                datasource = 'synthetic'): 
         """
         Initialization of Fast COMPOSE
         """
@@ -70,6 +72,7 @@ class COMPOSE:
         self.method = method   
         self.mode = mode             
         self.dataset = selected_dataset
+        self.datasource = datasource 
         self.predictions = {}               # predictions from base classifier 
         self.user_data_input = {}
         self.hypothesis = {}                # hypothesis to copy available labels & core supports 
@@ -360,18 +363,36 @@ class COMPOSE:
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        if not self.dataset:
-            avail_data_opts = ['UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D','1CHT','2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR',
-                '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
-            print('The following datasets are available:\n' , avail_data_opts)
-            self.dataset = input('Enter dataset:')
-        self.user_data_input = self.dataset
-        data_gen = bmdg.Synthetic_Datagen()
-        # get data, labels, and first core supports synthetically for timestep 0
-        # data is composed of just the features 
-        # labels are the labels 
-        # core supports are the first batch with added labels 
-        data, labels, core_supports, self.dataset = data_gen.gen_dataset(self.dataset)
+        # if not self.dataset:
+        #     avail_data_opts = ['UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D','1CHT','2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR',
+        #         '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
+        #     print('The following datasets are available:\n' , avail_data_opts)
+        #     self.dataset = input('Enter dataset:')
+        # self.user_data_input = self.dataset
+        if self.datasource == 'synthetic': 
+            # get data, labels, and first core supports synthetically for timestep 0
+            # data is composed of just the features 
+            # labels are the labels 
+            # core supports are the first batch with added labels 
+            # synthetic data 
+            data_gen = bmdg.Synthetic_Datagen()
+            data, labels, core_supports, self.dataset = data_gen.gen_dataset(self.dataset) # returns self.data, self.labels, self.use, self.dataset
+        elif self.datasource == 'unsw':
+            # dataset = UNSW_NB15_Datagen()
+            # gen_train_features = dataset.generateFeatTrain
+            # gen_test_features =dataset.generateFeatTest 
+            # X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
+            # we have the following categoires : flow, basic, time, content, generated 
+            unsw_gen = unsw.UNSW_NB15_Datagen()
+            gen_train_features = unsw_gen.generateFeatTrain
+            gen_test_features = unsw_gen.generateFeatTest 
+            train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
+            data = train['Data']
+            labels = train['Label']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+
+
         ts = 0 
         # set data (all the features)
         for i in range(0, len(data[0])):
