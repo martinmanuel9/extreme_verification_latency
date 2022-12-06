@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 
 """
-Application:        COMPOSE Framework 
+Application:        Synthetic Data Generation for Verification Latency 
 File name:          
 Author:             Martin Manuel Lopez
 Creation:           08/05/2021
