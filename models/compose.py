@@ -555,9 +555,14 @@ class COMPOSE:
         self.core_supports[ts] = np.squeeze(self.core_supports[ts][sorter])
         # classify 
         # step 4 call SSL with L, Y , U
-        t_start = time.time()   
-        self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
-        t_end = time.time() 
+        if self.datasource == 'synthetic':
+            t_start = time.time()   
+            self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
+            t_end = time.time() 
+        elif self.datasource == 'unsw':
+            t_start = time.time()   
+            self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.testData[ts], )
+            t_end = time.time() 
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
         # get performance metrics of classification 
