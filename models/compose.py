@@ -67,6 +67,9 @@ class COMPOSE:
         self.labeled = {}                   #  array of timesteps each containing a vector N instances x 1 - Correct label
         self.core_supports = {}             #  array of timesteps each containing a N instances x 1 - binary vector indicating if instance is a core support (1) or not (0)
         self.total_time = []
+        self.testData = {}
+        self.testLabeled = {}
+        self.testCoreSupports = {}
         self.selected_dataset = selected_dataset
         self.classifier = classifier
         self.method = method   
@@ -363,12 +366,6 @@ class COMPOSE:
         """
         Method sets the dataset in its repespective bins, data with timesteps, gets labaled data and unlabeled data from dataset
         """
-        # if not self.dataset:
-        #     avail_data_opts = ['UG_2C_2D','MG_2C_2D','1CDT', '2CDT', 'UG_2C_3D','1CHT','2CHT','4CR','4CREV1','4CREV2','5CVT','1CSURR',
-        #         '4CE1CF','FG_2C_2D','GEARS_2C_2D', 'keystroke', 'UG_2C_5D', 'UnitTest']
-        #     print('The following datasets are available:\n' , avail_data_opts)
-        #     self.dataset = input('Enter dataset:')
-        # self.user_data_input = self.dataset
         if self.datasource == 'synthetic': 
             # get data, labels, and first core supports synthetically for timestep 0
             # data is composed of just the features 
@@ -377,6 +374,18 @@ class COMPOSE:
             # synthetic data 
             data_gen = bmdg.Synthetic_Datagen()
             data, labels, core_supports, self.dataset = data_gen.gen_dataset(self.dataset) # returns self.data, self.labels, self.use, self.dataset
+            ts = 0 
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.core_supports[0] = np.squeeze(core_supports)
         elif self.datasource == 'unsw':
             # dataset = UNSW_NB15_Datagen()
             # gen_train_features = dataset.generateFeatTrain
@@ -384,27 +393,42 @@ class COMPOSE:
             # X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
             # we have the following categoires : flow, basic, time, content, generated 
             unsw_gen = unsw.UNSW_NB15_Datagen()
-            gen_train_features = unsw_gen.generateFeatTrain
-            gen_test_features = unsw_gen.generateFeatTest 
+            # type of unsw features : generated, time, content, basic, flow
+            # TODO: need to develop options for running this
+            gen_train_features = unsw_gen.basicFeatTrain
+            gen_test_features = unsw_gen.basicFeatTest
             train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
             data = train['Data']
-            labels = train['Label']
+            labels = train['Labels']
             core_supports = train['Use']
             self.dataset = train['Dataset']
-
-
-        ts = 0 
-        # set data (all the features)
-        for i in range(0, len(data[0])):
-            self.data[ts] = data[0][i]
-            ts += 1
-        # set all the labels 
-        ts = 0
-        for k in range(0, len(labels[0])):
-            self.labeled[ts] = labels[0][k]
-            ts += 1
-        # gets first core supports from synthetic
-        self.core_supports[0] = np.squeeze(core_supports)
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
 
     def learn(self, X_train_l, L_train_l, X_train_u, X_test):
         """
@@ -419,11 +443,9 @@ class COMPOSE:
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
-
         if self.classifier == 'QN_S3VM':
             random_gen = random.Random()
             random_gen.seed(0)
-
             # X_L_train = []
             # X_train_l = np.array(X_train_l)
             # for i in range(0, len(X_train_l)):
@@ -443,13 +465,11 @@ class COMPOSE:
             model.train()
             preds = model.getPredictions(X_test)
             return preds
-            
         elif self.classifier == 'label_propagation':
             ssl_label_propagation = lbl_prop.Label_Propagation(X_train_l, L_train_l, X_train_u)
             preds = ssl_label_propagation.ssl()
             return preds
         elif self.classifier == 'svm':
-            print(np.unique(X_train_l))
             ssl_svm = SVC(gamma='auto').fit(X_train_u[:,:-1], X_train_l)
             preds = ssl_svm.predict(X_train_u)
             return preds
@@ -467,6 +487,8 @@ class COMPOSE:
         # append the current data with the core supports
         # if compose :
         # D_t = {(xl, yl): x in L where any l} Union {(xu, ht(xu_)): x in U where any u }
+        # print('timestep:', ts)
+        # print(self.core_supports[ts-1])
         cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
         cs_indx = np.squeeze(cs_indx)
         prev_cs = self.core_supports[ts-1][cs_indx]

@@ -61,18 +61,20 @@ class UNSW_NB15_Datagen:
         self.time_features()
         self.generated_features()
         
+    # cannot use flow features for COMPOSE as it has strings 
     def flow_features(self): 
-        flow_features = ['proto', 'label'] # ['scrip', 'sport','dstip','dsport'] were not found in the csv file
+        flow_features = ['proto','label'] # ; ['scrip', 'sport','dstip','dsport'] were not found in the csv file
         self.flowFeatTrain = self.trainSet[flow_features]
         self.flowFeatTest = self.testSet[flow_features]
 
     def basic_features(self):
-        basic_features = ['state', 'dur', 'sbytes', 'dbytes', 'sttl', 'dttl', 'sloss','dloss','service','sload', 'dload', 'spkts', 'dpkts', 'label']
+        # basic featues has 'state' & 'service' removed for EVL as they are str
+        basic_features = ['dur', 'sbytes', 'dbytes', 'sttl', 'dttl', 'sloss','dloss','sload', 'dload', 'spkts', 'dpkts', 'label']
         self.basicFeatTrain = self.trainSet[basic_features]
         self.basicFeatTest = self.testSet[basic_features]
 
     def content_features(self):
-        contet_features = ['swin','dwin', 'stcpb', 'dtcpb', 'smean', 'dmean', 'trans_depth', 'label'] # ['res_bdy_len] was not found in csv
+        contet_features = ['swin','dwin', 'stcpb', 'dtcpb', 'smean', 'dmean', 'trans_depth','label'] # ['res_bdy_len] was not found in csv
         self.contentFeatTrain = self.trainSet[contet_features]
         self.contentFeatTest = self.testSet[contet_features]
 
@@ -160,11 +162,13 @@ class UNSW_NB15_Datagen:
 
         return self.trainDict, self.testDict
 
-## set up the dataset generation 
+# set up the dataset generation 
 # dataset = UNSW_NB15_Datagen()
-# gen_train_features = dataset.generateFeatTrain
+# gen_train_features = dataset.flowFeatTrain
 # gen_test_features =dataset.generateFeatTest 
+# print(gen_train_features)
 # X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
+
 
 
 

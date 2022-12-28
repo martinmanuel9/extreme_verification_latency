@@ -112,12 +112,13 @@ class SCARGC:
     def __init__(self, 
                 Xinit,
                 Yinit,
+                datasource,
+                dataset,  
                 Kclusters:int=10,
                 maxpool:int=25, 
                 resample:bool=True, 
                 T:int=100,
-                classifier:str='',
-                dataset = []): 
+                classifier:str=''): 
         """
         """
         # set the classifier that is used [eg 1nn or svm]
@@ -132,6 +133,8 @@ class SCARGC:
         # set the data 
         self.X = Xinit
         self.Y = Yinit
+        self.datasource = datasource
+        self.dataset = dataset
         # set resample 
         self.resample = resample
         # set max pool size 
@@ -171,6 +174,8 @@ class SCARGC:
                 yhat = self.Y[i][labels]
                 mode_val,_ = stats.mode(yhat)
                 self.class_cluster[i] = mode_val
+    def set_data(self):
+        pass
 
     def run(self, Xts, Yts): 
         '''

@@ -54,11 +54,13 @@ class MClassification():
                 classifier,
                 dataset,
                 method,
+                datasource, 
                 NClusters:int = 10): 
         """
         """
         self.classifier = classifier
         self.dataset = dataset
+        self.datasource = datasource
         self.NClusters = NClusters
         self.method = method
         self.cluster_centers ={}
