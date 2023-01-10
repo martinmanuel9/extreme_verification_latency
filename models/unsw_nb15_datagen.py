@@ -60,6 +60,7 @@ class UNSW_NB15_Datagen:
         self.content_features()
         self.time_features()
         self.generated_features()
+        self.all_features()
         
     # cannot use flow features for COMPOSE as it has strings 
     def flow_features(self): 
@@ -88,6 +89,14 @@ class UNSW_NB15_Datagen:
                                 'ct_dst_ltm', 'ct_src_ltm', 'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'ct_dst_src_ltm', 'label' ]
         self.generateFeatTrain = self.trainSet[generated_features]
         self.generateFeatTest = self.testSet[generated_features]
+
+    def all_features(self):
+        all_features = ['dur', 'sbytes', 'dbytes', 'sttl', 'dttl', 'sloss','dloss','sload', 'dload', 'spkts', 'dpkts',
+                        'swin','dwin', 'stcpb', 'dtcpb', 'smean', 'dmean', 'trans_depth','sjit', 'djit',  'sinpkt', 'dinpkt',  
+                        'tcprtt', 'synack', 'ackdat','is_sm_ips_ports', 'ct_state_ttl', 'ct_flw_http_mthd', 'is_ftp_login',  
+                        'ct_ftp_cmd', 'ct_srv_src', 'ct_srv_dst','ct_dst_ltm', 'ct_src_ltm', 'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'ct_dst_src_ltm', 'label']
+        self.allFeatTrain = self.trainSet[all_features]
+        self.allFeatTest = self.testSet[all_features]
     
     def batch(self, iterable, n=1):
         l = len(iterable)

@@ -395,8 +395,8 @@ class COMPOSE:
             unsw_gen = unsw.UNSW_NB15_Datagen()
             # type of unsw features : generated, time, content, basic, flow
             # TODO: need to develop options for running this
-            gen_train_features = unsw_gen.basicFeatTrain
-            gen_test_features = unsw_gen.basicFeatTest
+            gen_train_features = unsw_gen.allFeatTrain
+            gen_test_features = unsw_gen.allFeatTest
             train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
             data = train['Data']
             labels = train['Labels']
