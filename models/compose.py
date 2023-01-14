@@ -303,6 +303,7 @@ class COMPOSE:
             # match data with sort 
             self.data[ts] = self.data[ts][sortID]
             # match labeles with sort 
+            print('timestep', ts)
             if self.labeled[ts].size == 0:
                 self.labeled[ts] = self.labeled[ts-1]
                 sorter = []
@@ -393,8 +394,7 @@ class COMPOSE:
             # X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
             # we have the following categoires : flow, basic, time, content, generated 
             unsw_gen = unsw.UNSW_NB15_Datagen()
-            # type of unsw features : generated, time, content, basic, flow
-            # TODO: need to develop options for running this
+            # type of unsw features : generated, time, content, basic, allFeatures
             gen_train_features = unsw_gen.allFeatTrain
             gen_test_features = unsw_gen.allFeatTest
             train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)

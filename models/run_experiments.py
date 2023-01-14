@@ -244,8 +244,8 @@ class RunExperiment:
                                 print("Results:\n" , results_pkl ) 
         self.plot_results()
 ## run compose
-run_compose = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 
-                            datasets=['unsw'], datasources = ['unsw'], num_cores=0.95)
+run_compose = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['fast_compose'], 
+                            datasets=['unsw'], datasources = ['unsw'], num_cores=0.9)
 run_compose.run()
 
 # ## run mclassification

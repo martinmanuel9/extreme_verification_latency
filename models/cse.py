@@ -307,7 +307,7 @@ class CSE:
             if len(x_ul_df) < i:
                 break
             else:           
-                GM[i] = GMM(n_components = i ).fit(x_ul_df)
+                GM[i] = GMM(n_components = i , reg_covar= 1e9).fit(x_ul_df)
             BIC.append(GM[i].bic(x_ul_df))
         
         # Plots GMM
