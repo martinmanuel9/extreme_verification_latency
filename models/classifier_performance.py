@@ -146,7 +146,7 @@ class PerformanceMetrics:
         f1_scores = []
         first = np.shape(self.f1_score[0])[0]
         for s in self.f1_score.values():
-            if np.shape(s)[0] > first:
+            if np.shape(s)[0] >= first:
                 break
             else:
                 f1_scores.append(s)

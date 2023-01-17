@@ -40,6 +40,8 @@ import unsw_nb15_datagen as unsw_data
 import datagen_synthetic as synthetic_data
 import classifier_performance as perf_metric
 from skmultiflow.bayes import NaiveBayes
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.svm import SVC, OneClassSVM
 import time
 
 
@@ -52,6 +54,7 @@ class VanillaClassifier():
         self.test ={}
         self.predictions = {}
         self.perf_metric = {}
+        self.avg_perf_metric = {}
 
     def set_data(self):
         if self.dataset == 'unsw':
@@ -70,33 +73,77 @@ class VanillaClassifier():
                 self.test[ts] = test[0][i]
                 ts += 1
             assert len(self.train.keys()) == len(self.test.keys()) 
+        if self.dataset == 'unsw_stream':
+            unsw_stream = unsw_data.UNSW_NB15_Datagen()
+            train_data = unsw_stream.allFeatTrain
+            test_data = unsw_stream.allFeatTest
+            train, test = unsw_stream.create_dataset(train= train_data, test= test_data)
+            train = train['Dataset']
+            test = test['Dataset']
+
+            if len(train) < len(test):
+                min_length = len(train)
+            elif len(test) < len(train):
+                min_length = len(train)
+
+            ts = 0
+            for i in range(0, min_length):
+                self.train[ts] = train[i]
+                ts += 1
+            ts = 0
+            for i in range(0, min_length):
+                self.test[ts] = test[i]
+                ts += 1
 
     def classify(self, ts, classifier, train, test):
-        if self.classifier == 'naive_bayes':
-            naive_bayes = NaiveBayes()
+        if self.classifier == 'naive_bayes_stream':
+            naive_bayes = NaiveBayes() 
             t_start = time.time()
-            naive_bayes.fit(train, test)
             self.predictions[ts] = naive_bayes.predict(test)
             t_end = time.time()
-            naive_bayes.partial_fit(train, test)
+            list_train = list(train[:,:-1])
+            list_test = list(test[:,-1])
+            naive_bayes.fit(train[:,:-1], test[:,-1])
             performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
                                         dataset= self.dataset , method= self.method , \
                                         classifier= self.classifier, tstart=t_start, tend=t_end) 
-            self.perf_metric[ts] = performance.findClassifierMetrics(preds= self.predictions[ts], test= test)
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds= self.predictions[ts], test= test[:,-1])
 
-            print(self.perf_metric)
+        elif self.classifier == 'naive_bayes':
+            naive_bayes = MultinomialNB()
+            t_start = time.time()
+            naive_bayes.fit(train[:,:-1], train[:,-1])
+            self.predictions[ts] = naive_bayes.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
         elif self.classifier == 'svm':
-            pass
-        elif self.classifier == 'knn':
-            pass
+            ssl_svm = OneClassSVM()
+            t_start = time.time()
+            ssl_svm.fit(train)
+            self.predictions[ts] = ssl_svm.predict(test)
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
     
     def run(self):
+        total_start = time.time()
         self.set_data()
         timesteps = self.train.keys()
         for ts in range(0, len(timesteps) -1):
             self.classify(ts=ts, classifier=self.classifier, train = self.train[ts], test= self.train[ts])
-            
-    
+        
+        total_end = time.time()
+        total_time = total_end - total_start 
+        avg_perf_metric = perf_metric.PerformanceMetrics(tstart= total_start, tend= total_end)
+        self.avg_perf_metric = avg_perf_metric.findAvePerfMetrics(total_time= total_time, perf_metrics= self.perf_metric)
+        return self.avg_perf_metric
 
-van = VanillaClassifier(classifier='naive_bayes', dataset='unsw')
-van.run()
+
+# van = VanillaClassifier(classifier='naive_bayes', dataset='unsw')
+# van.run()

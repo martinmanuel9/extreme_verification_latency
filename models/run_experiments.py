@@ -41,6 +41,7 @@ import pickle as pickle
 import time
 import scargc
 import mclassification as mclass
+import vanilla 
 import os
 import time
 from pathlib import Path 
@@ -241,12 +242,55 @@ class RunExperiment:
                                 results_mclass_svm = 'results_'+ f'{experiment}' +'.pkl'
                                 results_df.to_pickle(results_mclass_svm)
                                 results_pkl = pd.read_pickle(results_mclass_svm)
-                                print("Results:\n" , results_pkl ) 
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == 'svm':
+                                van = vanilla.VanillaClassifier(classifier= 'svm', dataset=dataset)
+                                self.results[experiment] = van.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van.avg_perf_metric['Experiment'] = i + '_' + j
+                                van.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van.avg_perf_metric.keys(), van.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_svm = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_svm)
+                                results_pkl = pd.read_pickle(results_van_svm)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == 'naive_bayes_stream':
+                                van_nb_stream = vanilla.VanillaClassifier(classifier= 'naive_bayes_stream', dataset=dataset)
+                                self.results[experiment] = van_nb_stream.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb_stream.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb_stream.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb_stream.avg_perf_metric.keys(), van_nb_stream.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nbs = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nbs)
+                                results_pkl = pd.read_pickle(results_van_nbs)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == 'naive_bayes':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'naive_bayes', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+
         self.plot_results()
 ## run compose
-run_compose = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['fast_compose'], 
-                            datasets=['unsw'], datasources = ['unsw'], num_cores=0.9)
-run_compose.run()
+# run_compose = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['fast_compose'], 
+#                             datasets=['unsw'], datasources = ['unsw'], num_cores=0.9)
+# run_compose.run()
 
 # ## run mclassification
 # run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasource = ['synthetic'])
@@ -255,4 +299,8 @@ run_compose.run()
 ## run scargc 
 # run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasources= ['synthetic'])
 # run_scargc.run()
+
+## run vanilla 
+run_vanilla_svm = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes_stream'], modes=[''], datasets=['unsw'], datasources= ['unsw'])
+run_vanilla_svm.run()
 #%%
