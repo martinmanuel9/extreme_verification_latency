@@ -2,7 +2,7 @@
 
 """
 Application:        Cyber Attacks Data Generation from USNW - NB15 dataset 
-File name:          
+File name:          unsw_nb15_datagen.py 
 Author:             Martin Manuel Lopez
 Creation:           12/5/2022
 
@@ -106,14 +106,14 @@ class UNSW_NB15_Datagen:
     def create_dataset(self, train, test):
         self.trainDict = {}
         self.testDict = {}
-        train_stepsize = 820
-        test_stepsize = 1750
+        train_stepsize = 1750 
+        test_stepsize = 820
         trainSet = train.to_numpy()
         testSet = test.to_numpy()
         
         a = []
         indx = []
-        for d in range(train_stepsize-1):
+        for d in range(test_stepsize-1):
             a.append(d)
         for v in range(int(0.5 * len(a))):
             rnd = random.choice(a)

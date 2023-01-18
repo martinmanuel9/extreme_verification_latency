@@ -40,7 +40,7 @@ import unsw_nb15_datagen as unsw_data
 import datagen_synthetic as synthetic_data
 import classifier_performance as perf_metric
 from skmultiflow.bayes import NaiveBayes
-from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.svm import SVC, OneClassSVM
 import time
 
@@ -97,7 +97,7 @@ class VanillaClassifier():
 
     def classify(self, ts, classifier, train, test):
         if self.classifier == 'naive_bayes_stream':
-            naive_bayes = NaiveBayes() 
+            naive_bayes = NaiveBayes() # multiflow
             t_start = time.time()
             self.predictions[ts] = naive_bayes.predict(test)
             t_end = time.time()
@@ -110,7 +110,7 @@ class VanillaClassifier():
             self.perf_metric[ts] = performance.findClassifierMetrics(preds= self.predictions[ts], test= test[:,-1])
 
         elif self.classifier == 'naive_bayes':
-            naive_bayes = MultinomialNB()
+            naive_bayes = BernoulliNB()
             t_start = time.time()
             naive_bayes.fit(train[:,:-1], train[:,-1])
             self.predictions[ts] = naive_bayes.predict(test[:,:-1])
@@ -121,10 +121,10 @@ class VanillaClassifier():
             self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
 
         elif self.classifier == 'svm':
-            ssl_svm = OneClassSVM()
+            ssl_svm = SVC(kernel='rbf')
             t_start = time.time()
-            ssl_svm.fit(train)
-            self.predictions[ts] = ssl_svm.predict(test)
+            ssl_svm.fit(train[:,:-1], train[:,-1]) 
+            self.predictions[ts] = ssl_svm.predict(test[:,:-1])
             t_end = time.time()
             performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
                                         dataset= self.dataset , method= self.method , \
