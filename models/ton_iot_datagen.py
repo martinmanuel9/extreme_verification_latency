@@ -205,7 +205,7 @@ class TON_IoT_Datagen():
         return self.trainDict, self.testDict
 
 
-datagen = IoT_Datagen()
+datagen = TON_IoT_Datagen()
 fridge_train, fridge_test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
             train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
 print(fridge_train)
