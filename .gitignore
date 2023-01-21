@@ -4,3 +4,5 @@ results/**
 # Ignore all plots 
 plots/**
 
+# Ignotr data 
+data/BoT_IoT_Data/**
