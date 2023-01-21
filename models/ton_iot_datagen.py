@@ -205,14 +205,14 @@ class TON_IoT_Datagen():
         return self.trainDict, self.testDict
 
 
-datagen = TON_IoT_Datagen()
-fridge_train, fridge_test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
-            train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
-print(fridge_train)
+# datagen = TON_IoT_Datagen()
+# fridge_train, fridge_test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
+#             train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
+# print(fridge_train)
 
-weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
-                                train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
-print(weather_train)
+# weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
+#                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
+# print(weather_train)
 
 
 
