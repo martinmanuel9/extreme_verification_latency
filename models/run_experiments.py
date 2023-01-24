@@ -288,9 +288,9 @@ class RunExperiment:
 
         self.plot_results()
 ## run compose
-run_compose = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['fast_compose'], 
-                            datasets=['unsw'], datasources = ['unsw'], num_cores=0.9)
-run_compose.run()
+# run_compose = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['fast_compose'], 
+#                             datasets=['unsw'], datasources = ['unsw'], num_cores=0.9)
+# run_compose.run()
 
 # ## run mclassification
 # run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasource = ['synthetic'])
@@ -300,7 +300,7 @@ run_compose.run()
 # run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasources= ['synthetic'])
 # run_scargc.run()
 
-## run vanilla 
-# run_vanilla_svm = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes_stream', 'naive_bayes'], modes=[''], datasets=['unsw'], datasources= ['unsw'])
-# run_vanilla_svm.run()
+# run vanilla 
+run_vanilla_svm = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes_stream', 'naive_bayes', 'svm'], modes=[''], datasets=['ton_iot'], datasources= ['ton_iot'])
+run_vanilla_svm.run()
 #%%

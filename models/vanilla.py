@@ -38,6 +38,7 @@ import pandas as pd
 import numpy as np
 import unsw_nb15_datagen as unsw_data
 import datagen_synthetic as synthetic_data
+import ton_iot_datagen as ton_iot
 import classifier_performance as perf_metric
 from skmultiflow.bayes import NaiveBayes
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
@@ -94,6 +95,22 @@ class VanillaClassifier():
             for i in range(0, min_length):
                 self.test[ts] = test[i]
                 ts += 1
+        if self.dataset == 'ton_iot':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
+                                                    train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+            ts = 0
+            for i in range(0, len(test[0])):
+                self.test[ts] = test[0][i]
+                ts += 1
+            # assert len(self.train.keys()) == len(self.test.keys()) 
 
     def classify(self, ts, classifier, train, test):
         if self.classifier == 'naive_bayes_stream':
@@ -101,8 +118,6 @@ class VanillaClassifier():
             t_start = time.time()
             self.predictions[ts] = naive_bayes.predict(test)
             t_end = time.time()
-            list_train = list(train[:,:-1])
-            list_test = list(test[:,-1])
             naive_bayes.fit(train[:,:-1], test[:,-1])
             performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
                                         dataset= self.dataset , method= self.method , \

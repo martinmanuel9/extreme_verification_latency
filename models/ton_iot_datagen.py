@@ -38,7 +38,8 @@ import pandas as pd
 import numpy as np
 import os
 from pathlib import Path
-from sklearn.model_selection import train_test_split   
+from sklearn.model_selection import train_test_split  
+from category_encoder import CountEncoder 
 
 class TON_IoT_Datagen():
     def __init__(self) -> None:
@@ -62,6 +63,8 @@ class TON_IoT_Datagen():
     def fridge_data(self):
         fridge_dataset = pd.read_csv('Train_Test_IoT_Fridge.csv')
         fridge_dataset = fridge_dataset[['ts','date','time','fridge_temperature','temp_condition','type','label']]
+        CountEncoder(cols=['date']).fit(fridge_dataset).transform(fridge_dataset)
+        print(fridge_dataset)
         train_fridge, test_fridge = train_test_split(fridge_dataset, test_size=0.33)
         # print('fridge:', len(train_fridge), len(test_fridge))
         self.fridgeTrainStepsize = 400
@@ -73,6 +76,7 @@ class TON_IoT_Datagen():
     def garage_data(self):
         garage_dataset = pd.read_csv('Train_Test_IoT_Garage_Door.csv')
         garage_dataset = garage_dataset[['ts','date','time','door_state','sphone_signal','type', 'label']]
+
         train_garage, test_garage = train_test_split(garage_dataset, test_size=0.33)
         # print('garage:', len(train_garage), len(test_garage))
         self.garageTrainStepsize = 399
@@ -205,10 +209,10 @@ class TON_IoT_Datagen():
         return self.trainDict, self.testDict
 
 
-# datagen = TON_IoT_Datagen()
-# fridge_train, fridge_test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
-#             train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
-# print(fridge_train)
+datagen = TON_IoT_Datagen()
+fridge_train, fridge_test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
+            train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
+print(fridge_train)
 
 # weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
 #                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
