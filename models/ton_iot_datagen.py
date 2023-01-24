@@ -39,7 +39,8 @@ import numpy as np
 import os
 from pathlib import Path
 from sklearn.model_selection import train_test_split  
-from category_encoder import CountEncoder 
+from category_encoders import CountEncoder 
+from datetime import datetime
 
 class TON_IoT_Datagen():
     def __init__(self) -> None:
@@ -63,8 +64,9 @@ class TON_IoT_Datagen():
     def fridge_data(self):
         fridge_dataset = pd.read_csv('Train_Test_IoT_Fridge.csv')
         fridge_dataset = fridge_dataset[['ts','date','time','fridge_temperature','temp_condition','type','label']]
-        CountEncoder(cols=['date']).fit(fridge_dataset).transform(fridge_dataset)
-        print(fridge_dataset)
+        fridge_dataset['date'] = pd.to_datetime(fridge_dataset['date'], format='%d-%b-%y').astype(int) #25-Apr-19
+        fridge_dataset['time'] = pd.to_datetime(fridge_dataset['time'], format='%H:%M:%S')
+        print(fridge_dataset['time'])
         train_fridge, test_fridge = train_test_split(fridge_dataset, test_size=0.33)
         # print('fridge:', len(train_fridge), len(test_fridge))
         self.fridgeTrainStepsize = 400
@@ -212,7 +214,7 @@ class TON_IoT_Datagen():
 datagen = TON_IoT_Datagen()
 fridge_train, fridge_test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
             train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
-print(fridge_train)
+
 
 # weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
 #                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
