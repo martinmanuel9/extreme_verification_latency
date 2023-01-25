@@ -38,6 +38,7 @@ import pandas as pd
 import numpy as np
 import os
 from pathlib import Path  
+from category_encoders import OrdinalEncoder 
 class BOT_IoT_Datagen():
     def __init__(self) -> None:
         self.import_data()
@@ -53,13 +54,19 @@ class BOT_IoT_Datagen():
 
     def updateDataset(self):
         trainData = pd.read_csv('UNSW_2018_IoT_Botnet_Final_10_best_Training.csv')
+        mapping = [{'col': 'proto',  'mapping': {'arp': 1, 'icmp': 2, 'ipv6-icmp': 3, 'tcp': 4, 'tcp': 5, 'udp': 6}},
+                        {'col': 'category', 'mapping': {'Normal':0, 'DDoS': 1, 'DoS': 2, 'Reconnaissance':3, 'Theft':4}},
+                        {'col' : 'subcategory', 'mapping': {'Normal': 0, 'HTTP': 1, 'Keylogging': 2, 'OS_Fingerprint': 3, 'Service_Scan': 4, 'TCP': 5, 'UDP': 6}}]
+        trainData = OrdinalEncoder(cols=['proto', 'category', 'subcategory'], mapping=mapping).fit(trainData).transform(trainData)
         testData = pd.read_csv('UNSW_2018_IoT_Botnet_Final_10_best_Testing.csv')
-        self.botTrainSet = trainData[['pkSeqID','proto','saddr','sport','daddr','dport',
+        testData = OrdinalEncoder(cols=['proto', 'category', 'subcategory'], mapping=mapping).fit(testData).transform(testData)
+        self.botTrainSet = trainData[['pkSeqID','proto','sport','dport',
+                        'seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
+                        'N_IN_Conn_P_DstIP','drate','srate','max','category','subcategory','attack']] # removing IP addresses 
+        self.botTestSet = testData[['pkSeqID','proto','sport','dport',
                         'seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
                         'N_IN_Conn_P_DstIP','drate','srate','max','category','subcategory','attack']]
-        self.botTestSet = testData[['pkSeqID','proto','saddr','sport','daddr','dport',
-                        'seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
-                        'N_IN_Conn_P_DstIP','drate','srate','max','category','subcategory','attack']]
+        print(self.botTrainSet)
 
     def batch(self, iterable, n=1):
         l = len(iterable)
@@ -134,8 +141,8 @@ class BOT_IoT_Datagen():
 
         return self.trainDict, self.testDict
 
-# datagen = BOT_IoT_Datagen()
-# trainSetFeat = datagen.botTrainSet
-# testSetFeat = datagen.botTestSet
-# trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
-# print(np.shape(trainSet['Data']), np.shape(testSet['Data']))
+datagen = BOT_IoT_Datagen()
+trainSetFeat = datagen.botTrainSet
+testSetFeat = datagen.botTestSet
+trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
+print(np.shape(trainSet['Data']), np.shape(testSet['Data']))
