@@ -163,6 +163,13 @@ class TON_IoT_Datagen():
         trainSet = test.to_numpy()
         testSet = train.to_numpy()
 
+        N = len(trainSet)
+        V = len(testSet)
+        ii = np.random.randint(0, N, N)
+        jj = np.random.randint(0, V, V)
+        trainSet = trainSet[ii] 
+        testSet =  testSet[jj]
+
         a = []
         indx = []
         for d in range(test_stepsize-1):
@@ -231,6 +238,3 @@ class TON_IoT_Datagen():
 # weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
 #                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
 # print(weather_train)
-
-
-

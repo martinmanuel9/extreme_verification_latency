@@ -301,6 +301,6 @@ class RunExperiment:
 # run_scargc.run()
 
 # run vanilla 
-run_vanilla_svm = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes_stream', 'naive_bayes', 'svm'], modes=[''], datasets=['ton_iot'], datasources= ['ton_iot'])
+run_vanilla_svm = RunExperiment(experiements=['vanilla'], classifier=['svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
 run_vanilla_svm.run()
 #%%

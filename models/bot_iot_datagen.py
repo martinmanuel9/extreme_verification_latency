@@ -60,13 +60,11 @@ class BOT_IoT_Datagen():
         trainData = OrdinalEncoder(cols=['proto', 'category', 'subcategory'], mapping=mapping).fit(trainData).transform(trainData)
         testData = pd.read_csv('UNSW_2018_IoT_Botnet_Final_10_best_Testing.csv')
         testData = OrdinalEncoder(cols=['proto', 'category', 'subcategory'], mapping=mapping).fit(testData).transform(testData)
-        self.botTrainSet = trainData[['pkSeqID','proto','sport','dport',
-                        'seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
-                        'N_IN_Conn_P_DstIP','drate','srate','max','category','subcategory','attack']] # removing IP addresses 
-        self.botTestSet = testData[['pkSeqID','proto','sport','dport',
-                        'seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
+
+        self.botTrainSet = trainData[['proto','seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
+                        'N_IN_Conn_P_DstIP','drate','srate','max','category','subcategory','attack']] # removing IP addresses and pkSeqID, 'sport','dport'
+        self.botTestSet = testData[['proto','seq','stddev', 'N_IN_Conn_P_SrcIP', 'min','state_number','mean',
                         'N_IN_Conn_P_DstIP','drate','srate','max','category','subcategory','attack']]
-        print(self.botTrainSet)
 
     def batch(self, iterable, n=1):
         l = len(iterable)
@@ -80,6 +78,13 @@ class BOT_IoT_Datagen():
         test_stepsize = 820
         trainSet = train.to_numpy()
         testSet = test.to_numpy()
+
+        N = len(trainSet)
+        V = len(testSet)
+        ii = np.random.randint(0, N, N)
+        jj = np.random.randint(0, V, V)
+        trainSet = trainSet[ii] 
+        testSet =  testSet[jj]
         
         a = []
         indx = []
@@ -141,8 +146,7 @@ class BOT_IoT_Datagen():
 
         return self.trainDict, self.testDict
 
-datagen = BOT_IoT_Datagen()
-trainSetFeat = datagen.botTrainSet
-testSetFeat = datagen.botTestSet
-trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
-print(np.shape(trainSet['Data']), np.shape(testSet['Data']))
+# datagen = BOT_IoT_Datagen()
+# trainSetFeat = datagen.botTrainSet
+# testSetFeat = datagen.botTestSet
+# trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)

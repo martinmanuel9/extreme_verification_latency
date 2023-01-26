@@ -39,6 +39,7 @@ import numpy as np
 import unsw_nb15_datagen as unsw_data
 import datagen_synthetic as synthetic_data
 import ton_iot_datagen as ton_iot
+import bot_iot_datagen as bot_iot
 import classifier_performance as perf_metric
 from skmultiflow.bayes import NaiveBayes
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
@@ -111,6 +112,22 @@ class VanillaClassifier():
                 self.test[ts] = test[0][i]
                 ts += 1
             # assert len(self.train.keys()) == len(self.test.keys()) 
+        if self.dataset == 'bot_iot':
+            datagen = bot_iot.BOT_IoT_Datagen()
+            trainSetFeat = datagen.botTrainSet
+            testSetFeat = datagen.botTestSet
+            train, test = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
+
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+            ts = 0
+            for i in range(0, len(test[0])):
+                self.test[ts] = test[0][i]
+                ts += 1
 
     def classify(self, ts, classifier, train, test):
         if self.classifier == 'naive_bayes_stream':
@@ -138,6 +155,7 @@ class VanillaClassifier():
         elif self.classifier == 'svm':
             ssl_svm = SVC(kernel='rbf')
             t_start = time.time()
+            print(np.unique(train[:,-1]))
             ssl_svm.fit(train[:,:-1], train[:,-1]) 
             self.predictions[ts] = ssl_svm.predict(test[:,:-1])
             t_end = time.time()
