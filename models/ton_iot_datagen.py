@@ -170,6 +170,10 @@ class TON_IoT_Datagen():
         trainSet = trainSet[ii] 
         testSet =  testSet[jj]
 
+        print(np.unique(trainSet[:,-1]))
+        print(sum( num > 0 for num in trainSet[:,-1]))
+        print(len(trainSet))
+
         a = []
         indx = []
         for d in range(test_stepsize-1):
@@ -231,9 +235,9 @@ class TON_IoT_Datagen():
         return self.trainDict, self.testDict
 
 
-# datagen = TON_IoT_Datagen()
-# train, test =  datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
-#             train=datagen.weatherTrainSet, test= datagen.weatherTestSet)
+datagen = TON_IoT_Datagen()
+train, test =  datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
+            train=datagen.weatherTrainSet, test= datagen.weatherTestSet)
 
 # weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
 #                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)

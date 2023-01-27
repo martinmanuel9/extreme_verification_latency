@@ -303,7 +303,6 @@ class COMPOSE:
             # match data with sort 
             self.data[ts] = self.data[ts][sortID]
             # match labeles with sort 
-            print('timestep', ts)
             if self.labeled[ts].size == 0:
                 self.labeled[ts] = self.labeled[ts-1]
                 sorter = []

@@ -74,18 +74,72 @@ class BOT_IoT_Datagen():
     def create_dataset(self, train, test):
         self.trainDict = {}
         self.testDict = {}
-        train_stepsize = 1750 
-        test_stepsize = 820
+        train_stepsize = 29348 
+        test_stepsize = 7337
         trainSet = train.to_numpy()
         testSet = test.to_numpy()
 
+        # randomize the order of the of test set
         N = len(trainSet)
         V = len(testSet)
         ii = np.random.randint(0, N, N)
         jj = np.random.randint(0, V, V)
         trainSet = trainSet[ii] 
         testSet =  testSet[jj]
+
+        # numAttacks = sum( num > 0 for num in trainSet[:,-1])
+        # noAttacks = sum( num < 1 for num in trainSet[:,-1])
+
+        trainAtckLblSort = np.argwhere(trainSet[:,-1]>0)
+        trainNoAtckSort = np.argwhere(trainSet[:,-1]<1)   
         
+        testAtckLblSort = np.argwhere(testSet[:,-1]>0)
+        testNoAtckSort = np.argwhere(testSet[:,-1]<1)
+
+        trainAttackSet = trainSet[trainAtckLblSort]
+        testAttackSet = testSet[testAtckLblSort]
+
+        trainNoAttackSet = trainSet[trainNoAtckSort]
+        testNoAttackSet = testSet[testNoAtckSort]
+        
+        attackTrainStep = 29344
+        noAttackTrainStep = 3
+
+        attackTestStep = 7336
+        noAttackTestStep = 1
+
+        # make batches to later concatenante so that all batches have attacks and no attacks 
+        trainAttack = []
+        lblAttack = []
+        for i in self.batch(trainAttackSet, attackTrainStep):
+            trainAttack.append(i)
+        lblAttack.append(trainAttack)
+        trnAttackSet = np.array(lblAttack, dtype=object)
+
+        trainNoAttack = []
+        lblNoAttack = []
+        for i in self.batch(trainNoAttackSet, noAttackTrainStep):
+            trainNoAttack.append(i)
+        lblNoAttack.append(trainNoAttack)
+        trnNoAttackSet = np.array(lblNoAttack, dtype=object )
+
+        testAttack =[]
+        lblTestAttack = []
+        for i in self.batch(testAttackSet, attackTestStep):
+            testAttack.append(i)
+        lblTestAttack.append(testAttack)
+        tstAttackSet = np.array(lblTestAttack, dtype=object)
+
+        testNoAttack = []
+        lbltestNoAttack = []
+        for i in self.batch(testNoAttackSet, noAttackTestStep):
+            testNoAttack.append(i)
+        lbltestNoAttack.append(testNoAttack)
+        tstNoAttackSet = np.array(lbltestNoAttack, dtype=object)
+
+        print(np.shape(trnAttackSet), np.shape(trnNoAttackSet))
+        print(np.shape(tstAttackSet), np.shape(tstNoAttackSet))
+
         a = []
         indx = []
         for d in range(test_stepsize-1):
@@ -146,7 +200,8 @@ class BOT_IoT_Datagen():
 
         return self.trainDict, self.testDict
 
-# datagen = BOT_IoT_Datagen()
-# trainSetFeat = datagen.botTrainSet
-# testSetFeat = datagen.botTestSet
-# trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
+datagen = BOT_IoT_Datagen()
+trainSetFeat = datagen.botTrainSet
+testSetFeat = datagen.botTestSet
+trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
+
