@@ -300,7 +300,13 @@ class RunExperiment:
 # run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasources= ['synthetic'])
 # run_scargc.run()
 
-# run vanilla 
-run_vanilla_svm = RunExperiment(experiements=['vanilla'], classifier=['svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
-run_vanilla_svm.run()
+# run vanilla with bot iot dataset
+# run_vanilla_bot = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
+# run_vanilla_bot.run()
+
+# run ton IoT
+run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
+                                'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
+run_vanilla_ton_IoT.run()
+
 #%%

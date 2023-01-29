@@ -96,7 +96,7 @@ class VanillaClassifier():
             for i in range(0, min_length):
                 self.test[ts] = test[i]
                 ts += 1
-        if self.dataset == 'ton_iot':
+        if self.dataset == 'ton_iot_fridge':
             datagen = ton_iot.TON_IoT_Datagen()
             # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
             train, test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
@@ -111,8 +111,87 @@ class VanillaClassifier():
             for i in range(0, len(test[0])):
                 self.test[ts] = test[0][i]
                 ts += 1
-            # assert len(self.train.keys()) == len(self.test.keys()) 
-        if self.dataset == 'bot_iot':
+            # assert len(self.train.keys()) == len(self.test.keys())
+        elif self.dataset == 'ton_iot_garage':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.garageTrainStepsize, test_stepsize=datagen.garageTestStepsize, 
+                                                    train=datagen.garageTrainSet, test= datagen.garageTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+            ts = 0
+            for i in range(0, len(test[0])):
+                self.test[ts] = test[0][i]
+                ts += 1
+        elif self.dataset == 'ton_iot_gps':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.gpsTrainStepsize, test_stepsize=datagen.gpsTestStepsize, 
+                                                    train=datagen.gpsTrainSet, test= datagen.gpsTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+            ts = 0
+            for i in range(0, len(test[0])):
+                self.test[ts] = test[0][i]
+                ts += 1
+        elif self.dataset == 'ton_iot_modbus':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.modbusTrainStepsize, test_stepsize=datagen.modbusTestStepsize, 
+                                                    train=datagen.modbusTrainSet, test= datagen.modbusTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+            ts = 0
+            for i in range(0, len(test[0])):
+                self.test[ts] = test[0][i]
+                ts += 1
+        elif self.dataset == 'ton_iot_light':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.lightTrainStepsize, test_stepsize=datagen.lightTestStepsize, 
+                                                    train=datagen.lightTrainSet, test= datagen.lightTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+        elif self.dataset == 'ton_iot_thermo':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.thermoTrainStepsize, test_stepsize=datagen.thermoTestStepsize, 
+                                                    train=datagen.thermoTrainSet, test= datagen.thermoTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+        elif self.dataset == 'ton_iot_weather':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
+                                                    train=datagen.weatherTrainSet, test= datagen.weatherTestSet)
+            train = train['Data'] # create data set with timesteps with dictionary of 'Data'
+            test = test['Data']
+            ts = 0
+            for i in range(0, len(train[0])):
+                self.train[ts] = train[0][i]
+                ts += 1
+
+        elif self.dataset == 'bot_iot':
             datagen = bot_iot.BOT_IoT_Datagen()
             trainSetFeat = datagen.botTrainSet
             testSetFeat = datagen.botTestSet
@@ -155,7 +234,6 @@ class VanillaClassifier():
         elif self.classifier == 'svm':
             ssl_svm = SVC(kernel='rbf')
             t_start = time.time()
-            print(np.unique(train[:,-1]))
             ssl_svm.fit(train[:,:-1], train[:,-1]) 
             self.predictions[ts] = ssl_svm.predict(test[:,:-1])
             t_end = time.time()

@@ -91,23 +91,18 @@ class BOT_IoT_Datagen():
         # noAttacks = sum( num < 1 for num in trainSet[:,-1])
 
         trainAtckLblSort = np.argwhere(trainSet[:,-1]>0)
-        trainNoAtckSort = np.argwhere(trainSet[:,-1]<1)   
-        
         testAtckLblSort = np.argwhere(testSet[:,-1]>0)
-        testNoAtckSort = np.argwhere(testSet[:,-1]<1)
-
         trainAttackSet = trainSet[trainAtckLblSort]
         testAttackSet = testSet[testAtckLblSort]
 
-        trainNoAttackSet = trainSet[trainNoAtckSort]
-        testNoAttackSet = testSet[testNoAtckSort]
+        trainZeroLblSort = np.argwhere(trainSet[:,-1]<1)
+        testZeroLblSort = np.argwhere(testSet[:,-1]<1)
+
+        trainZeroLbls = np.squeeze(trainSet[trainZeroLblSort])
+        testZeroLbls = np.squeeze(testSet[testZeroLblSort])
         
-        attackTrainStep = 29344
-        noAttackTrainStep = 3
-
-        attackTestStep = 7336
-        noAttackTestStep = 1
-
+        attackTrainStep = train_stepsize - len(trainZeroLbls)
+        attackTestStep = test_stepsize - len(testZeroLbls)
         # make batches to later concatenante so that all batches have attacks and no attacks 
         trainAttack = []
         lblAttack = []
@@ -115,13 +110,12 @@ class BOT_IoT_Datagen():
             trainAttack.append(i)
         lblAttack.append(trainAttack)
         trnAttackSet = np.array(lblAttack, dtype=object)
-
-        trainNoAttack = []
-        lblNoAttack = []
-        for i in self.batch(trainNoAttackSet, noAttackTrainStep):
-            trainNoAttack.append(i)
-        lblNoAttack.append(trainNoAttack)
-        trnNoAttackSet = np.array(lblNoAttack, dtype=object )
+        
+        for j in range(0, len(trnAttackSet[0])-1):
+            trnAttackSet[0][j] = np.vstack((np.squeeze(trnAttackSet[0][j]), trainZeroLbls))
+            K = len(trnAttackSet[0][j]) 
+            kk = np.random.randint(0, K, K)
+            trnAttackSet[0][j] = trnAttackSet[0][j][kk]
 
         testAttack =[]
         lblTestAttack = []
@@ -130,64 +124,45 @@ class BOT_IoT_Datagen():
         lblTestAttack.append(testAttack)
         tstAttackSet = np.array(lblTestAttack, dtype=object)
 
-        testNoAttack = []
-        lbltestNoAttack = []
-        for i in self.batch(testNoAttackSet, noAttackTestStep):
-            testNoAttack.append(i)
-        lbltestNoAttack.append(testNoAttack)
-        tstNoAttackSet = np.array(lbltestNoAttack, dtype=object)
+        for j in range(0, len(tstAttackSet[0])-1):
+            tstAttackSet[0][j] = np.vstack((np.squeeze(tstAttackSet[0][j]), testZeroLbls))
+            K = len(tstAttackSet[0][j])
+            kk = np.random.randint(0, K, K)
+            tstAttackSet[0][j] = tstAttackSet[0][j][kk]
 
-        print(np.shape(trnAttackSet), np.shape(trnNoAttackSet))
-        print(np.shape(tstAttackSet), np.shape(tstNoAttackSet))
+        # set batched and randomized sets to train and test data
+        self.trainData = trnAttackSet
+        self.testData = tstAttackSet
 
-        a = []
-        indx = []
-        for d in range(test_stepsize-1):
-            a.append(d)
-        for v in range(int(0.5 * len(a))):
-            rnd = random.choice(a)
-            indx.append(rnd)
+        # get the training lables 
+        trainLbls = []
+        for i in range(0, len(self.trainData[0])-1):
+            trainLbls.append(self.trainData[0][i][:,-1])
+        self.trainLabels = trainLbls
 
-        self.trainDataset = trainSet
-        self.trainData = trainSet
-        self.trainLabels = trainSet[:,-1]
-        self.trainUse = trainSet[:train_stepsize]
-        self.trainUse[:,-1][indx] = 1
+        testLbls = []
+        for i in range(0, len(self.testData[0])-1):
+            testLbls.append(self.testData[0][i][:,-1])
+        self.testLabels = testLbls 
 
-        self.testDataset = testSet
-        self.testData = testSet
-        self.testLabels = testSet[:,-1]
-        self.testUse = testSet[:test_stepsize]
-        self.testUse[:,-1][indx] = 1
-
+        # get the datasets as a single array
         trainDataset = []
-        X_train = []
-        for i in self.batch(self.trainData, train_stepsize):
-            trainDataset.append(i)
-        X_train.append(trainDataset)
-        self.trainData = np.array(X_train, dtype=object)
+        trainDataset.append(np.squeeze(self.trainData[0][0]))
+        for t in range(1, len(self.trainData[0])-1):
+            trainDataset = np.vstack((np.squeeze(trainDataset), np.squeeze(self.trainData[0][t])))
+        self.trainDataset = trainDataset
 
-        testDataset = []
-        y_test = []
-        for i in self.batch(self.testData, test_stepsize):
-            testDataset.append(i)
-        y_test.append(testDataset)
-        self.testData = np.array(y_test, dtype=object)
+        testDataset =[]
+        testDataset.append(np.squeeze(self.testData[0][0]))
+        for t in range(1, len(self.testData[0])-1):
+            testDataset = np.vstack((np.squeeze(testDataset), np.squeeze(self.testData[0][t])))
+        self.testDataset = testDataset
 
-        trainLabels = []
-        lblTrainData = []
-        for i in self.batch(self.trainLabels, train_stepsize):
-            trainLabels.append(i)
-        lblTrainData.append(trainLabels)
-        self.trainLabels = lblTrainData
+        # get use sets:
+        self.trainUse = self.trainData[0][0]
+        self.testUse = self.testData[0][0]
 
-        testLabels = []
-        lblTestData = []
-        for i in self.batch(self.testLabels, test_stepsize):
-            testLabels.append(i)
-        lblTestData.append(trainLabels)
-        self.testLabels = lblTestData
-
+        
         self.trainDict['Dataset'] = self.trainDataset
         self.trainDict['Data'] = self.trainData
         self.trainDict['Labels'] = self.trainLabels
@@ -200,8 +175,7 @@ class BOT_IoT_Datagen():
 
         return self.trainDict, self.testDict
 
-datagen = BOT_IoT_Datagen()
-trainSetFeat = datagen.botTrainSet
-testSetFeat = datagen.botTestSet
-trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
-
+# datagen = BOT_IoT_Datagen()
+# trainSetFeat = datagen.botTrainSet
+# testSetFeat = datagen.botTestSet
+# trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
