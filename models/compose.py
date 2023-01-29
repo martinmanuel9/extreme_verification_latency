@@ -41,6 +41,8 @@ import multiprocessing
 import qns3vm as ssl
 import datagen_synthetic as bmdg
 import unsw_nb15_datagen as unsw
+import ton_iot_datagen as ton_iot
+import bot_iot_datagen as bot_iot
 import random
 import time 
 import label_propagation as lbl_prop
@@ -49,6 +51,7 @@ import matplotlib.animation as animation
 import math
 import classifier_performance as cp
 from sklearn.svm import SVC, SVR
+
 
 class COMPOSE: 
     def __init__(self, 
@@ -84,11 +87,11 @@ class COMPOSE:
         self.compact_time = {}
         self.num_cs = {}
         
-        if self.classifier is None:
-            avail_classifier = ['knn', 's3vm']
-            print('The following classifiers are available:\n' , avail_classifier)
-            classifier_input = input('Enter classifier:')
-            self.classifier = classifier_input
+        # if self.classifier is None:
+        #     avail_classifier = ['knn', 's3vm']
+        #     print('The following classifiers are available:\n' , avail_classifier)
+        #     classifier_input = input('Enter classifier:')
+        #     self.classifier = classifier_input
         
 
     def compose(self):
@@ -397,6 +400,302 @@ class COMPOSE:
             gen_train_features = unsw_gen.allFeatTrain
             gen_test_features = unsw_gen.allFeatTest
             train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_fridge':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
+                                                    train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_garage':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.garageTrainStepsize, test_stepsize=datagen.garageTestStepsize, 
+                                                    train=datagen.garageTrainSet, test= datagen.garageTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_gps':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.gpsTrainStepsize, test_stepsize=datagen.gpsTestStepsize, 
+                                                    train=datagen.gpsTrainSet, test= datagen.gpsTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_modbus':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.modbusTrainStepsize, test_stepsize=datagen.modbusTestStepsize, 
+                                                    train=datagen.modbusTrainSet, test= datagen.modbusTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_light':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.lightTrainStepsize, test_stepsize=datagen.lightTestStepsize, 
+                                                    train=datagen.lightTrainSet, test= datagen.lightTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_thermo':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.thermoTrainStepsize, test_stepsize=datagen.thermoTestStepsize, 
+                                                    train=datagen.thermoTrainSet, test= datagen.thermoTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'ton_iot_weather':
+            datagen = ton_iot.TON_IoT_Datagen()
+            # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+            train, test =  datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
+                                                    train=datagen.weatherTrainSet, test= datagen.weatherTestSet)
+            data = train['Data']
+            labels = train['Labels']
+            core_supports = train['Use']
+            self.dataset = train['Dataset']
+            testData = test['Data']
+            testLabels = test['Labels']
+            testCoreSupports = test['Use']
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(data[0])):
+                self.data[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.labeled[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from use
+            self.core_supports[0] = np.squeeze(core_supports)
+            ts = 0
+            # set data (all the features)
+            for i in range(0, len(testData[0])):
+                self.testData[ts] = testData[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(testLabels[0])):
+                self.testLabeled[ts] = testLabels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
+        elif self.dataset == 'bot_iot':
+            datagen = bot_iot.BOT_IoT_Datagen()
+            trainSetFeat = datagen.botTrainSet
+            testSetFeat = datagen.botTestSet
+            train, test = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']

@@ -288,9 +288,14 @@ class RunExperiment:
 
         self.plot_results()
 ## run compose
-# run_compose = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['fast_compose'], 
-#                             datasets=['unsw'], datasources = ['unsw'], num_cores=0.9)
-# run_compose.run()
+# run_compose_ton_iot = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 
+#                             datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                             datasources = ['unsw'], num_cores=0.9)
+# run_compose_ton_iot.run()
+
+run_compose_bot_iot = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 
+                        datasets=['bot_iot'], datasources = ['bot_iot'], num_cores=0.9)
+run_compose_bot_iot.run()
 
 # ## run mclassification
 # run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasource = ['synthetic'])
@@ -300,13 +305,13 @@ class RunExperiment:
 # run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasources= ['synthetic'])
 # run_scargc.run()
 
-# run vanilla with bot iot dataset
+# ## run vanilla with bot iot dataset
 # run_vanilla_bot = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
 # run_vanilla_bot.run()
 
-# run ton IoT
-run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
-                                'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
-run_vanilla_ton_IoT.run()
+# ## run ton IoT
+# run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
+#                                 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
+# run_vanilla_ton_IoT.run()
 
 #%%

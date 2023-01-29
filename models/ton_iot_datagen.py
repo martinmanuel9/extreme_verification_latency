@@ -170,10 +170,6 @@ class TON_IoT_Datagen():
         trainSet = trainSet[ii] 
         testSet =  testSet[jj]
 
-        print(np.unique(trainSet[:,-1]))
-        print(sum( num > 0 for num in trainSet[:,-1]))
-        print(len(trainSet))
-
         a = []
         indx = []
         for d in range(test_stepsize-1):
