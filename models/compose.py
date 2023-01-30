@@ -710,8 +710,8 @@ class COMPOSE:
                 ts += 1
             # set all the labels 
             ts = 0
-            for k in range(0, len(labels[0])):
-                self.labeled[ts] = labels[0][k]
+            for k in range(0, len(labels)):
+                self.labeled[ts] = labels[k]
                 ts += 1
             # gets first core supports from use
             self.core_supports[0] = np.squeeze(core_supports)
@@ -722,8 +722,8 @@ class COMPOSE:
                 ts += 1
             # set all the labels 
             ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
+            for k in range(0, len(testLabels)):
+                self.testLabeled[ts] = testLabels[k]
                 ts += 1
             # gets first core supports from synthetic
             self.testCoreSupports[0] = np.squeeze(testCoreSupports)
@@ -857,6 +857,7 @@ class COMPOSE:
             t_start = time.time()   
             self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
             t_end = time.time() 
+        # UNSW data sources include ToN_IoT and bot_IoT
         elif self.datasource == 'unsw':
             t_start = time.time()   
             self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.testData[ts], )

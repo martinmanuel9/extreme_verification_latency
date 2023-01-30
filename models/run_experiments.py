@@ -288,14 +288,15 @@ class RunExperiment:
 
         self.plot_results()
 ## run compose
-# run_compose_ton_iot = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 
-#                             datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot.run()
+run_compose_ton_iot = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['gmm'], 
+                            datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+                            datasources = ['unsw'], num_cores=0.9)
+run_compose_ton_iot.run()
 
-run_compose_bot_iot = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 
-                        datasets=['bot_iot'], datasources = ['bot_iot'], num_cores=0.9)
-run_compose_bot_iot.run()
+## run bot IoT COMPOSE
+# run_compose_bot_iot = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 
+#                         datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
+# run_compose_bot_iot.run()
 
 # ## run mclassification
 # run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasource = ['synthetic'])
