@@ -287,11 +287,16 @@ class RunExperiment:
                                 print("Results:\n" , results_pkl )
 
         self.plot_results()
+
 ## run compose
 run_compose_ton_iot = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['gmm'], 
                             datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
                             datasources = ['unsw'], num_cores=0.9)
 run_compose_ton_iot.run()
+
+# run_compose_synthetic = RunExperiment(experiements=['fast_compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D'], 
+#                             datasources = ['synthetic'], num_cores=0.9)
+# run_compose_synthetic.run()
 
 ## run bot IoT COMPOSE
 # run_compose_bot_iot = RunExperiment(experiements=['compose'], classifier=['label_propagation'], modes=['gmm'], 

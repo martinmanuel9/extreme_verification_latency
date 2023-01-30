@@ -273,15 +273,17 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id) 
-            self.labeled[ts] = self.labeled[ts][sorter]
+            if len(sorter) > 0 :
+                self.labeled[ts] = self.labeled[ts][sorter]
             # remove core supports dupes
             sorter = []
             for id in sortID:
                 if id >= len(self.core_supports[ts]):
                     break
                 else:
-                    sorter.append(id) 
-            self.core_supports[ts] = self.core_supports[ts][sorter] 
+                    sorter.append(id)
+            if len(sorter) > 0:
+                self.core_supports[ts] = self.core_supports[ts][sorter] 
             # remove hypothesis dupes
             sorter = []
             for id in sortID:
@@ -289,7 +291,8 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-            self.hypothesis[ts] = self.hypothesis[ts][sorter]
+            if len(sorter) > 0:
+                self.hypothesis[ts] = self.hypothesis[ts][sorter]
             # remove unlabeled data indices of removed instances
             sorter = []
             for id in sortID:
@@ -297,16 +300,24 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-            unlabeled = unlabeled[sorter]
+            if len(sorter) > 0 : 
+                unlabeled = unlabeled[sorter]
 
             # Sort by the classes
             uniq_class = np.unique(self.hypothesis[ts])     # determine number of classes
             # sort by the class
             self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
             # match data with sort 
-            self.data[ts] = self.data[ts][sortID]
+            sorter = []
+            for id in sortID:
+                if id >= len(self.data[ts]):
+                    break
+                else:
+                    sorter.append(id)
+
+            self.data[ts] = self.data[ts][sorter]
             # match labeles with sort 
-            if self.labeled[ts].size == 0:
+            if self.labeled[ts].size == 0 and ts > 0:
                 self.labeled[ts] = self.labeled[ts-1]
                 sorter = []
                 for id in sortID:
@@ -353,13 +364,20 @@ class COMPOSE:
             core_supports = np.zeros((1, np.shape(self.data[ts])[1]))
             for c in uniq_class:
                 class_ind = np.squeeze(np.argwhere(self.hypothesis[ts] == c))
-                new_cs = self.data[ts][class_ind]
+                sorter = []
+                for id in class_ind:
+                    if id >= len(self.data[ts]):
+                        break
+                    else:
+                        sorter.append(id)
+                new_cs = self.data[ts][sorter]
                 new_cs[:,0] = 2
                 core_supports = np.vstack((core_supports, new_cs))
             core_supports = np.squeeze(core_supports)
             core_supports = np.delete(core_supports, 0, axis=0)
             self.core_supports[ts] = core_supports
             # add to labeled data for next time step
+            print(self.core_supports[ts])
             self.labeled[ts] = np.concatenate((self.labeled[ts], self.core_supports[ts][:,-1]))
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
@@ -853,6 +871,7 @@ class COMPOSE:
         self.core_supports[ts] = np.squeeze(self.core_supports[ts][sorter])
         # classify 
         # step 4 call SSL with L, Y , U
+
         if self.datasource == 'synthetic':
             t_start = time.time()   
             self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.data[ts+1])
@@ -864,18 +883,23 @@ class COMPOSE:
             t_end = time.time() 
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]
+        
         # get performance metrics of classification 
-        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
-                                            dataset= self.selected_dataset , method= self.method , \
-                                            classifier= self.classifier, tstart=t_start, tend=t_end)
         # make sure that preds and test have same dim
         if self.labeled[ts] is None:
             self.labeled[ts] = np.array(1)
         if len(self.hypothesis[ts]) > len(self.labeled[ts]):
             class_perf_hypoth = self.hypothesis[ts][0:len(self.labeled[ts])]
-            self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= class_perf_hypoth, test= self.labeled[ts])
-        else:
-            self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.hypothesis[ts], test= self.labeled[ts])
+            self.hypothesis[ts] = class_perf_hypoth
+        elif len(self.hypothesis[ts]) < len(self.labeled[ts]):
+            labls = self.labeled[ts][0:len(self.hypothesis[ts])]
+            self.labeled[ts] = labls
+
+        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.hypothesis[ts], test= self.labeled[ts], \
+                                            dataset= self.selected_dataset , method= self.method , \
+                                            classifier= self.classifier, tstart=t_start, tend=t_end)
+        
+        self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.hypothesis[ts], test= self.labeled[ts])
         
         return self.predictions[ts]
 
