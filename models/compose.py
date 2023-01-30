@@ -325,7 +325,8 @@ class COMPOSE:
                         break
                     else:
                         sorter.append(id)
-                self.labeled[ts] = self.labeled[ts][sorter]
+                if len(sorter) > 0:
+                    self.labeled[ts] = self.labeled[ts][sorter]
             else:
                 sorter = []
                 for id in sortID:
@@ -333,7 +334,8 @@ class COMPOSE:
                         break
                     else:
                         sorter.append(id)
-                self.labeled[ts] = self.labeled[ts][sorter]
+                if len(sorter) > 0:
+                    self.labeled[ts] = self.labeled[ts][sorter]
             # match core supports with sort 
             sorter = []
             # if the sortID is larger than any index in the available core supports
@@ -342,7 +344,8 @@ class COMPOSE:
                     pass
                 else:
                     sorter.append(sortID[i])
-            self.core_supports[ts] = self.core_supports[ts][sorter]
+            if len(sorter) > 0 :
+                self.core_supports[ts] = self.core_supports[ts][sorter]
             # match unlabeled with sort
             unlabeled = unlabeled[sortID]
             t_start = time.time()
