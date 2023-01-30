@@ -314,8 +314,8 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-
-            self.data[ts] = self.data[ts][sorter]
+            if len(sorter) > 0:
+                self.data[ts] = self.data[ts][sorter]
             # match labeles with sort 
             if self.labeled[ts].size == 0 and ts > 0:
                 self.labeled[ts] = self.labeled[ts-1]
@@ -370,14 +370,16 @@ class COMPOSE:
                         break
                     else:
                         sorter.append(id)
-                new_cs = self.data[ts][sorter]
+                if len(sorter) > 0:
+                    new_cs = self.data[ts][sorter]
+                else:
+                    new_cs = self.data[ts]
                 new_cs[:,0] = 2
                 core_supports = np.vstack((core_supports, new_cs))
             core_supports = np.squeeze(core_supports)
             core_supports = np.delete(core_supports, 0, axis=0)
             self.core_supports[ts] = core_supports
             # add to labeled data for next time step
-            print(self.core_supports[ts])
             self.labeled[ts] = np.concatenate((self.labeled[ts], self.core_supports[ts][:,-1]))
             t_end = time.time()
             self.compact_time[ts] = t_end - t_start
@@ -776,7 +778,6 @@ class COMPOSE:
             #     L_l_train.append(add)
             # L_train_l = L_l_train
             # L_train_l = np.array(L_train_l).astype(int)
-
             model = ssl.QN_S3VM(X_train_l, L_train_l, X_train_u[:,-1], random_gen)
             model.train()
             preds = model.getPredictions(X_test)
@@ -850,7 +851,8 @@ class COMPOSE:
                 break
             else:
                 sorter.append(id)
-        self.data[ts] = np.squeeze(self.data[ts][sorter])
+        if len(sorter) > 0:
+            self.data[ts] = np.squeeze(self.data[ts][sorter])
         # 3. sort labeled to match hypothesis shift
         sorter = []
         # if index is out of range we skip to the next index
@@ -859,7 +861,8 @@ class COMPOSE:
                 break
             else:
                 sorter.append(id)
-        self.labeled[ts] = np.squeeze(self.labeled[ts][sorter])
+        if len(sorter) > 0: 
+            self.labeled[ts] = np.squeeze(self.labeled[ts][sorter])
         # 4. sort the core supports to match hypothesis 
         sorter = []
         # if index is out of range we skip to the next index
@@ -868,7 +871,8 @@ class COMPOSE:
                 break
             else:
                 sorter.append(id)
-        self.core_supports[ts] = np.squeeze(self.core_supports[ts][sorter])
+        if len(sorter) > 0 :
+            self.core_supports[ts] = np.squeeze(self.core_supports[ts][sorter])
         # classify 
         # step 4 call SSL with L, Y , U
 
@@ -878,8 +882,8 @@ class COMPOSE:
             t_end = time.time() 
         # UNSW data sources include ToN_IoT and bot_IoT
         elif self.datasource == 'unsw':
-            t_start = time.time()   
-            self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.testData[ts], )
+            t_start = time.time()  
+            self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.testData[ts])
             t_end = time.time() 
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]

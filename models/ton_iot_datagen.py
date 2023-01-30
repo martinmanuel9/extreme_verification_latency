@@ -230,11 +230,6 @@ class TON_IoT_Datagen():
 
         return self.trainDict, self.testDict
 
-
-datagen = TON_IoT_Datagen()
-train, test =  datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
-            train=datagen.weatherTrainSet, test= datagen.weatherTestSet)
-
 # weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
 #                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
 # print(weather_train)
