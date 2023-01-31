@@ -51,7 +51,7 @@ class Label_Propagation:
             hypothesis = self.hypothesis
             X = self.X[:,:-1] # just the features
             # define model
-            model = LabelPropagation(kernel='knn', n_neighbors= 3, gamma=30, max_iter=2000)
+            model = LabelPropagation(kernel='knn', n_neighbors= 2, gamma=30, max_iter=2000)
             # fit model on training dataset
             if len(X) < len(hypothesis):
                 hypothesis = hypothesis[0:len(X)]

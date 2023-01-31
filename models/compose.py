@@ -360,7 +360,7 @@ class COMPOSE:
                 # Y^(t+1) = Y^(t+1) U {y_u: u in [|CSc|], y = c}
             # ------------------------------------------------------------
             # c_offset is used to keep track how many instances have been analyzed so each class can be returned in the correct spot after cse
-            c_offset = 0       
+            c_offset = 0 
             self.data[ts] = np.squeeze(self.data[ts])
             # D_t = {{(x_ut,ht(x_ut)) :x ∈ Ut∀u}}
             # step 7 for fast compose
