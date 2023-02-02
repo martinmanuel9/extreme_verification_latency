@@ -44,7 +44,7 @@ from matplotlib import pyplot as plt
 from pathlib import Path
 import pandas as pd
 
-class OpenResults:
+class OpenResults():
     def run(self):
         # change the directory to your particular files location
         path = str(Path.home())

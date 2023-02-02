@@ -352,8 +352,8 @@ class RunExperiment:
 # run_vanilla_bot.run()
 
 # ## run ton IoT
-# run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
-#                                 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
-# run_vanilla_ton_IoT.run()
+run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
+                                'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
+run_vanilla_ton_IoT.run()
 
 #%%

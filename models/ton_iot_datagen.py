@@ -70,8 +70,8 @@ class TON_IoT_Datagen():
         fridge_dataset = fridge_dataset[['fridge_temperature','temp_condition','type','label']]
         train_fridge, test_fridge = train_test_split(fridge_dataset, test_size=0.33)
         # print('fridge:', len(train_fridge), len(test_fridge))
-        self.fridgeTrainStepsize = 400
-        self.fridgeTestStepsize = 197
+        self.fridgeTrainStepsize = 197
+        self.fridgeTestStepsize = 100
         self.fridgeTrainSet = train_fridge
         self.fridgeTestSet = test_fridge
 
@@ -84,8 +84,8 @@ class TON_IoT_Datagen():
         garage_dataset = garage_dataset[['door_state','sphone_signal','type', 'label']]
         train_garage, test_garage = train_test_split(garage_dataset, test_size=0.33)
         # print('garage:', len(train_garage), len(test_garage))
-        self.garageTrainStepsize = 399
-        self.garageTestStepsize = 196
+        self.garageTrainStepsize = 196
+        self.garageTestStepsize = 96
         self.garageTrainSet = train_garage
         self.garageTestSet = test_garage
 
@@ -96,8 +96,8 @@ class TON_IoT_Datagen():
         gps_dataset = gps_dataset[['latitude','longitude','type', 'label']]
         train_gps, test_gps = train_test_split(gps_dataset, test_size=0.33)
         # print('gps:', len(train_gps), len(test_gps))
-        self.gpsTrainStepsize = 395
-        self.gpsTestStepsize = 194
+        self.gpsTrainStepsize = 194
+        self.gpsTestStepsize = 94
         self.gpsTrainSet = train_gps
         self.gpsTestSet = test_gps 
 
@@ -111,8 +111,8 @@ class TON_IoT_Datagen():
         # train_modbus = train_modbus[features]
         # test_modbus = test_modbus[features]
         # print('modbus:', len(train_modbus), len(test_modbus))
-        self.modbusTrainStepsize = 342
-        self.modbusTestStepsize = 168
+        self.modbusTrainStepsize = 168
+        self.modbusTestStepsize = 82
         self.modbusTrainSet = train_modbus
         self.modbusTestSet = test_modbus
     
@@ -123,8 +123,8 @@ class TON_IoT_Datagen():
         light_dataset = light_dataset[['motion_status','light_status','type','label']]
         train_light, test_light = train_test_split(light_dataset, test_size=0.33)
         # print('light:', len(train_light), len(test_light))
-        self.lightTrainStepsize = 398
-        self.lightTestStepsize = 196
+        self.lightTrainStepsize = 196
+        self.lightTestStepsize = 96
         self.lightTrainSet = train_light
         self.lightTestSet = test_light
 
@@ -135,8 +135,8 @@ class TON_IoT_Datagen():
         thermostat_dataset = thermostat_dataset[['current_temperature','thermostat_status','type','label']]
         train_thermo, test_thermo = train_test_split(thermostat_dataset, test_size=0.33)
         # print('thermo', len(train_thermo), len(test_thermo))
-        self.thermoTrainStepsize = 353
-        self.thermoTestStepsize = 174
+        self.thermoTrainStepsize = 174
+        self.thermoTestStepsize = 84
         self.thermoTrainSet = train_thermo
         self.thermoTestSet = test_thermo
 
@@ -147,8 +147,8 @@ class TON_IoT_Datagen():
         weather_dataset = weather_dataset[['temperature','pressure','humidity','type','label']]
         train_weather, test_weather = train_test_split(weather_dataset, test_size=0.33)
         # print('weather:', len(train_weather), len(test_weather))
-        self.weatherTrainStepsize = 397
-        self.weatherTestStepsize = 195
+        self.weatherTrainStepsize = 194
+        self.weatherTestStepsize = 92
         self.weatherTrainSet = train_weather
         self.weatherTestSet = test_weather
     

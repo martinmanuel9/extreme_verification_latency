@@ -256,5 +256,6 @@ class VanillaClassifier():
         return self.avg_perf_metric
 
 
-# van = VanillaClassifier(classifier='naive_bayes', dataset='unsw')
-# van.run()
+# van = VanillaClassifier(classifier='naive_bayes', dataset='ton_iot_weather')
+# results = van.run()
+# print(results)

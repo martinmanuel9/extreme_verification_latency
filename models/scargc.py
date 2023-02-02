@@ -642,6 +642,6 @@ class SCARGC:
 
 # scargc_svm_data = SetData(dataset= 'UG_2C_2D', datasource='synthetic')
 # print(scargc_svm_data.X)
-run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'UG_2C_2D', datasource='synthetic')
-results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
+# run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'UG_2C_2D', datasource='synthetic')
+# results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
 
