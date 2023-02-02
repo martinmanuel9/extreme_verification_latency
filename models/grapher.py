@@ -81,6 +81,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of BOT IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_fridge(self):
@@ -123,6 +124,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON Fridge IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_garage(self):
@@ -162,6 +164,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON Garage IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_gps(self):
@@ -201,6 +204,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON GPS IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_light(self):
@@ -240,6 +244,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON Motion Light IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_modbus(self):
@@ -279,6 +284,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON Modbus IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_thermo(self):
@@ -317,6 +323,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON Thermostat IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10) 
         plt.show()
 
     def graph_ton_iot_weather(self):
@@ -356,6 +363,7 @@ class Grapher():
         plt.ylabel('Accuracy')
         plt.title('Accuracy Comparison of EVL Classifiers of TON Weather Activity IoT Dataset')
         plt.legend()
+        plt.gcf().set_size_inches(15,10)  
         plt.show()
 
     def run(self):
