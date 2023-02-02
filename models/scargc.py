@@ -58,14 +58,46 @@ from sklearn import metrics
 from sklearn import preprocessing
 from knn import knn as Bknn
 
-
-class SetData:
-    def __init__(self, dataset, datasource):
-        self.dataset = dataset
+class SCARGC: 
+    def __init__(self, 
+                datasource,
+                dataset,  
+                Kclusters:int=10,
+                maxpool:int=25, 
+                resample:bool=True, 
+                T:int=100,
+                classifier:str=''): 
+        """
+        Removed Xinit, Yinit
+        """
+        # set the classifier that is used [eg 1nn or svm]
+        self.classifier = classifier 
+        # set the number of clusters for kmeans
+        self.Kclusters = Kclusters
+        # this will associate a cluster to a class in the data 
+        # self.class_cluster = np.zeros((self.Kclusters,))
+        self.class_cluster = {}
+        # set the data 
+        self.X = {} # Xinit
+        self.Y = {} # Yinit
+        self.Xinit = {}
+        self.Yinit = {}
         self.datasource = datasource
-        self._initialize()
-
-    def _initialize(self):
+        self.dataset = dataset
+        # set resample 
+        self.resample = resample
+        # set max pool size 
+        self.maxpool = maxpool
+        # establish dataset 
+        self._set_data()
+        # initialize the cluster model
+        self._initialize(Xinit= self.Xinit, Yinit = self.Yinit)
+        self.T = 0
+        self.performance_metric = {}
+        self.avg_perf_metric = {}
+        self.preds = {}
+    
+    def _set_data(self):
         if self.datasource == 'synthetic':
             set_data = bdg.Datagen()
             data_gen = set_data.gen_dataset(self.dataset)
@@ -112,6 +144,9 @@ class SetData:
             self.X = labeled    # set of all labels as a dict per timestep ; we only need X[0] for initial labels
             self.Y = data
 
+            self.Xinit = self.X
+            self.Yinit = self.Y
+
         elif self.datasource == 'unsw':
             # dataset = UNSW_NB15_Datagen()
             # gen_train_features = dataset.generateFeatTrain
@@ -124,12 +159,12 @@ class SetData:
             gen_test_features = unsw_gen.allFeatTest
             train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
             data = train['Data']
+            dataset = train['Dataset']
             labels = train['Labels']
-            core_supports = train['Use']
-            self.dataset = train['Dataset']
+            testDataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
-            testCoreSupports = test['Use']
+            
             ts = 0
             # set data (all the features)
             for i in range(0, len(data[0])):
@@ -140,20 +175,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         if self.dataset == 'ton_iot_fridge':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -177,20 +199,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'ton_iot_garage':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -214,20 +223,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'ton_iot_gps':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -251,20 +247,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'ton_iot_modbus':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -288,20 +271,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'ton_iot_light':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -325,20 +295,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'ton_iot_thermo':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -362,20 +319,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'ton_iot_weather':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -399,20 +343,7 @@ class SetData:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels[0])):
-                self.testLabeled[ts] = testLabels[0][k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)
+
 
         elif self.dataset == 'bot_iot':
             datagen = bot_iot.BOT_IoT_Datagen()
@@ -436,94 +367,72 @@ class SetData:
             for k in range(0, len(labels)):
                 self.labeled[ts] = labels[k]
                 ts += 1
-            # gets first core supports from use
-            self.core_supports[0] = np.squeeze(core_supports)
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(testData[0])):
-                self.testData[ts] = testData[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(testLabels)):
-                self.testLabeled[ts] = testLabels[k]
-                ts += 1
-            # gets first core supports from synthetic
-            self.testCoreSupports[0] = np.squeeze(testCoreSupports)      # data stream
+
+
+        # get the number of classes in the dataset 
+        self.nclasses = len(np.unique(self.Y))
         
 
-class SCARGC: 
-    def __init__(self, 
-                Xinit,
-                Yinit,
-                datasource,
-                dataset,  
-                Kclusters:int=10,
-                maxpool:int=25, 
-                resample:bool=True, 
-                T:int=100,
-                classifier:str=''): 
-        """
-        """
-        # set the classifier that is used [eg 1nn or svm]
-        self.classifier = classifier 
-        # set the number of clusters for kmeans
-        self.Kclusters = Kclusters
-        # get the number of classes in the dataset 
-        self.nclasses = len(np.unique(Yinit))
-        # this will associate a cluster to a class in the data 
-        # self.class_cluster = np.zeros((self.Kclusters,))
-        self.class_cluster = {}
-        # set the data 
-        self.X = Xinit
-        self.Y = Yinit
-        self.datasource = datasource
-        self.dataset = dataset
-        # set resample 
-        self.resample = resample
-        # set max pool size 
-        self.maxpool = maxpool
-        # initialize the cluster model
-        self._initialize()
-        self.T = 0
-        self.dataset = dataset
-        self.performance_metric = {}
-        self.avg_perf_metric = {}
-        self.preds = {}
-
-    def _initialize(self): 
+    def _initialize(self, Xinit, Yinit): 
         """
         """
         # run the clustering algorithm on the training data then find the cluster 
-        # assignment for each of the samples in the training data         
+        # assignment for each of the samples in the training data 
+        # 
         if self.classifier == '1nn':
-            self.cluster = KMeans(n_clusters=self.Kclusters).fit(self.X[0])
-            labels = self.cluster.predict(self.X[1])
-            
-            # for each of the clusters, find the labels of the data samples in the clusters
-            # then look at the labels from the initially labeled data that are in the same
-            # cluster. assign the cluster the label of the most frequent class. 
-            for i in range(self.Kclusters):
-                yhat = self.Y[i][labels]
-                mode_val,_ = stats.mode(yhat)
-                self.class_cluster[i] = mode_val
+            if self.datasource == 'synthetic':
+                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
+                labels = self.cluster.predict(Xinit[1])
+                
+                # for each of the clusters, find the labels of the data samples in the clusters
+                # then look at the labels from the initially labeled data that are in the same
+                # cluster. assign the cluster the label of the most frequent class. 
+                for i in range(self.Kclusters):
+                    yhat = Yinit[i][labels]
+                    mode_val,_ = stats.mode(yhat)
+                    self.class_cluster[i] = mode_val
+            elif self.datasource == 'unsw':
+                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
+                labels = self.cluster.predict(Yinit[1])
+                
+                # for each of the clusters, find the labels of the data samples in the clusters
+                # then look at the labels from the initially labeled data that are in the same
+                # cluster. assign the cluster the label of the most frequent class. 
+                for i in range(self.Kclusters):
+                    yhat = Yinit[i][labels]
+                    mode_val,_ = stats.mode(yhat)
+                    self.class_cluster[i] = mode_val
+
         elif self.classifier == 'svm':
-            self.cluster = KMeans(n_clusters=self.Kclusters).fit(self.X)
-            labels = self.cluster.predict(self.X)
-            
-            # for each of the clusters, find the labels of the data samples in the clusters
-            # then look at the labels from the initially labeled data that are in the same
-            # cluster. assign the cluster the label of the most frequent class. 
-            for i in range(self.Kclusters):
-                yhat = self.Y[i][labels]
-                mode_val,_ = stats.mode(yhat)
-                self.class_cluster[i] = mode_val
+            if self.datasource == 'synthetic':
+                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
+                labels = self.cluster.predict(Xinit[0])
+
+                # for each of the clusters, find the labels of the data samples in the clusters
+                # then look at the labels from the initially labeled data that are in the same
+                # cluster. assign the cluster the label of the most frequent class. 
+                for i in range(self.Kclusters):
+                    yhat = Yinit[i][labels]
+                    mode_val,_ = stats.mode(yhat)
+                    self.class_cluster[i] = mode_val
+            elif self.datasource == 'unsw':
+                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
+                labels = self.cluster.predict(Yinit[0])
+
+                # for each of the clusters, find the labels of the data samples in the clusters
+                # then look at the labels from the initially labeled data that are in the same
+                # cluster. assign the cluster the label of the most frequent class. 
+                for i in range(self.Kclusters):
+                    yhat = Yinit[i][labels]
+                    mode_val,_ = stats.mode(yhat)
+                    self.class_cluster[i] = mode_val
 
     def run(self, Xts, Yts): 
         '''
         Xts = Initial Training data
         Yts = Data stream
         '''
+        # TODO: Need to update algo for UNSW datasets 
         total_time_start = time.time()
         # Build Classifier 
         if self.classifier == '1nn':
@@ -598,8 +507,11 @@ class SCARGC:
     
             
             t_start = time.time()
-        
+            if self.datasource == 'unsw':
+                self.resample == False
+
             if self.resample:
+                print('Resample == True')
                 N = len(Yt)
                 V = len(Xt)
                 ii = np.random.randint(0, N, N)
@@ -721,8 +633,15 @@ class SCARGC:
         self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
         return self.avg_perf_metric
 
-scargc_svm_data = SetData(dataset= 'UG_2C_2D', datasource='synthetic')
-print(scargc_svm_data.X)
-run_scargc_svm = SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= 'UG_2C_2D')
-results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
+
+# scargc_svm_data = SetData(dataset= 'UG_2C_2D', datasource='synthetic')
+# print(scargc_svm_data.X)
+# run_scargc_svm = SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= 'UG_2C_2D')
+# results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
+
+
+# scargc_svm_data = SetData(dataset= 'UG_2C_2D', datasource='synthetic')
+# print(scargc_svm_data.X)
+run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'UG_2C_2D', datasource='synthetic')
+results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
 
