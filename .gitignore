@@ -6,6 +6,3 @@ plots/**
 
 # Ignotr data 
 data/BoT_IoT_Data/**
-
-# Ignore Paper plots
-Paper_Plots/**
