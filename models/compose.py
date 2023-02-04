@@ -50,8 +50,8 @@ import util as ut
 import matplotlib.animation as animation
 import math
 import classifier_performance as cp
-from sklearn.svm import SVC, SVR
-
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 
 class COMPOSE: 
     def __init__(self, 
@@ -152,6 +152,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id) 
+            # if len(sorter) > len(self.labeled[ts]):
             self.labeled[ts] = self.labeled[ts][sorter]
             # remove core supports dupes
             sorter = []
@@ -160,6 +161,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id) 
+            # if len(sorter) > len(self.core_supports[ts]):
             self.core_supports[ts] = self.core_supports[ts][sorter] 
             # remove hypothesis dupes
             sorter = []
@@ -168,6 +170,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
+            # if len(sorter) > len(self.hypothesis[ts]):
             self.hypothesis[ts] = self.hypothesis[ts][sorter]
             # remove unlabeled data indices of removed instances
             sorter = []
@@ -176,6 +179,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
+            # if len(sorter) > len(unlabeled):
             unlabeled = unlabeled[sorter]
 
             # Sort by the classes
@@ -183,6 +187,13 @@ class COMPOSE:
             # sort by the class
             self.hypothesis[ts], sortID = np.sort(self.hypothesis[ts], kind="heapsort", axis=0), np.argsort(self.hypothesis[ts], kind="heapsort", axis=0)
             # match data with sort 
+            sorter = []
+            for id in sortID:
+                if id >= len(self.data[ts]):
+                    break
+                else:
+                    sorter.append(id)
+            # if len(sorter) > len(self.data[ts]):
             self.data[ts] = self.data[ts][sortID]
             # match labeles with sort 
             if self.labeled[ts].size == 0:
@@ -193,6 +204,7 @@ class COMPOSE:
                         break
                     else:
                         sorter.append(id)
+                # if len(sorter) > len(self.labeled[ts]):
                 self.labeled[ts] = self.labeled[ts][sorter]
             else:
                 sorter = []
@@ -201,6 +213,7 @@ class COMPOSE:
                         break
                     else:
                         sorter.append(id)
+                # if len(sorter) > len(self.labeled[ts]):
                 self.labeled[ts] = self.labeled[ts][sorter]
             # match core supports with sort 
             sorter = []
@@ -210,8 +223,10 @@ class COMPOSE:
                     pass
                 else:
                     sorter.append(sortID[i])
+            # if len(sorter) > len(self.core_supports[ts]):
             self.core_supports[ts] = self.core_supports[ts][sorter]
             # match unlabeled with sort
+            # if len(sortID) > len(unlabeled):
             unlabeled = unlabeled[sortID]
             t_start = time.time()
             # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
@@ -235,6 +250,23 @@ class COMPOSE:
                     extract_cs = cse.CSE(data=self.data[ts], mode=self.mode)    # gets core support based on first timestep
                 else:
                     extract_cs = cse.CSE(data= np.squeeze(self.data[ts][class_ind]), mode=self.mode)    # gets core support based on first timestep
+                    # if len(self.data[ts]) > len(class_ind):
+                    #     sorter = []
+                    #     for id in class_ind:
+                    #         if id >= len(self.data[ts]):
+                    #             break
+                    #         else:
+                    #             sorter.append(id)
+                    #     extract_cs = cse.CSE(data= np.squeeze(self.data[ts][sorter]), mode=self.mode)    # gets core support based on first timestep
+                    # else:
+                    #     sorter = []
+                    #     for id in class_ind:
+                    #         if id >= len(self.data[ts]):
+                    #             break
+                    #         else:
+                    #             sorter.append(id)
+                    #     extract_cs = cse.CSE(data= np.squeeze(self.data[ts][sorter]), mode=self.mode)
+                        
                 self.core_supports[ts] = extract_cs.core_support_extract()
                 inds = np.argwhere(self.core_supports[ts][:,0])
                 inds = inds[:,0]
@@ -273,7 +305,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id) 
-            if len(sorter) > 0 :
+            if len(sorter) > len(self.labeled[ts]) :
                 self.labeled[ts] = self.labeled[ts][sorter]
             # remove core supports dupes
             sorter = []
@@ -282,7 +314,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-            if len(sorter) > 0:
+            if len(sorter) > len(self.core_supports[ts]):
                 self.core_supports[ts] = self.core_supports[ts][sorter] 
             # remove hypothesis dupes
             sorter = []
@@ -291,7 +323,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-            if len(sorter) > 0:
+            if len(sorter) > len(self.hypothesis[ts]):
                 self.hypothesis[ts] = self.hypothesis[ts][sorter]
             # remove unlabeled data indices of removed instances
             sorter = []
@@ -300,7 +332,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-            if len(sorter) > 0 : 
+            if len(sorter) > len(unlabeled) : 
                 unlabeled = unlabeled[sorter]
 
             # Sort by the classes
@@ -314,7 +346,7 @@ class COMPOSE:
                     break
                 else:
                     sorter.append(id)
-            if len(sorter) > 0:
+            if len(sorter) > len(self.data[ts]):
                 self.data[ts] = self.data[ts][sorter]
             # match labeles with sort 
             if self.labeled[ts].size == 0 and ts > 0:
@@ -344,10 +376,11 @@ class COMPOSE:
                     pass
                 else:
                     sorter.append(sortID[i])
-            if len(sorter) > 0 :
+            if len(sorter) > len(self.core_supports[ts]) :
                 self.core_supports[ts] = self.core_supports[ts][sorter]
             # match unlabeled with sort
-            unlabeled = unlabeled[sortID]
+            if len(sortID) > len(unlabeled):
+                unlabeled = unlabeled[sortID]
             t_start = time.time()
             # class_offset = 0 # class offset to keep track of how many instances have been analyzed so each class can be returned in correct spot after cse 
             # ------------------------------------------------------------
@@ -790,8 +823,13 @@ class COMPOSE:
             preds = ssl_label_propagation.ssl()
             return preds
         elif self.classifier == 'svm':
-            ssl_svm = SVC(gamma='auto').fit(X_train_u[:,:-1], X_train_l)
-            preds = ssl_svm.predict(X_train_u)
+            ssl_svm = SVC(kernel='rbf').fit(X_train_u[:,:-1], X_train_u[:,-1])
+            preds = ssl_svm.predict(X_test[:,:-1])
+            return preds
+        elif self.classifier == 'naive_bayes':
+            naive_bayes = BernoulliNB()
+            naive_bayes.fit(X_train_u[:,:-1], X_train_u[:,-1])
+            preds = naive_bayes.predict(X_test[:,:-1])
             return preds
 
     def set_stream_compose(self, ts):
@@ -811,6 +849,12 @@ class COMPOSE:
         # print(self.core_supports[ts-1])
         cs_indx = np.argwhere(self.core_supports[ts-1][:,0]==2)
         cs_indx = np.squeeze(cs_indx)
+        # sorter = []
+        # for id in cs_indx:
+        #     if id >= len(self.data[ts]):
+        #         break
+        #     else:
+        #         sorter.append(id)
         prev_cs = self.core_supports[ts-1][cs_indx]
         self.data[ts] = np.concatenate((self.data[ts-1], prev_cs))
         # append hypothesis to include classes of the core supports

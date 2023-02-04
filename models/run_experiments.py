@@ -139,6 +139,20 @@ class RunExperiment:
                                 results_df.to_pickle(results_fast_compose_svm)
                                 results_pkl = pd.read_pickle(results_fast_compose_svm)
                                 print("Results:\n" , results_pkl )
+
+                            elif i == 'fast_compose' and j == 'naive_bayes':
+                                fast_compose_nb = compose.COMPOSE(classifier="naivbe_bayes", mode= mode, method="fast_compose",  num_cores= self.num_cores, selected_dataset = dataset, datasource= datasource)
+                                self.results[experiment] = fast_compose_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                fast_compose_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                fast_compose_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((fast_compose_nb.avg_perf_metric.keys(), fast_compose_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_fast_compose_nb = 'results_'+ f'{experiment}' + '.pkl'
+                                results_df.to_pickle(results_fast_compose_nb)
+                                results_pkl = pd.read_pickle(results_fast_compose_nb)
+                                print("Results:\n" , results_pkl )
                                 
                             elif i == 'compose' and j == 'QN_S3VM':
                                 reg_compose_label_QN_S3VM = compose.COMPOSE(classifier="QN_S3VM", mode= mode ,method="compose", num_cores= self.num_cores, selected_dataset = dataset, datasource= datasource)
@@ -180,6 +194,20 @@ class RunExperiment:
                                 results_compose_svm = 'results_'+ f'{experiment}' +'.pkl'
                                 results_df.to_pickle(results_compose_svm)
                                 results_pkl = pd.read_pickle(results_compose_svm)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'compose' and j == 'naive_bayes':
+                                reg_compose_nb = compose.COMPOSE(classifier="naive_bayes", mode= mode ,method="compose", num_cores= self.num_cores, selected_dataset = dataset, datasource= datasource)
+                                self.results[experiment] = reg_compose_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                reg_compose_nb.avg_perf_metric['Experiment'] = i + '_' + j 
+                                reg_compose_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((reg_compose_nb.avg_perf_metric.keys(), reg_compose_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_compose_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_compose_nb)
+                                results_pkl = pd.read_pickle(results_compose_nb)
                                 print("Results:\n" , results_pkl )
                             
                             elif i == 'scargc' and j == '1nn': 
@@ -329,9 +357,9 @@ class RunExperiment:
 # run_compose_ton_iot.run()
 
 # # run bot IoT COMPOSE
-# run_compose_bot_iot = RunExperiment(experiements=['compose','fast_compose'], classifier=['label_propagation'], modes=['gmm'], 
-#                         datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
-# run_compose_bot_iot.run()
+run_compose_bot_iot = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
+                        datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
+run_compose_bot_iot.run()
 
 
 ## Regression on synthetic 
@@ -352,8 +380,8 @@ class RunExperiment:
 # run_vanilla_bot.run()
 
 # ## run ton IoT
-run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
-                                'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
-run_vanilla_ton_IoT.run()
+# run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
+#                                 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
+# run_vanilla_ton_IoT.run()
 
 #%%
