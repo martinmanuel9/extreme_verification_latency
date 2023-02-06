@@ -55,7 +55,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -98,7 +99,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -141,7 +143,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -181,7 +184,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -221,7 +225,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -261,7 +266,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -301,7 +307,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
@@ -340,7 +347,8 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE', 'Fast COMPOSE']
+        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
+                        'COMPOSE SVM', 'Fast COMPOSE SVM']
         timesteps = {}
         accuracy = {}
         classifier = {}
