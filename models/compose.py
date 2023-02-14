@@ -86,6 +86,7 @@ class COMPOSE:
         self.avg_perf_metric = {}
         self.compact_time = {}
         self.num_cs = {}
+        self.model = []
         
         # if self.classifier is None:
         #     avail_classifier = ['knn', 's3vm']
@@ -780,7 +781,7 @@ class COMPOSE:
             # gets first core supports from synthetic
             self.testCoreSupports[0] = np.squeeze(testCoreSupports)
 
-    def learn(self, X_train_l, L_train_l, X_train_u, X_test):
+    def learn(self, X_train_l, L_train_l, X_train_u, X_test, ts):
         """
         Available classifiers : 'label_propagation',  'QN_S3VM', 'svm'
         For QN_S3VM:  
@@ -793,6 +794,7 @@ class COMPOSE:
         random_generator -- particular instance of a random_generator (default None)
         kw -- additional parameters for the optimizer
         """
+
         if self.classifier == 'QN_S3VM':
             random_gen = random.Random()
             random_gen.seed(0)
@@ -805,13 +807,16 @@ class COMPOSE:
             preds = ssl_label_propagation.ssl()
             return preds
         elif self.classifier == 'svm':
-            ssl_svm = SVC(kernel='rbf').fit(X_train_u[:,:-1], X_train_u[:,-1])
-            preds = ssl_svm.predict(X_test[:,:-1])
+            if ts == 0:
+                ssl_svm = SVC(kernel='rbf').fit(X_train_u[:,:-1], X_train_u[:,-1])
+                self.model = ssl_svm
+            preds = self.model.predict(X_test[:,:-1])
             return preds
         elif self.classifier == 'naive_bayes':
-            naive_bayes = BernoulliNB()
-            naive_bayes.fit(X_train_u[:,:-1], X_train_u[:,-1])
-            preds = naive_bayes.predict(X_test[:,:-1])
+            if ts == 0:
+                naive_bayes = BernoulliNB()
+                self.model = naive_bayes.fit(X_train_u[:,:-1], X_train_u[:,-1])
+            preds = self.model.predict(X_test[:,:-1])
             return preds
 
     def set_stream_compose(self, ts):
@@ -915,8 +920,8 @@ class COMPOSE:
         # UNSW data sources include ToN_IoT and bot_IoT
         elif self.datasource == 'unsw':
             t_start = time.time()
-            
-            self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.data[ts], X_test=self.testData[ts])
+            # TODO: Need to change and learn from full training set
+            self.predictions[ts] = self.learn(X_train_l= self.hypothesis[ts], L_train_l=self.labeled[ts], X_train_u = self.dataset, X_test=self.testData[ts], ts=ts)
             t_end = time.time() 
         # obtain hypothesis ht: X-> Y 
         self.hypothesis[ts] = self.predictions[ts]

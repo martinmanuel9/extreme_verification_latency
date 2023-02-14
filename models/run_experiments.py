@@ -214,13 +214,12 @@ class RunExperiment:
                                 # scargc_svm_data = SetData(dataset= 'UG_2C_2D')
                                 # run_scargc_svm = SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= 'UG_2C_2D')
                                 # results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
-                                scargc_1nn_data = scargc.SetData(dataset= dataset)
-                                run_scargc_1nn = scargc.SCARGC(Xinit= scargc_1nn_data.X[0], Yinit= scargc_1nn_data.Y , classifier = '1nn', dataset= dataset, datasource= datasource)
-                                self.results[experiment] = run_scargc_1nn.run(Xts = scargc_1nn_data.X, Yts = scargc_1nn_data.Y)
+                                scargc_1nn = scargc.SCARGC(classifier = '1nn', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_1nn.run(Xts = scargc_1nn.X, Yts = scargc_1nn.Y)
                                 time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-                                run_scargc_1nn.avg_perf_metric['Experiment'] = i + '_' + j
-                                run_scargc_1nn.avg_perf_metric['Time_Stamp'] = time_stamp
-                                results_df = pd.DataFrame.from_dict((run_scargc_1nn.avg_perf_metric.keys(), run_scargc_1nn.avg_perf_metric.values())).T
+                                scargc_1nn.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_1nn.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_1nn.avg_perf_metric.keys(), scargc_1nn.avg_perf_metric.values())).T
                                 # change the directory to your particular files location
                                 self.change_dir()
                                 results_scargc_1nn = 'results_'+ f'{experiment}' + '.pkl'
@@ -229,13 +228,12 @@ class RunExperiment:
                                 print("Results:\n", results_df)
 
                             elif i == 'scargc' and j == 'svm': 
-                                scargc_svm_data = scargc.SetData(dataset= dataset)
-                                run_scargc_svm = scargc.SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= dataset, datasource= datasource)
-                                self.results[experiment] = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)     # .X[0] only get initial training set
+                                scargc_svm = scargc.SCARGC(classifier = 'svm', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_svm.run(Xts = scargc_svm.X, Yts = scargc_svm.Y)     # .X[0] only get initial training set
                                 time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-                                run_scargc_svm.avg_perf_metric['Experiment'] = i + '_' + j
-                                run_scargc_svm.avg_perf_metric['Time_Stamp'] = time_stamp
-                                results_df = pd.DataFrame.from_dict((run_scargc_svm.avg_perf_metric.keys(), run_scargc_svm.avg_perf_metric.values())).T
+                                scargc_svm.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_svm.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_svm.avg_perf_metric.keys(), scargc_svm.avg_perf_metric.values())).T
                                 # change the directory to your particular files location
                                 self.change_dir()
                                 results_scargc_svm = 'results_'+ f'{experiment}' + '.pkl' 
@@ -341,28 +339,28 @@ class RunExperiment:
 #                             datasources = ['unsw'], num_cores=0.9)
 # run_compose_ton_iot_light.run()
 
-# run_compose_ton_iot_thermo = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
+# run_compose_ton_iot_thermo = RunExperiment(experiements=['fast_compose'], classifier=['svm'], modes=['gmm'], 
 #                             datasets=['ton_iot_thermo'], 
 #                             datasources = ['unsw'], num_cores=0.9)
 # run_compose_ton_iot_thermo.run()
 
-run_compose_ton_iot_weather = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-                            datasets=['ton_iot_weather'], 
-                            datasources = ['unsw'], num_cores=0.9)
-run_compose_ton_iot_weather.run()
+# run_compose_ton_iot_weather = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
+#                             datasets=['ton_iot_weather'], 
+#                             datasources = ['unsw'], num_cores=0.9)
+# run_compose_ton_iot_weather.run()
 
-# run_compose_ton_iot = RunExperiment(experiements=['fast_compose','compose'], classifier=['label_propagation'], modes=['gmm'], 
+# run_compose_ton_iot = RunExperiment(experiements=['compose','fast_compose'], classifier=['svm'], modes=['gmm'], 
 #                         datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'],
 #                         datasources = ['unsw'], num_cores=0.9)
 # run_compose_ton_iot.run()
 
-# # run bot IoT COMPOSE
+# run bot IoT COMPOSE
 # run_compose_bot_iot = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
 #                         datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
 # run_compose_bot_iot.run()
 
 
-## Regression on synthetic 
+# Regression on synthetic 
 # run_compose_synthetic = RunExperiment(experiements=['compose','fast_compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D'], 
 #                             datasources = ['synthetic'], num_cores=0.9)
 # run_compose_synthetic.run()
@@ -371,11 +369,13 @@ run_compose_ton_iot_weather.run()
 # run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasource = ['synthetic'])
 # run_mclass.run()
 
-## run scargc 
-# run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasources= ['synthetic'])
-# run_scargc.run()
+# run scargc 
+run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''],
+                    datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot'], 
+                    datasources= ['unsw'])
+run_scargc.run()
 
-## run vanilla with bot iot dataset
+# # run vanilla with bot iot dataset
 # run_vanilla_bot = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
 # run_vanilla_bot.run()
 

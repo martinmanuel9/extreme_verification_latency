@@ -179,3 +179,4 @@ class BOT_IoT_Datagen():
 # trainSetFeat = datagen.botTrainSet
 # testSetFeat = datagen.botTestSet
 # trainSet, testSet = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
+# print(np.shape(trainSet['Data']), np.shape(testSet['Data']))

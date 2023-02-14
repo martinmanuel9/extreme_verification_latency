@@ -71,7 +71,7 @@ class TON_IoT_Datagen():
         train_fridge, test_fridge = train_test_split(fridge_dataset, test_size=0.33)
         # print('fridge:', len(train_fridge), len(test_fridge))
         self.fridgeTrainStepsize = 197
-        self.fridgeTestStepsize = 100
+        self.fridgeTestStepsize = 396
         self.fridgeTrainSet = train_fridge
         self.fridgeTestSet = test_fridge
 
@@ -85,7 +85,7 @@ class TON_IoT_Datagen():
         train_garage, test_garage = train_test_split(garage_dataset, test_size=0.33)
         # print('garage:', len(train_garage), len(test_garage))
         self.garageTrainStepsize = 196
-        self.garageTestStepsize = 96
+        self.garageTestStepsize = 396
         self.garageTrainSet = train_garage
         self.garageTestSet = test_garage
 
@@ -97,7 +97,7 @@ class TON_IoT_Datagen():
         train_gps, test_gps = train_test_split(gps_dataset, test_size=0.33)
         # print('gps:', len(train_gps), len(test_gps))
         self.gpsTrainStepsize = 194
-        self.gpsTestStepsize = 94
+        self.gpsTestStepsize = 396
         self.gpsTrainSet = train_gps
         self.gpsTestSet = test_gps 
 
@@ -112,7 +112,7 @@ class TON_IoT_Datagen():
         # test_modbus = test_modbus[features]
         # print('modbus:', len(train_modbus), len(test_modbus))
         self.modbusTrainStepsize = 168
-        self.modbusTestStepsize = 82
+        self.modbusTestStepsize = 336
         self.modbusTrainSet = train_modbus
         self.modbusTestSet = test_modbus
     
@@ -124,7 +124,7 @@ class TON_IoT_Datagen():
         train_light, test_light = train_test_split(light_dataset, test_size=0.33)
         # print('light:', len(train_light), len(test_light))
         self.lightTrainStepsize = 196
-        self.lightTestStepsize = 96
+        self.lightTestStepsize = 396
         self.lightTrainSet = train_light
         self.lightTestSet = test_light
 
@@ -136,7 +136,7 @@ class TON_IoT_Datagen():
         train_thermo, test_thermo = train_test_split(thermostat_dataset, test_size=0.33)
         # print('thermo', len(train_thermo), len(test_thermo))
         self.thermoTrainStepsize = 174
-        self.thermoTestStepsize = 84
+        self.thermoTestStepsize = 348
         self.thermoTrainSet = train_thermo
         self.thermoTestSet = test_thermo
 
@@ -148,7 +148,7 @@ class TON_IoT_Datagen():
         train_weather, test_weather = train_test_split(weather_dataset, test_size=0.33)
         # print('weather:', len(train_weather), len(test_weather))
         self.weatherTrainStepsize = 194
-        self.weatherTestStepsize = 92
+        self.weatherTestStepsize = 396
         self.weatherTrainSet = train_weather
         self.weatherTestSet = test_weather
     
@@ -163,16 +163,16 @@ class TON_IoT_Datagen():
         trainSet = test.to_numpy()
         testSet = train.to_numpy()
 
-        N = len(trainSet)
-        V = len(testSet)
-        ii = np.random.randint(0, N, N)
-        jj = np.random.randint(0, V, V)
-        trainSet = trainSet[ii] 
-        testSet =  testSet[jj]
+        # N = len(trainSet)
+        # V = len(testSet)
+        # ii = np.random.randint(0, N, N)
+        # jj = np.random.randint(0, V, V)
+        # trainSet = trainSet[ii] 
+        # testSet =  testSet[jj]
 
         a = []
         indx = []
-        for d in range(test_stepsize-1):
+        for d in range(train_stepsize-1): # teststpesize
             a.append(d)
         for v in range(int(0.5 * len(a))):
             rnd = random.choice(a)
@@ -230,6 +230,7 @@ class TON_IoT_Datagen():
 
         return self.trainDict, self.testDict
 
-# weather_train, weather_test = datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
-#                                 train= datagen.weatherTrainSet, test = datagen.weatherTestSet)
-# print(weather_train)
+# datagen = TON_IoT_Datagen()
+# fridgeTrain, fridgeTest = datagen.create_dataset(train_stepsize=datagen.thermoTrainStepsize, test_stepsize=datagen.thermoTestStepsize, 
+#                                 train= datagen.thermoTrainSet, test = datagen.thermoTestSet)
+# print(np.shape(fridgeTrain['Data']), np.shape(fridgeTest['Data']))

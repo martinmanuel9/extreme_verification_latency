@@ -56,6 +56,9 @@ class Label_Propagation:
             if len(X) < len(hypothesis):
                 hypothesis = hypothesis[0:len(X)]
                 model.fit(X, np.ravel(hypothesis))
+            elif len(hypothesis) < len(X):
+                X = X[0:len(hypothesis)]
+                model.fit(X, np.ravel(hypothesis))
             else:
                 model.fit(X, np.ravel(hypothesis))
             # make predictions

@@ -44,6 +44,7 @@ import classifier_performance as perf_metric
 from skmultiflow.bayes import NaiveBayes
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.svm import SVC, OneClassSVM
+import label_propagation as lbp 
 import time
 
 
@@ -241,6 +242,11 @@ class VanillaClassifier():
                                         dataset= self.dataset , method= self.method , \
                                         classifier= self.classifier, tstart=t_start, tend=t_end) 
             self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
+        elif self.classifier == 'label_propagation':
+            ssl_label_propagation = lbp.Label_Propagation(X_train = train, X_labeled=train[:,-1], X_unlabeled=test)
+            preds = ssl_label_propagation.ssl()
+            return preds
     
     def run(self):
         total_start = time.time()
@@ -256,6 +262,6 @@ class VanillaClassifier():
         return self.avg_perf_metric
 
 
-# van = VanillaClassifier(classifier='naive_bayes', dataset='ton_iot_weather')
+# van = VanillaClassifier(classifier='label_propagation', dataset='bot_iot')
 # results = van.run()
 # print(results)

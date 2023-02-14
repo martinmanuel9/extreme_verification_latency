@@ -82,6 +82,10 @@ class SCARGC:
         self.Y = {} # Yinit
         self.Xinit = {}
         self.Yinit = {}
+        self.data = {}
+        self.labeled = {}
+        self.all_data = []
+        self.train_model = []
         self.datasource = datasource
         self.dataset = dataset
         # set resample 
@@ -147,34 +151,34 @@ class SCARGC:
             self.Xinit = self.X
             self.Yinit = self.Y
 
-        elif self.datasource == 'unsw':
-            # dataset = UNSW_NB15_Datagen()
-            # gen_train_features = dataset.generateFeatTrain
-            # gen_test_features =dataset.generateFeatTest 
-            # X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
-            # we have the following categoires : flow, basic, time, content, generated 
-            unsw_gen = unsw.UNSW_NB15_Datagen()
-            # type of unsw features : generated, time, content, basic, allFeatures
-            gen_train_features = unsw_gen.allFeatTrain
-            gen_test_features = unsw_gen.allFeatTest
-            train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
-            data = train['Data']
-            dataset = train['Dataset']
-            labels = train['Labels']
-            testDataset = train['Dataset']
-            testData = test['Data']
-            testLabels = test['Labels']
+        # elif self.datasource == 'unsw':
+        #     # dataset = UNSW_NB15_Datagen()
+        #     # gen_train_features = dataset.generateFeatTrain
+        #     # gen_test_features =dataset.generateFeatTest 
+        #     # X, y = dataset.create_dataset(train=gen_train_features, test=gen_test_features)
+        #     # we have the following categoires : flow, basic, time, content, generated 
+        #     unsw_gen = unsw.UNSW_NB15_Datagen()
+        #     # type of unsw features : generated, time, content, basic, allFeatures
+        #     gen_train_features = unsw_gen.allFeatTrain
+        #     gen_test_features = unsw_gen.allFeatTest
+        #     train , test = unsw_gen.create_dataset(train = gen_train_features, test = gen_test_features)
+        #     data = train['Data']
+        #     dataset = train['Dataset']
+        #     labels = train['Labels']
+        #     testDataset = train['Dataset']
+        #     testData = test['Data']
+        #     testLabels = test['Labels']
             
-            ts = 0
-            # set data (all the features)
-            for i in range(0, len(data[0])):
-                self.data[ts] = data[0][i]
-                ts += 1
-            # set all the labels 
-            ts = 0
-            for k in range(0, len(labels[0])):
-                self.labeled[ts] = labels[0][k]
-                ts += 1
+        #     ts = 0
+        #     # set data (all the features)
+        #     for i in range(0, len(data[0])):
+        #         self.data[ts] = data[0][i]
+        #         ts += 1
+        #     # set all the labels 
+        #     ts = 0
+        #     for k in range(0, len(labels[0])):
+        #         self.labeled[ts] = labels[0][k]
+        #         ts += 1
 
 
         if self.dataset == 'ton_iot_fridge':
@@ -185,7 +189,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -199,7 +203,21 @@ class SCARGC:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
+            
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
 
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
         elif self.dataset == 'ton_iot_garage':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -209,7 +227,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -224,6 +242,20 @@ class SCARGC:
                 self.labeled[ts] = labels[0][k]
                 ts += 1
 
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
         elif self.dataset == 'ton_iot_gps':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -233,7 +265,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -247,6 +279,21 @@ class SCARGC:
             for k in range(0, len(labels[0])):
                 self.labeled[ts] = labels[0][k]
                 ts += 1
+
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
 
         elif self.dataset == 'ton_iot_modbus':
@@ -257,7 +304,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -272,6 +319,20 @@ class SCARGC:
                 self.labeled[ts] = labels[0][k]
                 ts += 1
 
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
         elif self.dataset == 'ton_iot_light':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -281,7 +342,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -296,6 +357,20 @@ class SCARGC:
                 self.labeled[ts] = labels[0][k]
                 ts += 1
 
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
         elif self.dataset == 'ton_iot_thermo':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -305,7 +380,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -320,6 +395,20 @@ class SCARGC:
                 self.labeled[ts] = labels[0][k]
                 ts += 1
 
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
         elif self.dataset == 'ton_iot_weather':
             datagen = ton_iot.TON_IoT_Datagen()
@@ -329,7 +418,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -344,6 +433,20 @@ class SCARGC:
                 self.labeled[ts] = labels[0][k]
                 ts += 1
 
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
         elif self.dataset == 'bot_iot':
             datagen = bot_iot.BOT_IoT_Datagen()
@@ -353,7 +456,7 @@ class SCARGC:
             data = train['Data']
             labels = train['Labels']
             core_supports = train['Use']
-            self.dataset = train['Dataset']
+            dataset = train['Dataset']
             testData = test['Data']
             testLabels = test['Labels']
             testCoreSupports = test['Use']
@@ -367,11 +470,25 @@ class SCARGC:
             for k in range(0, len(labels)):
                 self.labeled[ts] = labels[k]
                 ts += 1
+            
+            dict_train = {}
+            for i in range(0, len(train['Data'][0])):
+                dict_train[i] = train['Data'][0][i]
+            
+            dict_test = {}
+            for j in range(0, len(test['Data'][0])):
+                dict_test[j] = test['Data'][0][j]
+
+            self.Xinit = dict_train
+            self.Yinit = dict_test
+
+            self.X = dict_train
+            self.Y = dict_test
+            self.all_data = train['Dataset']
 
 
         # get the number of classes in the dataset 
         self.nclasses = len(np.unique(self.Y))
-        
 
     def _initialize(self, Xinit, Yinit): 
         """
@@ -392,7 +509,7 @@ class SCARGC:
                     mode_val,_ = stats.mode(yhat)
                     self.class_cluster[i] = mode_val
             elif self.datasource == 'unsw':
-                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
+                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0]) # TODO: test with first step
                 labels = self.cluster.predict(Yinit[1])
                 
                 # for each of the clusters, find the labels of the data samples in the clusters
@@ -432,7 +549,6 @@ class SCARGC:
         Xts = Initial Training data
         Yts = Data stream
         '''
-        # TODO: Need to update algo for UNSW datasets 
         total_time_start = time.time()
         # Build Classifier 
         if self.classifier == '1nn':
@@ -448,8 +564,14 @@ class SCARGC:
                 for i in range(dif):
                     xts_array.pop()
                 Yts[0] = np.array(xts_array)
-            knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
-            predicted_label = knn.predict(Yts[1])
+            
+            if self.datasource == 'synthetic':
+                knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
+                predicted_label = knn.predict(Yts[1])
+            elif self.datasource == 'unsw':
+                knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
+                self.train_model = knn
+                predicted_label = knn.predict(Yts[1]) 
 
             # brute knn
             # bknn = Bknn(k=1, problem=1, metric=0)
@@ -457,22 +579,27 @@ class SCARGC:
             # predicted_label = bknn.predict(Yts[1])
 
         elif self.classifier == 'svm':
-            if len(Yts[0]) < len(Xts):
-                dif = int(len(Xts) - len(Yts[0]))
-                xts_array = list(Xts)
-                for i in range(dif):
-                    xts_array.pop()
-                Xts = np.array(xts_array)
-            elif len(Yts[0]) > len(Xts):
-                dif = int(len(Yts[0]) - len(Xts[0]))
-                xts_array = list(Yts[0])
-                for i in range(dif):
-                    xts_array.pop()
-                Yts[0] = np.array(xts_array)
-            
-            svn_clf = SVC(gamma='auto').fit(Xts[0][:,:-1], Yts[0][:,-1])
-            predicted_label = svn_clf.predict(Yts[1][:,:-1])
-            self.preds[0] = predicted_label
+            if self.datasource == 'synthetic':
+                if len(Yts[0]) < len(Xts):
+                    dif = int(len(Xts) - len(Yts[0]))
+                    xts_array = list(Xts)
+                    for i in range(dif):
+                        xts_array.pop()
+                    Xts = np.array(xts_array)
+                elif len(Yts[0]) > len(Xts):
+                    dif = int(len(Yts[0]) - len(Xts[0]))
+                    xts_array = list(Yts[0])
+                    for i in range(dif):
+                        xts_array.pop()
+                    Yts[0] = np.array(xts_array)
+                svn_clf = SVC(gamma='auto').fit(Xts[0][:,:-1], Yts[0][:,-1])
+                predicted_label = svn_clf.predict(Yts[1][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'unsw':
+                svn_clf = SVC(kernel='rbf').fit(self.all_data[:,:-1], self.all_data[:,-1]) # use the entire training data
+                self.train_model = svn_clf
+                predicted_label = svn_clf.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
             
         self.T = len(Yts)      
 
@@ -490,28 +617,40 @@ class SCARGC:
         for t in tqdm(range(self.T-1), position=0, leave=True): 
             # get the data from time T and resample if required
             # it seems that the algo takes in the labeled data labels and the labeled data as inputs 
-            if self.classifier == '1nn':
-                if t == 0: 
-                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(labeled_data[t])       # Xt = train labels ; Yt = train data
-                    Xe, Ye = np.array(labeled_data_labels[t+1]), np.array(Yts[t+1])            # Xe = test labels ; Ye = test data
-                else: 
-                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
-                    Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
-            elif self.classifier == 'svm': 
-                if t == 0:
-                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                   # Xt = train labels ; Yt = train data
-                    Xe, Ye = np.array(Xts), np.array(Yts[t+1])                                 # Xe = test labels ; Ye = test data
-                else:
-                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
-                    Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
-    
-            
-            t_start = time.time()
-            if self.datasource == 'unsw':
-                self.resample == False
+            if self.datasource == 'synthetic':
+                if self.classifier == '1nn':
+                    if t == 0: 
+                        Xt, Yt = np.array(labeled_data_labels[t]), np.array(labeled_data[t])       # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(labeled_data_labels[t+1]), np.array(Yts[t+1])            # Xe = test labels ; Ye = test data
+                    else: 
+                        Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                elif self.classifier == 'svm': 
+                    if t == 0:
+                        Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(Xts), np.array(Yts[t+1])                                 # Xe = test labels ; Ye = test data
+                    else:
+                        Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+            elif self.datasource == 'unsw':
+                if self.classifier == '1nn':
+                    if t == 0: 
+                        Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])       # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(labeled_data[t+1]), np.array(Yts[t+1])            # Xe = test labels ; Ye = test data
+                    else: 
+                        Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                elif self.classifier == 'svm': 
+                    if t == 0:
+                        Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(Xts), np.array(Yts[t+1])                                 # Xe = test labels ; Ye = test data
+                    else:
+                        Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
+                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
 
-            if self.resample:
-                print('Resample == True')
+            t_start = time.time()            
+
+            if self.resample == True:
                 N = len(Yt)
                 V = len(Xt)
                 ii = np.random.randint(0, N, N)
@@ -531,17 +670,22 @@ class SCARGC:
                         for q in range(dif):
                             yt_reduced.pop()
                         Yt = np.array(yt_reduced)
-
-                    knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)    # fit(train_data, train_label)
-                    predicted_label = knn_mdl.predict(Ye)
+                    if self.datasource == 'synthetic':
+                        knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)    # fit(train_data, train_label)
+                        predicted_label = knn_mdl.predict(Ye)
+                    elif self.datasource == 'unsw':
+                        predicted_label = self.train_model.predict(Ye)
 
                     # bknn_mdl = Bknn(k=0, problem=1, metric=0)
                     # bknn_mdl.fit(Yt, Xt)
                     # predicted_label = bknn_mdl.predict(Ye)
 
                 elif self.classifier == 'svm':
-                    svm_mdl = SVC(gamma='auto').fit(Yt[:,:-1], Yt[:,-1])        # fit(Xtrain, X_label_train)
-                    predicted_label = svm_mdl.predict(Ye[:,:-1])
+                    if self.datasource == 'synthetic':
+                        svm_mdl = SVC(kernel='rbf').fit(Yt[:,:-1], Yt[:,-1])        # fit(Xtrain, X_label_train)
+                        predicted_label = svm_mdl.predict(Ye[:,:-1])
+                    elif self.datasource == 'unsw':
+                        predicted_label = self.train_model.predict(Ye[:,:-1])
                 
                 pool_data = np.vstack((pool_data, Ye))
 
@@ -640,8 +784,7 @@ class SCARGC:
 # results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
 
 
-# scargc_svm_data = SetData(dataset= 'UG_2C_2D', datasource='synthetic')
-# print(scargc_svm_data.X)
-# run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'UG_2C_2D', datasource='synthetic')
-# results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
+run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'ton_iot_fridge', datasource='unsw')
+results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
+print(results)
 
