@@ -374,6 +374,46 @@ class Grapher():
         plt.gcf().set_size_inches(15,10)  
         plt.show()
 
+    def graph_scargc(self):
+        path = str(Path.home())
+        path = path + "/extreme_verification_latency/Paper_Plots/scargc"
+        os.chdir(path)
+        list_dir = os.listdir(path)
+        result = {}
+        for i in range(len(list_dir)):
+            result[i] = pickle.load(open(list_dir[i], "rb"))
+            # print(result[i], "\n")
+            # loc[12] for time steps 
+            # loc[13] for accuracy 
+            # loc[14] for Experiment
+            # loc[0] for dataset
+            # result[0].loc[12].at[1]
+        experiments = ['Fridge', 'Garage','GPS', 'Light','Modbus', 'Thermostat', 'Weather']
+        timesteps = {}
+        accuracy = {}
+        classifier = {}
+        for i in range(len(result)):
+            timesteps[i] = result[i].loc[12].at[1]
+            accuracy[i] = result[i].loc[13].at[1]
+            classifier[i] = experiments[i]
+        
+        data = {}
+        for i, item in enumerate(classifier.values()):
+            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
+
+        for i, item in enumerate(data.keys()):
+            sns.set_theme(style='darkgrid')
+            # sns.set_style('whitegrid')
+            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
+                
+        
+        plt.xlabel('Timesteps')
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy Comparison of EVL Classifiers of TON IoT Activity IoT Dataset')
+        plt.legend()
+        plt.gcf().set_size_inches(15,10)  
+        plt.show()
+
     def run(self):
         bot_result = Grapher()
         bot_result.graph_bot_iot()
@@ -391,6 +431,8 @@ class Grapher():
         ton_iot_thermo.graph_ton_iot_thermo()
         ton_iot_weather = Grapher()
         ton_iot_weather.graph_ton_iot_weather()
+        scargc = Grapher()
+        scargc.graph_scargc()
 
 graph = Grapher()
 graph.run()

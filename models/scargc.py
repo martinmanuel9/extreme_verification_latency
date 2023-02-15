@@ -778,13 +778,8 @@ class SCARGC:
         return self.avg_perf_metric
 
 
-# scargc_svm_data = SetData(dataset= 'UG_2C_2D', datasource='synthetic')
-# print(scargc_svm_data.X)
-# run_scargc_svm = SCARGC(Xinit= scargc_svm_data.X[0], Yinit= scargc_svm_data.Y , classifier = 'svm', dataset= 'UG_2C_2D')
-# results = run_scargc_svm.run(Xts = scargc_svm_data.X, Yts = scargc_svm_data.Y)
 
-
-run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'ton_iot_fridge', datasource='unsw')
-results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
-print(results)
+# run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'ton_iot_fridge', datasource='unsw')
+# results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
+# print(results)
 
