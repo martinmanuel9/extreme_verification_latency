@@ -86,6 +86,6 @@ class Results:
 
         fig.show()
 
-res = Results()
-res.provide_results()
+# res = Results()
+# res.provide_results()
 # %%
