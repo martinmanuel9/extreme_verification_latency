@@ -60,20 +60,28 @@ class Results:
         dataset = {}
         experiment = {}
         accuracy = {}
+        roc_auc = {}
         total_exec_time_sec = {}
         for i in range(len(result)):
             dataset[i] = result[i].loc[0].at[1]
             experiment[i] = result[i].loc[14].at[1]
             accuracy[i] = result[i].loc[4].at[1]
+            roc_auc[i] = result[i].loc[7].at[1]
             total_exec_time_sec[i] = result[i].loc[10].at[1]
 
-        # data = {}
-        # for i in range(len(result)):
-        #     data[i] = pd.DataFrame({'Dataset':dataset[i], 'Experiment': experiment[i], 'Accuracy': accuracy[i], 'Total Exec Time (sec)': total_exec_time_sec[i]})
-    
-        fig = go.Figure(data=[go.Table(header= dict(values= ['Dataset', 'Experiment', 'Avg Accuracy', 'Total Exec Time in Seconds']),
+        data = {}
+        data['dataset'] = dataset.values()
+        data['experiment'] = experiment.values()
+        data['accuracy'] = accuracy.values()
+        data['roc_auc'] = roc_auc.values()
+        data['total_exec_time'] = total_exec_time_sec.values()
+
+        to_excel = pd.DataFrame(data) 
+        to_excel.to_excel('Results.xlsx')
+
+        fig = go.Figure(data=[go.Table(header= dict(values= ['Dataset', 'Experiment', 'Avg Accuracy', 'Avg ROC AUC','Total Exec Time in Seconds']),
                                         cells= dict(values= [list(dataset.values()), list(experiment.values()),
-                                                            list(accuracy.values()), list(total_exec_time_sec.values())]))
+                                                            list(accuracy.values()), list(roc_auc.values()), list(total_exec_time_sec.values())]))
                             ])
 
         fig.show()
