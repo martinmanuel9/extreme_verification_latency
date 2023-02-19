@@ -569,9 +569,10 @@ class SCARGC:
                 knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
                 predicted_label = knn.predict(Yts[1])
             elif self.datasource == 'unsw':
-                knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
+                knn = KNeighborsClassifier(n_neighbors=1).fit(self.all_data[:,:-1], self.all_data[:,-1])           # KNN.fit(train_data, train label)
                 self.train_model = knn
-                predicted_label = knn.predict(Yts[1]) 
+                predicted_label = knn.predict(Yts[0][:,:-1]) 
+                self.preds[0] = predicted_label
 
             # brute knn
             # bknn = Bknn(k=1, problem=1, metric=0)
@@ -636,17 +637,17 @@ class SCARGC:
                 if self.classifier == '1nn':
                     if t == 0: 
                         Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])       # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(labeled_data[t+1]), np.array(Yts[t+1])            # Xe = test labels ; Ye = test data
+                        Xe, Ye = np.array(Xts), np.array(Yts[t])            # Xe = test labels ; Ye = test data
                     else: 
                         Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t])                 # Xe = test labels ; Ye = test data
                 elif self.classifier == 'svm': 
                     if t == 0:
                         Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(Xts), np.array(Yts[t+1])                                 # Xe = test labels ; Ye = test data
+                        Xe, Ye = np.array(Xts), np.array(Yts[t])                                 # Xe = test labels ; Ye = test data
                     else:
                         Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
+                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t])                 # Xe = test labels ; Ye = test data
 
             t_start = time.time()            
 
@@ -671,10 +672,10 @@ class SCARGC:
                             yt_reduced.pop()
                         Yt = np.array(yt_reduced)
                     if self.datasource == 'synthetic':
-                        knn_mdl = KNeighborsRegressor(n_neighbors=1).fit(Yt, Xt)    # fit(train_data, train_label)
+                        knn_mdl = KNeighborsClassifier(n_neighbors=1).fit(Yt, Xt)    # fit(train_data, train_label)
                         predicted_label = knn_mdl.predict(Ye)
                     elif self.datasource == 'unsw':
-                        predicted_label = self.train_model.predict(Ye)
+                        predicted_label = self.train_model.predict(Ye[:,:-1])
 
                     # bknn_mdl = Bknn(k=0, problem=1, metric=0)
                     # bknn_mdl.fit(Yt, Xt)
@@ -730,7 +731,7 @@ class SCARGC:
                         
                         
                     elif self.classifier == 'svm':
-                        nearestData = SVR(gamma='auto').fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
+                        nearestData = SVR(kernel='rbf').fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
                         centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
                         new_label_data = np.vstack(centroid_label)
                 
@@ -765,10 +766,13 @@ class SCARGC:
                 pool_index = 0    
             
             t_end = time.time() 
-            perf_metric = cp.PerformanceMetrics(timestep= t, preds= self.preds[t], test= Ye, \
+            # needed to have same shape as preds and test
+            indx = np.arange(np.shape(self.preds[t])[0])
+            indx = np.squeeze(indx)
+            perf_metric = cp.PerformanceMetrics(timestep= t, preds= self.preds[t], test= Ye[indx], \
                                                 dataset= self.dataset , method= '' , \
                                                 classifier= self.classifier, tstart=t_start, tend=t_end)
-            self.performance_metric[t] = perf_metric.findClassifierMetrics(preds= self.preds[t], test= Ye)
+            self.performance_metric[t] = perf_metric.findClassifierMetrics(preds= self.preds[t], test= Ye[indx])
 
         total_time_end = time.time()
 
@@ -779,7 +783,6 @@ class SCARGC:
 
 
 
-# run_scargc_svm = SCARGC(classifier = 'svm', dataset= 'ton_iot_fridge', datasource='unsw')
-# results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
-# print(results)
-
+run_scargc_svm = SCARGC(classifier = '1nn', dataset= 'ton_iot_fridge', datasource='unsw')
+results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
+print(results)

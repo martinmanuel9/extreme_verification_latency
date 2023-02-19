@@ -370,21 +370,21 @@ class RunExperiment:
 # run_mclass.run()
 
 # run scargc 
-run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''],
-                    datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot'], 
+run_scargc = RunExperiment(experiements=['scargc'], classifier=['1nn'], modes=[''],
+                    datasets= ['ton_iot_fridge'], 
                     datasources= ['unsw'])
 run_scargc.run()
 
 
-run_compose_ton_iot = RunExperiment(experiements=['compose','fast_compose'], classifier=['svm'], modes=['gmm'], 
-                        datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'],
-                        datasources = ['unsw'], num_cores=0.9)
-run_compose_ton_iot.run()
+# run_compose_ton_iot = RunExperiment(experiements=['compose','fast_compose'], classifier=['svm'], modes=['gmm'], 
+#                         datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'],
+#                         datasources = ['unsw'], num_cores=0.9)
+# run_compose_ton_iot.run()
 
-# run bot IoT COMPOSE
-run_compose_bot_iot = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-                        datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
-run_compose_bot_iot.run()
+# # run bot IoT COMPOSE
+# run_compose_bot_iot = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
+#                         datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
+# run_compose_bot_iot.run()
 
 # # run vanilla with bot iot dataset
 # run_vanilla_bot = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
