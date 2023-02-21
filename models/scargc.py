@@ -41,7 +41,6 @@ import statistics
 from turtle import position
 import numpy as np 
 from scipy import stats
-from sklearn import preprocessing
 from sklearn.svm import SVC, SVR
 from tqdm import tqdm
 import math
@@ -51,6 +50,12 @@ import bot_iot_datagen as bot_iot
 import unsw_nb15_datagen as unsw
 import classifier_performance as cp
 from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.linear_model import LogisticRegression 
+from sklearn.neural_network import MLPClassifier
+from sklearn import tree
+from skmultiflow.bayes import NaiveBayes
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 import time
 import pandas as pd
@@ -495,54 +500,29 @@ class SCARGC:
         """
         # run the clustering algorithm on the training data then find the cluster 
         # assignment for each of the samples in the training data 
-        # 
-        if self.classifier == '1nn':
-            if self.datasource == 'synthetic':
-                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
-                labels = self.cluster.predict(Xinit[1])
-                
-                # for each of the clusters, find the labels of the data samples in the clusters
-                # then look at the labels from the initially labeled data that are in the same
-                # cluster. assign the cluster the label of the most frequent class. 
-                for i in range(self.Kclusters):
-                    yhat = Yinit[i][labels]
-                    mode_val,_ = stats.mode(yhat)
-                    self.class_cluster[i] = mode_val
-            elif self.datasource == 'unsw':
-                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0]) # TODO: test with first step
-                labels = self.cluster.predict(Yinit[1])
-                
-                # for each of the clusters, find the labels of the data samples in the clusters
-                # then look at the labels from the initially labeled data that are in the same
-                # cluster. assign the cluster the label of the most frequent class. 
-                for i in range(self.Kclusters):
-                    yhat = Yinit[i][labels]
-                    mode_val,_ = stats.mode(yhat)
-                    self.class_cluster[i] = mode_val
 
-        elif self.classifier == 'svm':
-            if self.datasource == 'synthetic':
-                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
-                labels = self.cluster.predict(Xinit[0])
-
-                # for each of the clusters, find the labels of the data samples in the clusters
-                # then look at the labels from the initially labeled data that are in the same
-                # cluster. assign the cluster the label of the most frequent class. 
-                for i in range(self.Kclusters):
-                    yhat = Yinit[i][labels]
-                    mode_val,_ = stats.mode(yhat)
-                    self.class_cluster[i] = mode_val
-            elif self.datasource == 'unsw':
-                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
-                labels = self.cluster.predict(Yinit[0])
-
-                # for each of the clusters, find the labels of the data samples in the clusters
-                # then look at the labels from the initially labeled data that are in the same
-                # cluster. assign the cluster the label of the most frequent class. 
-                for i in range(self.Kclusters):
-                    yhat = Yinit[i][labels]
-                    mode_val,_ = stats.mode(yhat)
-                    self.class_cluster[i] = mode_val
+        if self.datasource == 'synthetic':
+            self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])
+            labels = self.cluster.predict(Xinit[1])
+            
+            # for each of the clusters, find the labels of the data samples in the clusters
+            # then look at the labels from the initially labeled data that are in the same
+            # cluster. assign the cluster the label of the most frequent class. 
+            for i in range(self.Kclusters):
+                yhat = Yinit[i][labels]
+                mode_val,_ = stats.mode(yhat)
+                self.class_cluster[i] = mode_val
+        elif self.datasource == 'unsw':
+            self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0]) 
+            labels = self.cluster.predict(Yinit[0])
+            
+            # for each of the clusters, find the labels of the data samples in the clusters
+            # then look at the labels from the initially labeled data that are in the same
+            # cluster. assign the cluster the label of the most frequent class. 
+            for i in range(self.Kclusters):
+                yhat = Yinit[i][labels]
+                mode_val,_ = stats.mode(yhat)
+                self.class_cluster[i] = mode_val
 
     def run(self, Xts, Yts): 
         '''
@@ -552,19 +532,6 @@ class SCARGC:
         total_time_start = time.time()
         # Build Classifier 
         if self.classifier == '1nn':
-            if len(Yts[0]) < len(Xts[0]):
-                dif = int(len(Xts[0]) - len(Yts[0]))
-                xts_array = list(Xts[0])
-                for i in range(dif):
-                    xts_array.pop()
-                Xts = np.array(xts_array)
-            elif len(Yts[0]) > len(Xts[0]):
-                dif = int(len(Yts[0]) - len(Xts[0]))
-                xts_array = list(Yts[0])
-                for i in range(dif):
-                    xts_array.pop()
-                Yts[0] = np.array(xts_array)
-            
             if self.datasource == 'synthetic':
                 knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
                 predicted_label = knn.predict(Yts[1])
@@ -574,25 +541,8 @@ class SCARGC:
                 predicted_label = knn.predict(Yts[0][:,:-1]) 
                 self.preds[0] = predicted_label
 
-            # brute knn
-            # bknn = Bknn(k=1, problem=1, metric=0)
-            # bknn.fit(Yts[0], Xts[0])
-            # predicted_label = bknn.predict(Yts[1])
-
         elif self.classifier == 'svm':
             if self.datasource == 'synthetic':
-                if len(Yts[0]) < len(Xts):
-                    dif = int(len(Xts) - len(Yts[0]))
-                    xts_array = list(Xts)
-                    for i in range(dif):
-                        xts_array.pop()
-                    Xts = np.array(xts_array)
-                elif len(Yts[0]) > len(Xts):
-                    dif = int(len(Yts[0]) - len(Xts[0]))
-                    xts_array = list(Yts[0])
-                    for i in range(dif):
-                        xts_array.pop()
-                    Yts[0] = np.array(xts_array)
                 svn_clf = SVC(gamma='auto').fit(Xts[0][:,:-1], Yts[0][:,-1])
                 predicted_label = svn_clf.predict(Yts[1][:,:-1])
                 self.preds[0] = predicted_label
@@ -601,6 +551,68 @@ class SCARGC:
                 self.train_model = svn_clf
                 predicted_label = svn_clf.predict(Yts[0][:,:-1])
                 self.preds[0] = predicted_label
+
+        elif self.classifier == 'logistic_regression':
+            if self.datasource == 'unsw':
+                lg_rg = LogisticRegression()
+                lg_rg.fit(self.all_data[:,:-1], self.all_data[:,-1])
+                self.train_model = lg_rg
+                predicted_label = lg_rg.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'synthetic':
+                # TODO: Need to develop synthetic 
+                exit()
+        
+        elif self.classifier == 'random_forest':
+            if self.datasource == 'unsw':
+                rf = RandomForestClassifier()
+                rf.fit(self.all_data[:,:-1], self.all_data[:,-1])
+                self.train_model = rf
+                predicted_label = rf.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'synthetic':
+                exit()
+        
+        elif self.classifier == 'adaboost':
+            if self.datasource == 'unsw':
+                ada = AdaBoostClassifier()
+                ada.fit(self.all_data[:,:-1], self.all_data[:,-1])
+                self.train_model = ada
+                predicted_label = ada.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'synthetic':
+                exit()
+        
+        elif self.classifier == 'decision_tree':
+            if self.datasource == 'unsw':
+                dt = tree.DecisionTreeClassifier()
+                dt.fit(self.all_data[:,:-1], self.all_data[:,-1])
+                self.train_model = dt
+                predicted_label = dt.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'synthetic':
+                exit()
+
+        elif self.classifier == 'knn':
+            if self.datasource == 'unsw':
+                knn = KNeighborsClassifier(n_neighbors=50)
+                knn.fit(self.all_data[:,:-1], self.all_data[:,-1])
+                self.train_model = knn
+                predicted_label = knn.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'synthetic':
+                exit()
+        
+        elif self.classifier == 'mlp':
+            if self.datasource == 'unsw':
+                mlp = MLPClassifier(random_state=1, max_iter=300)
+                mlp.fit(self.all_data[:,:-1], self.all_data[:,-1])
+                self.train_model = mlp
+                predicted_label = mlp.predict(Yts[0][:,:-1])
+                self.preds[0] = predicted_label
+            elif self.datasource == 'synthetic':
+                exit()
+
             
         self.T = len(Yts)      
 
@@ -634,20 +646,12 @@ class SCARGC:
                         Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
                         Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
             elif self.datasource == 'unsw':
-                if self.classifier == '1nn':
-                    if t == 0: 
-                        Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])       # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(Xts), np.array(Yts[t])            # Xe = test labels ; Ye = test data
-                    else: 
-                        Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t])                 # Xe = test labels ; Ye = test data
-                elif self.classifier == 'svm': 
-                    if t == 0:
-                        Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])                # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(Xts), np.array(Yts[t])                                 # Xe = test labels ; Ye = test data
-                    else:
-                        Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
-                        Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t])                 # Xe = test labels ; Ye = test data
+                if t == 0: 
+                    Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])       # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(Xts), np.array(Yts[t])            # Xe = test labels ; Ye = test data
+                else: 
+                    Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
+                    Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t])                 # Xe = test labels ; Ye = test data
 
             t_start = time.time()            
 
@@ -664,29 +668,15 @@ class SCARGC:
                 pool_label = np.array(predicted_label)
                 pool_index += 1
             else:
-                if self.classifier == '1nn':
-                    if len(Yt) > len(Xt):
-                        dif = len(Yt) - len(Xt)
-                        yt_reduced = list(Yt)
-                        for q in range(dif):
-                            yt_reduced.pop()
-                        Yt = np.array(yt_reduced)
-                    if self.datasource == 'synthetic':
+                if self.datasource == 'synthetic':
+                    if self.classifier == '1nn':
                         knn_mdl = KNeighborsClassifier(n_neighbors=1).fit(Yt, Xt)    # fit(train_data, train_label)
                         predicted_label = knn_mdl.predict(Ye)
-                    elif self.datasource == 'unsw':
-                        predicted_label = self.train_model.predict(Ye[:,:-1])
-
-                    # bknn_mdl = Bknn(k=0, problem=1, metric=0)
-                    # bknn_mdl.fit(Yt, Xt)
-                    # predicted_label = bknn_mdl.predict(Ye)
-
-                elif self.classifier == 'svm':
-                    if self.datasource == 'synthetic':
+                    elif self.classifier == 'svm':
                         svm_mdl = SVC(kernel='rbf').fit(Yt[:,:-1], Yt[:,-1])        # fit(Xtrain, X_label_train)
                         predicted_label = svm_mdl.predict(Ye[:,:-1])
-                    elif self.datasource == 'unsw':
-                        predicted_label = self.train_model.predict(Ye[:,:-1])
+                elif self.datasource == 'unsw':
+                    predicted_label = self.train_model.predict(Ye[:,:-1])
                 
                 pool_data = np.vstack((pool_data, Ye))
 
@@ -695,10 +685,7 @@ class SCARGC:
                 predicted_label = np.squeeze(predicted_label)
                 self.preds[t] = predicted_label
                 
-                if self.classifier == '1nn':
-                    pool_label = np.concatenate((pool_label, predicted_label))
-                elif self.classifier == 'svm':
-                    pool_label = np.concatenate((pool_label, predicted_label))
+                pool_label = np.concatenate((pool_label, predicted_label))
                 
                 if t > 0:
                     sbrt_pool_lbl = list(pool_label)
@@ -719,7 +706,6 @@ class SCARGC:
                     if self.classifier == '1nn':
                         nearestData = KNeighborsRegressor(n_neighbors=1).fit(past_centroid, temp_current_centroids)
                         centroid_label = nearestData.predict([temp_current_centroids[k]])[0]
-                        
                         new_label_data = np.vstack((new_label_data, centroid_label))
                         
                         # _,new_label_data = nearestData.kneighbors([temp_current_centroids[k]])
@@ -729,9 +715,48 @@ class SCARGC:
                         # centroid_label = nearestData.predict(temp_current_centroids[k])[0]
                         # new_label_data = np.vstack((new_label_data[0], centroid_label))
                         
-                        
                     elif self.classifier == 'svm':
                         nearestData = SVR(kernel='rbf').fit(past_centroid[:,:-1], temp_current_centroids[:,-1])
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
+                        new_label_data = np.vstack(centroid_label)
+                    
+                    elif self.classifier == 'logistic_regression':
+                        label_encoder = preprocessing.LabelEncoder()
+                        t_cur_centroid = label_encoder.fit_transform(temp_current_centroids[:,-1])
+                        nearestData = LogisticRegression().fit(X=past_centroid[:,:-1], y= t_cur_centroid)
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
+                        new_label_data = np.vstack(centroid_label)
+
+                    elif self.classifier == 'random_forest':
+                        label_encoder = preprocessing.LabelEncoder()
+                        t_cur_centroid = label_encoder.fit_transform(temp_current_centroids[:,-1])
+                        nearestData = RandomForestClassifier().fit(past_centroid[:,:-1], t_cur_centroid)
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
+                        new_label_data = np.vstack(centroid_label)
+                    
+                    elif self.classifier == 'adaboost':
+                        label_encoder = preprocessing.LabelEncoder()
+                        t_cur_centroid = label_encoder.fit_transform(temp_current_centroids[:,-1])
+                        nearestData = RandomForestClassifier().fit(past_centroid[:,:-1], t_cur_centroid)
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
+                        new_label_data = np.vstack(centroid_label)
+
+                    elif self.classifier == 'decision_tree':
+                        label_encoder = preprocessing.LabelEncoder()
+                        t_cur_centroid = label_encoder.fit_transform(temp_current_centroids[:,-1])
+                        nearestData = tree.DecisionTreeClassifier().fit(past_centroid[:,:-1], t_cur_centroid)
+                        centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
+                        new_label_data = np.vstack(centroid_label)
+
+                    elif self.classifier == 'knn':
+                        nearestData = KNeighborsRegressor(n_neighbors=50).fit(past_centroid, temp_current_centroids)
+                        centroid_label = nearestData.predict([temp_current_centroids[k]])[0]
+                        new_label_data = np.vstack((new_label_data, centroid_label))
+
+                    elif self.classifier == 'mlp':
+                        label_encoder = preprocessing.LabelEncoder()
+                        t_cur_centroid = label_encoder.fit_transform(temp_current_centroids[:,-1])
+                        nearestData = MLPClassifier(random_state=1, max_iter=300).fit(past_centroid[:,:-1], t_cur_centroid)
                         centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
                         new_label_data = np.vstack(centroid_label)
                 
@@ -749,17 +774,9 @@ class SCARGC:
                     labeled_data_labels = new_label_data
                     past_centroid = temp_current_centroids
                 
-                    
-                # get prediction score 
-                if self.classifier == '1nn': 
-                    Ye = np.array(Ye[:,-1])
-                if self.classifier == 'svm': 
-                    Ye = np.array(Ye[:,-1])
-                
-                # if self.classifier == '1nn':
-                #     if t>0:
-                #         predicted_label = predicted_label[:,-1]
-                
+                Ye = np.squeeze(Ye)
+                Ye = np.array(Ye[:,-1])
+
                 # reset 
                 pool_data = np.zeros(np.shape(pool_data)[1])
                 pool_label = np.zeros(np.shape(pool_data))
@@ -783,6 +800,6 @@ class SCARGC:
 
 
 
-run_scargc_svm = SCARGC(classifier = '1nn', dataset= 'ton_iot_fridge', datasource='unsw')
+run_scargc_svm = SCARGC(classifier = 'mlp', dataset= 'ton_iot_fridge', datasource='unsw')
 results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
 print(results)

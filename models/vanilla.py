@@ -42,6 +42,11 @@ import ton_iot_datagen as ton_iot
 import bot_iot_datagen as bot_iot
 import classifier_performance as perf_metric
 from skmultiflow.bayes import NaiveBayes
+from sklearn.linear_model import LogisticRegression 
+from sklearn import tree
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.svm import SVC, OneClassSVM
 import label_propagation as lbp 
@@ -246,8 +251,85 @@ class VanillaClassifier():
         elif self.classifier == 'label_propagation':
             ssl_label_propagation = lbp.Label_Propagation(X_train = train, X_labeled=train[:,-1], X_unlabeled=test)
             preds = ssl_label_propagation.ssl()
-            return preds
-    
+            
+        
+        elif self.classifier == 'logistic_regression':
+            log_regression = LogisticRegression()
+            t_start = time.time()
+            log_regression.fit(X=train[:,:-1], y=train[:,-1])
+            self.predictions[ts] = log_regression.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+        
+        elif self.classifier == 'random_forest':
+            random_forest = RandomForestClassifier()
+            t_start = time.time()
+            random_forest.fit(X=train[:,:-1], y= train[:,-1])
+            self.predictions[ts] = random_forest.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
+        elif self.classifier == 'adaboost':
+            adaboost = AdaBoostClassifier()
+            t_start = time.time()
+            adaboost.fit(X = train[:,:-1], y=train[:,-1])
+            self.predictions[ts] = adaboost.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
+        elif self.classifier == 'decision_tree':
+            dt = tree.DecisionTreeClassifier()
+            t_start = time.time()
+            dt.fit(X=train[:,:-1], y=train[:,-1])
+            self.predictions[ts] = dt.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
+        elif self.classifier == '1nn':
+            knn = KNeighborsClassifier(n_neighbors=1)
+            t_start = time.time()
+            knn.fit(X=train[:,:-1], y=train[:,-1])
+            self.predictions[ts] = knn.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
+        elif self.classifier == 'knn':
+            knn = KNeighborsClassifier(n_neighbors=50)
+            t_start = time.time()
+            knn.fit(X=train[:,:-1], y=train[:,-1])
+            self.predictions[ts] = knn.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
+        elif self.classifier == 'mlp':
+            mlp = MLPClassifier(random_state=1, max_iter=300)
+            t_start = time.time()
+            mlp.fit(X=train[:,:-1], y=train[:,-1])
+            self.predictions[ts] = mlp.predict(test[:,:-1])
+            t_end = time.time()
+            performance = perf_metric.PerformanceMetrics(timestep= ts, preds= self.predictions[ts], test= test, \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end) 
+            self.perf_metric[ts] = performance.findClassifierMetrics(preds = self.predictions[ts], test = test[:,-1])
+
     def run(self):
         total_start = time.time()
         self.set_data()
@@ -262,6 +344,6 @@ class VanillaClassifier():
         return self.avg_perf_metric
 
 
-# van = VanillaClassifier(classifier='label_propagation', dataset='bot_iot')
+# van = VanillaClassifier(classifier='mlp', dataset='ton_iot_fridge')
 # results = van.run()
 # print(results)
