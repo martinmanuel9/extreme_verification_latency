@@ -4,5 +4,7 @@ results/**
 # Ignore all plots 
 plots/**
 
+plotter_scargc/**
+
 # Ignotr data 
 data/BoT_IoT_Data/**

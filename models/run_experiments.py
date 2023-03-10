@@ -240,6 +240,103 @@ class RunExperiment:
                                 results_df.to_pickle(results_scargc_svm)
                                 results_pkl = pd.read_pickle(results_scargc_svm)
                                 print("Results:\n", results_df)
+                            elif i == 'scargc' and j == 'knn': 
+                                scargc_knn = scargc.SCARGC(classifier = 'knn', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_knn.run(Xts = scargc_knn.X, Yts = scargc_knn.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_knn.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_knn.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_knn.avg_perf_metric.keys(), scargc_knn.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_knn = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_knn)
+                                results_pkl = pd.read_pickle(results_scargc_knn)
+                                print("Results:\n", results_df)
+
+                            elif i == 'scargc' and j == 'logistic_regression': 
+                                scargc_lr = scargc.SCARGC(classifier = 'logistic_regression', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_lr.run(Xts = scargc_lr.X, Yts = scargc_lr.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_lr.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_lr.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_lr.avg_perf_metric.keys(), scargc_lr.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_lr = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_lr)
+                                results_pkl = pd.read_pickle(results_scargc_lr)
+                                print("Results:\n", results_df)
+                            
+                            elif i == 'scargc' and j == 'random_forest': 
+                                scargc_rf = scargc.SCARGC(classifier = 'random_forest', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_rf.run(Xts = scargc_rf.X, Yts = scargc_rf.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_rf.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_rf.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_rf.avg_perf_metric.keys(), scargc_rf.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_rf = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_rf)
+                                results_pkl = pd.read_pickle(results_scargc_rf)
+                                print("Results:\n", results_df)
+
+                            elif i == 'scargc' and j == 'adaboost': 
+                                scargc_ab = scargc.SCARGC(classifier = 'adaboost', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_ab.run(Xts = scargc_ab.X, Yts = scargc_ab.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_ab.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_ab.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_ab.avg_perf_metric.keys(), scargc_ab.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_ab = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_ab)
+                                results_pkl = pd.read_pickle(results_scargc_ab)
+                                print("Results:\n", results_df)
+
+                            elif i == 'scargc' and j == 'decision_tree': 
+                                scargc_ab = scargc.SCARGC(classifier = 'decision_tree', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_ab.run(Xts = scargc_ab.X, Yts = scargc_ab.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_ab.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_ab.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_ab.avg_perf_metric.keys(), scargc_ab.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_ab = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_ab)
+                                results_pkl = pd.read_pickle(results_scargc_ab)
+                                print("Results:\n", results_df)
+
+                            elif i == 'scargc' and j == 'mlp': 
+                                scargc_ab = scargc.SCARGC(classifier = 'mlp', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_ab.run(Xts = scargc_ab.X, Yts = scargc_ab.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_ab.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_ab.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_ab.avg_perf_metric.keys(), scargc_ab.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_ab = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_ab)
+                                results_pkl = pd.read_pickle(results_scargc_ab)
+                                print("Results:\n", results_df)
+
+                            elif i == 'scargc' and j == 'naive_bayes': 
+                                scargc_ab = scargc.SCARGC(classifier = 'naive_bayes', dataset= dataset, datasource= datasource)
+                                self.results[experiment] = scargc_ab.run(Xts = scargc_ab.X, Yts = scargc_ab.Y)     # .X[0] only get initial training set
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                scargc_ab.avg_perf_metric['Experiment'] = i + '_' + j
+                                scargc_ab.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((scargc_ab.avg_perf_metric.keys(), scargc_ab.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_scargc_ab = 'results_'+ f'{experiment}' + '.pkl' 
+                                results_df.to_pickle(results_scargc_ab)
+                                results_pkl = pd.read_pickle(results_scargc_ab)
+                                print("Results:\n", results_df)
 
                             elif i == 'mclassification' and j == 'knn':
                                 mclass_knn = mclass.MClassification(classifier= 'knn', dataset= dataset, method = 'kmeans', datasource= datasource)
@@ -310,89 +407,166 @@ class RunExperiment:
                                 results_df.to_pickle(results_van_nb)
                                 results_pkl = pd.read_pickle(results_van_nb)
                                 print("Results:\n" , results_pkl )
+                            
+                            elif i == 'vanilla' and j == 'logistic_regression':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'logistic_regression', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == 'random_forest':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'random_forest', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+                            
+                            elif i == 'vanilla' and j == 'adaboost':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'adaboost', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+                            
+                            elif i == 'vanilla' and j == 'decision_tree':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'decision_tree', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == 'mlp':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'mlp', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == '1nn':
+                                van_nb = vanilla.VanillaClassifier(classifier= '1nn', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
+
+                            elif i == 'vanilla' and j == 'knn':
+                                van_nb = vanilla.VanillaClassifier(classifier= 'knn', dataset=dataset)
+                                self.results[experiment] = van_nb.run()
+                                time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
+                                van_nb.avg_perf_metric['Experiment'] = i + '_' + j
+                                van_nb.avg_perf_metric['Time_Stamp'] = time_stamp
+                                results_df = pd.DataFrame.from_dict((van_nb.avg_perf_metric.keys(), van_nb.avg_perf_metric.values())).T
+                                # change the directory to your particular files location
+                                self.change_dir()
+                                results_van_nb = 'results_'+ f'{experiment}' +'.pkl'
+                                results_df.to_pickle(results_van_nb)
+                                results_pkl = pd.read_pickle(results_van_nb)
+                                print("Results:\n" , results_pkl )
 
         self.plot_results()
 
-## run compose ToN IoT datasets
-# run_compose_ton_iot_fridge = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-#                             datasets=['ton_iot_fridge'], datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_fridge.run()
-
-# run_compose_ton_iot_garage = RunExperiment(experiements=['fast_compose'], classifier=['svm'], modes=['gmm'], 
-#                             datasets=['ton_iot_garage'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_garage.run()
-
-
-# run_compose_ton_iot_gps = RunExperiment(experiements=['fast_compose'], classifier=['svm'], modes=['gmm'], 
-#                             datasets=['ton_iot_gps'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_gps.run()
-
-# run_compose_ton_iot_modbus = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-#                             datasets=['ton_iot_modbus'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_modbus.run()
-
-# run_compose_ton_iot_light = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-#                             datasets=['ton_iot_light'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_light.run()
-
-# run_compose_ton_iot_thermo = RunExperiment(experiements=['fast_compose'], classifier=['svm'], modes=['gmm'], 
-#                             datasets=['ton_iot_thermo'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_thermo.run()
-
-# run_compose_ton_iot_weather = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-#                             datasets=['ton_iot_weather'], 
-#                             datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot_weather.run()
-
-# run_compose_ton_iot = RunExperiment(experiements=['compose','fast_compose'], classifier=['svm'], modes=['gmm'], 
-#                         datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'],
-#                         datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot.run()
-
-# run bot IoT COMPOSE
-# run_compose_bot_iot = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-#                         datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
-# run_compose_bot_iot.run()
-
-
-# Regression on synthetic 
-# run_compose_synthetic = RunExperiment(experiements=['compose','fast_compose'], classifier=['label_propagation'], modes=['gmm'], datasets=['UG_2C_2D'], 
-#                             datasources = ['synthetic'], num_cores=0.9)
-# run_compose_synthetic.run()
-
-# ## run mclassification
-# run_mclass = RunExperiment(experiements=['mclassification'], classifier=['knn'], modes=[''], datasets=['UG_2C_2D','MG_2C_2D','1CDT', '2CDT'], datasource = ['synthetic'])
-# run_mclass.run()
-
 # run scargc 
-run_scargc = RunExperiment(experiements=['scargc'], classifier=['1nn'], modes=[''],
-                    datasets= ['ton_iot_fridge'], 
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['1nn'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['svm'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['knn'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['logistic_regression'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['random_forest'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['adaboost'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['decision_tree'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['mlp'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['naive_bayes'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['scargc'], classifier=['1nn'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+# run_scargc = RunExperiment(experiements=['vanilla'], classifier=['svm', 'knn', 'logistic_regression', 'random_forest', 
+#                                                                 'adaboost', 'decision_tree', 'mlp', 'naive_bayes','1nn'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
+
+run_scargc = RunExperiment(experiements=['vanilla',], classifier=['knn'], modes=[''],
+                    datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather','bot_iot'], 
                     datasources= ['unsw'])
 run_scargc.run()
-
-
-# run_compose_ton_iot = RunExperiment(experiements=['compose','fast_compose'], classifier=['svm'], modes=['gmm'], 
-#                         datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'],
-#                         datasources = ['unsw'], num_cores=0.9)
-# run_compose_ton_iot.run()
-
-# # run bot IoT COMPOSE
-# run_compose_bot_iot = RunExperiment(experiements=['fast_compose'], classifier=['naive_bayes'], modes=['gmm'], 
-#                         datasets=['bot_iot'], datasources = ['unsw'], num_cores=0.9)
-# run_compose_bot_iot.run()
-
-# # run vanilla with bot iot dataset
-# run_vanilla_bot = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','naive_bayes_stream','svm'], modes=[''], datasets=['bot_iot'], datasources= ['bot_iot'])
-# run_vanilla_bot.run()
-
-# ## run ton IoT
-# run_vanilla_ton_IoT = RunExperiment(experiements=['vanilla'], classifier=['naive_bayes','svm'], modes=[''], datasets=['ton_iot_fridge', 'ton_iot_garage' ,'ton_iot_gps',
-#                                 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], datasources= ['ton_iot'])
-# run_vanilla_ton_IoT.run()
-
 #%%

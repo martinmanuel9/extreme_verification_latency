@@ -39,11 +39,10 @@ import pandas as pd
 import numpy as np
 import os 
 
-
 class Grapher():
-    def graph_bot_iot(self):
+    def grapher(self, path_name, labels, title, linestyle ):
         path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/bot_iot"
+        path = path + "/extreme_verification_latency/" + path_name
         os.chdir(path)
         list_dir = os.listdir(path)
         result = {}
@@ -55,384 +54,132 @@ class Grapher():
             # loc[14] for Experiment
             # loc[0] for dataset
             # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
+        experiments = labels
+        style = linestyle
         timesteps = {}
         accuracy = {}
         classifier = {}
+        plotline = {}
         for i in range(len(result)):
             timesteps[i] = result[i].loc[12].at[1]
             accuracy[i] = result[i].loc[13].at[1]
             classifier[i] = experiments[i]
-        
+            plotline[i] = style[i]
+            
         data = {}
         for i, item in enumerate(classifier.values()):
             data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
 
         for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            if item == 'COMPOSE':
-                plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item, linewidth=3)
-            else:
-                plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item, linewidth=0.8)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of BOT IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_fridge(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_fridge"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            if item == 'COMPOSE':
-                plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item, linewidth=3)
-            else:
-                plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item, linewidth=0.8)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON Fridge IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_garage(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_garage"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON Garage IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_gps(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_gps"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON GPS IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_light(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_light"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON Motion Light IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_modbus(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_modbus"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON Modbus IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_thermo(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_thermo"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
+            # sns.set_theme(style='darkgrid')
+            sns.set_style('whitegrid')
+            plt.plot(data[item]['Timesteps'][::8], data[item]['Accuracy'][::8], label=item, linestyle= plotline[i])
                 
         plt.xlabel('Timesteps')
         plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON Thermostat IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10) 
-        plt.show()
-
-    def graph_ton_iot_weather(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/ton_iot_weather"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Naive Bayes', 'SVM', 'COMPOSE Label Propagation', 'Fast COMPOSE Label Propagation', 'COMPOSE Naive Bayes', 'Fast COMPOSE Naive Bayes',
-                        'COMPOSE SVM', 'Fast COMPOSE SVM']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON Weather Activity IoT Dataset')
+        plt.title(title)
         plt.legend()
         plt.gcf().set_size_inches(15,10)  
-        plt.show()
-
-    def graph_scargc(self):
-        path = str(Path.home())
-        path = path + "/extreme_verification_latency/Paper_Plots/scargc"
-        os.chdir(path)
-        list_dir = os.listdir(path)
-        result = {}
-        for i in range(len(list_dir)):
-            result[i] = pickle.load(open(list_dir[i], "rb"))
-            # print(result[i], "\n")
-            # loc[12] for time steps 
-            # loc[13] for accuracy 
-            # loc[14] for Experiment
-            # loc[0] for dataset
-            # result[0].loc[12].at[1]
-        experiments = ['Fridge', 'Garage','GPS', 'Light','Modbus', 'Thermostat', 'Weather']
-        timesteps = {}
-        accuracy = {}
-        classifier = {}
-        for i in range(len(result)):
-            timesteps[i] = result[i].loc[12].at[1]
-            accuracy[i] = result[i].loc[13].at[1]
-            classifier[i] = experiments[i]
-        
-        data = {}
-        for i, item in enumerate(classifier.values()):
-            data[item] = pd.DataFrame({'Timesteps':timesteps[i], 'Accuracy': accuracy[i]})
-
-        for i, item in enumerate(data.keys()):
-            sns.set_theme(style='darkgrid')
-            # sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'], data[item]['Accuracy'], label=item)
-                
-        
-        plt.xlabel('Timesteps')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy Comparison of EVL Classifiers of TON IoT Activity IoT Dataset')
-        plt.legend()
-        plt.gcf().set_size_inches(15,10)  
+        plt.xlim([0,90])
+        plt.xticks(range(0, 90, 10))
         plt.show()
 
     def run(self):
-        bot_result = Grapher()
-        bot_result.graph_bot_iot()
-        ton_iot_fridge = Grapher()
-        ton_iot_fridge.graph_ton_iot_fridge()
-        ton_iot_garage = Grapher()
-        ton_iot_garage.graph_ton_iot_garage()
-        ton_iot_gps = Grapher()
-        ton_iot_gps.graph_ton_iot_gps()
-        ton_iot_light = Grapher()
-        ton_iot_light.graph_ton_iot_light()
-        ton_iot_modbus = Grapher()
-        ton_iot_modbus.graph_ton_iot_modbus()
-        ton_iot_thermo = Grapher()
-        ton_iot_thermo.graph_ton_iot_thermo()
-        ton_iot_weather = Grapher()
-        ton_iot_weather.graph_ton_iot_weather()
-        scargc = Grapher()
-        scargc.graph_scargc()
+        mlp_bot = Grapher()
+        mlp_bot.grapher(path_name='plotter_scargc/MLP/Bot', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of Bot IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        mlp_Fridge = Grapher()
+        mlp_Fridge.grapher(path_name='plotter_scargc/MLP/Fridge', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN Fridge IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        mlp_Garage = Grapher()
+        mlp_Garage.grapher(path_name='plotter_scargc/MLP/Garage', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN Garage IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        mlp_GPS = Grapher()
+        mlp_GPS.grapher(path_name='plotter_scargc/MLP/GPS', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN GPS IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+        
+        mlp_Light = Grapher()
+        mlp_Light.grapher(path_name='plotter_scargc/MLP/Light', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN Light IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        mlp_modbus = Grapher()
+        mlp_modbus.grapher(path_name='plotter_scargc/MLP/Modbus', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN Modbus IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        mlp_thermo = Grapher()
+        mlp_thermo.grapher(path_name='plotter_scargc/MLP/Thermo', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN Thermostat IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        mlp_weather = Grapher()
+        mlp_weather.grapher(path_name='plotter_scargc/MLP/Weather', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Multi-Layer Perceptron Accuracy Comparison of ToN Weather IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_bot = Grapher()
+        lr_bot.grapher(path_name='plotter_scargc/Logistic_Regression/Bot', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of Bot IoT Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_fridge = Grapher()
+        lr_fridge.grapher(path_name='plotter_scargc/Logistic_Regression/Fridge', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN Fridge Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_garage = Grapher()
+        lr_garage.grapher(path_name='plotter_scargc/Logistic_Regression/Garage', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN Garage Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_gps = Grapher()
+        lr_gps.grapher(path_name='plotter_scargc/Logistic_Regression/GPS', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN GPS Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_light = Grapher()
+        lr_light.grapher(path_name='plotter_scargc/Logistic_Regression/Light', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN Light Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_modbus = Grapher()
+        lr_modbus.grapher(path_name='plotter_scargc/Logistic_Regression/Modbus', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN Modbus Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_thermo = Grapher()
+        lr_thermo.grapher(path_name='plotter_scargc/Logistic_Regression/Thermo', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN Thermostat Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        lr_weather= Grapher()
+        lr_weather.grapher(path_name='plotter_scargc/Logistic_Regression/Weather', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='Logistic Regression Accuracy Comparison of ToN Weather Datasets',
+        linestyle= ['solid', 'dotted'])
 
 graph = Grapher()
 graph.run()
