@@ -75,16 +75,34 @@ class Grapher():
             sns.set_style('whitegrid')
             plt.plot(data[item]['Timesteps'][::8], data[item]['Accuracy'][::8], label=item, linestyle= plotline[i])
                 
-        plt.xlabel('Timesteps')
+        plt.xlabel('Step')
         plt.ylabel('Accuracy')
         plt.title(title)
         plt.legend()
         plt.gcf().set_size_inches(15,10)  
-        plt.xlim([0,90])
-        plt.xticks(range(0, 90, 10))
-        plt.show()
+        plt.xticks(range(0, 100, 10))
+        plt.xlim([11,96])
+        plt.show()  
 
     def run(self):
+        all_scargc = Grapher()
+        all_scargc.grapher(path_name='plotter_scargc/Logistic_Regression/scargc', 
+        labels=['Bot', 'Fridge', 'Garage', 'GPS', 'Light', 'Modbus', 'Thermostat', 'Weather'],
+        title='Logistic Regression Accuracy Comparison of IoT Datasets Implementing SCARGC',
+        linestyle= ['solid', 'dotted', (0, (1, 1)), (5, (10, 3)), (0, (5, 5)), (0, (3, 5, 1, 5, 1, 5)), (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))])
+        
+        all_base = Grapher()
+        all_base.grapher(path_name='plotter_scargc/bot_comparison', 
+        labels=['LR-SCARGC', 'LR', 'MLP-SCARGC', 'MLP', 'SVM-SCARGC', 'SVM'],
+        title='Bot IoT Dataset Comparison of Accuracy Between Implementation',
+        linestyle= ['solid', 'dotted', (0, (1, 1)), (5, (10, 3)), (0, (5, 5)), (0, (3, 5, 1, 5, 1, 5))])
+
+        bot_comparison = Grapher()
+        bot_comparison.grapher(path_name='plotter_scargc/Logistic_Regression/base_classifier', 
+        labels=['Bot', 'Fridge', 'Garage', 'GPS', 'Light', 'Modbus', 'Thermostat', 'Weather'],
+        title='Logistic Regression Accuracy Comparison of IoT Datasets Implementing of Base Classifiers',
+        linestyle= ['solid', 'dotted', (0, (1, 1)), (5, (10, 3)), (0, (5, 5)), (0, (3, 5, 1, 5, 1, 5)), (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))])
+
         mlp_bot = Grapher()
         mlp_bot.grapher(path_name='plotter_scargc/MLP/Bot', 
         labels=['SCARGC', 'Base Classifer'],
@@ -181,7 +199,56 @@ class Grapher():
         title='Logistic Regression Accuracy Comparison of ToN Weather Datasets',
         linestyle= ['solid', 'dotted'])
 
-graph = Grapher()
-graph.run()
+        svm_bot= Grapher()
+        svm_bot.grapher(path_name='plotter_scargc/SVM/Bot', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of Bot Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_fridge= Grapher()
+        svm_fridge.grapher(path_name='plotter_scargc/SVM/Fridge', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN Fridge Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_garage= Grapher()
+        svm_garage.grapher(path_name='plotter_scargc/SVM/Garage', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN Garage Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_GPS= Grapher()
+        svm_GPS.grapher(path_name='plotter_scargc/SVM/GPS', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN GPS Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_light= Grapher()
+        svm_light.grapher(path_name='plotter_scargc/SVM/Light', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN Light Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_modbus = Grapher()
+        svm_modbus.grapher(path_name='plotter_scargc/SVM/Modbus', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN Modbus Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_thermo = Grapher()
+        svm_thermo.grapher(path_name='plotter_scargc/SVM/Thermo', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN Thermostat Datasets',
+        linestyle= ['solid', 'dotted'])
+
+        svm_weather= Grapher()
+        svm_weather.grapher(path_name='plotter_scargc/SVM/Weather', 
+        labels=['SCARGC', 'Base Classifer'],
+        title='SVM Accuracy Comparison of ToN Weather Datasets',
+        linestyle= ['solid', 'dotted'])
+
+
+# graph = Grapher()
+# graph.run()
 
 # %%
