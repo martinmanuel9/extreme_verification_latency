@@ -43,6 +43,7 @@ from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
 import classifier_performance as cp
 from scipy import stats
+from sklearn.metrics import silhouette_score
 import time 
 from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
@@ -54,14 +55,13 @@ class MClassification():
                 classifier,
                 dataset,
                 method,
-                datasource, 
-                NClusters:int = 10): 
+                datasource): 
         """
         """
         self.classifier = classifier
         self.dataset = dataset
         self.datasource = datasource
-        self.NClusters = NClusters
+        self.NClusters = 0
         self.method = method
         self.cluster_centers ={}
         self.preds = {}
@@ -74,11 +74,9 @@ class MClassification():
         self.X = {}
         self.Y = {}
         self.T = {}
-        self._initialize()
+        self.setData()
         
-    
-    def _setData(self):
-        
+    def setData(self):
         data_gen = cbdg.Synthetic_Datagen()
         # get data, labels, and first labels synthetically for timestep 0
         # data is composed of just the features 
@@ -98,19 +96,34 @@ class MClassification():
         # gets first core supports from synthetic
         self.T = np.squeeze(first_labels)
 
-    def _initialize(self):
+    def euclidean_distance(self, x, MC):
         """
-        Get initial labeled data T 
-        Begin MC for the labeled data
+        x = datastream point 
+        MC = microcluster
         """
-        self._setData()
-
-    def _cluster(self, X, y, ts):
+        dist = np.linalg.norm(x - MC)
+        return dist
+    
+    def find_silhoette_score(self, X, y, ts):
         if self.method == 'kmeans':
-            clusters = np.max(np.unique(y[:,-1])).astype(int) # adding an additional cluster
-            kmeans_model = KMeans(n_clusters= clusters)
+            sil_score = {}
+            for c in range(2, 11):
+                kmeans_model = KMeans(n_clusters=c).fit(X)
+                score = silhouette_score(X, kmeans_model.labels_, metric='euclidean')
+                sil_score[c] = score
+            optimal_cluster = max(sil_score, key=sil_score.get)
+            self.NClusters = optimal_cluster
+
+    def cluster(self, X, y, ts):
+        if self.method == 'kmeans':
+            # clusters = np.max(np.unique(y[:,-1])).astype(int) # trying to get the number of clusters from the labels based on classes???
+            self.find_silhoette_score(X=X[ts], y=y, ts=ts)
+            if ts == 0:
+                kmeans_model = KMeans(n_clusters=self.NClusters).fit(X[ts])
+            else:
+                kmeans_model = KMeans(n_clusters=self.NClusters).fit(X[ts])
             # computes cluster centers and radii of cluster for initial ts
-            self.microCluster[ts] = self._create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(y), x= X[ts] , y= y)
+            self.microCluster[ts] = self.create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(y), x= X[ts] , y= y)
             # predict closes cluster center for each self.T belongs to
             self.clusters[ts] = kmeans_model.fit_predict(y)
             self.cluster_centers[ts] = kmeans_model.cluster_centers_
@@ -129,38 +142,36 @@ class MClassification():
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class.
         for i in range(self.NClusters):
-                xhat = self.X[i][self.clusters[ts]]
-                mode_val,_ = stats.mode(xhat)
-                self.class_cluster[i] = mode_val
+            xhat = self.X[i][self.clusters[ts]]
+            mode_val,_ = stats.mode(xhat)
+            self.class_cluster[i] = mode_val
 
-    def _create_mclusters(self, inClusterpoints) :
+    def create_mclusters(self, inClusterpoints) :
         """
         Clustering options:
         1. k-means
-        
         MC is defined as a 4 tuple (N, LS, SS, y) where:
         N = number of data points in a cluster
         LS = linear sum of N data points 
         SS = square sum of data points 
         y = label for a set of data points
         """
-        # develop microcluster based on inputs
         mcluster = {}
         N = len(inClusterpoints)
         LS = sum(inClusterpoints)
-        SS = np.zeros(np.shape(inClusterpoints)[1])
-        for c in range(np.shape(inClusterpoints)[1]):
-            for r in range(np.shape(inClusterpoints)[0]):
-                SS[c] += inClusterpoints[:,c][r] ** 2
+        SS = 0
+        for point in inClusterpoints:
+            SS += sum([element**2 for element in point])
+        
         mcluster['ClusterPoints'] = inClusterpoints
         mcluster['N'] = N
         mcluster['LS'] = LS
         mcluster['SS'] = SS
         mcluster['Centroid'] = LS / N
-        mcluster['Radii'] = np.sqrt((SS/N) - ((LS/N)**2))
+        mcluster['Radii'] = np.sqrt((SS / N) - ((LS / N)**2 ))
         return mcluster
         
-    def _classify(self, trainData, trainLabel, testData):
+    def classify(self, trainData, trainLabel, testData):
         """
         Inputs include training data, training label, test data
         Two classifiers 
@@ -181,7 +192,7 @@ class MClassification():
             predicted_label = svm_mdl.predict(testData)
         return predicted_label
 
-    def _create_centroid(self, inCluster, fitCluster, x, y):
+    def create_centroid(self, inCluster, fitCluster, x, y):
         """
         inCluster = cluster model 
         fitCluster = fitted model
@@ -190,20 +201,23 @@ class MClassification():
         """
         cluster_centroids = {}
         cluster_radii = {}
-        length = len(np.unique(list(set(y[:,-1].astype(int)))))
+        # calculates the cluster centroid and the radii of each cluster
         if self.method == 'kmeans':
-            for cluster in range(length):
+            for cluster in range(self.NClusters):
                 cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
                 cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
-            # print(cluster_radii)
             fig, ax = plt.subplots(1,figsize=(7,5))
-            clust_iter = len(np.unique(list(set(y[:,-1].astype(int)))))
+            # gets the indices of each cluster 
+            cluster_indices = {}
+            for i in range(self.NClusters):
+                cluster_indices[i] = np.array([ j for j , x in enumerate(inCluster.labels_) if x == i])
             # creates cluster data
             mcluster = {}
-            for c in range(clust_iter):
-                mcluster[c] = self._create_mclusters(inClusterpoints=x[fitCluster==c])
+            # calculates the microcluster for each cluster based on the number of classes 
+            for c in range(self.NClusters):
+                mcluster[c] = self.create_mclusters(inClusterpoints= x[cluster_indices[c]][:,: np.shape(x)[1]-1]) 
             # plot clusters
-            for i in range(clust_iter):
+            for i in range(self.NClusters):
                 plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label ='Class '+ str(i))
                 art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
                 ax.add_patch(art)
@@ -222,7 +236,7 @@ class MClassification():
         elif self.method == 'birch':
             pass # need to determine how calc radii for birch
 
-    def _append_mcluster(self, yhat,inData, inMicroCluster, ts):
+    def append_mcluster(self, yhat, inData, inMicroCluster, ts):
         """
         Method determines if yhat (preds) can be appended to the mcluster based on the radii that was determined by the original mcluster 
         We determine the yhat based on euclidean distance 
@@ -244,7 +258,8 @@ class MClassification():
         # need to add this for create centroid method to take preds
         addToPreds = np.zeros((np.shape(data)[0], (np.shape(data)[1]-1)))
         preds = np.column_stack((addToPreds, preds))
-        yhatCluster = self._create_centroid(inCluster = yhatKmeans, fitCluster = yhatKmeans.fit_predict(data), x= data , y=preds)
+        yhatCluster = self.create_centroid(inCluster = yhatKmeans, fitCluster = yhatKmeans.fit_predict(data), x= data , y=preds)
+
         # TODO: This may not make sense to do
         # self.microCluster[step] = yhatCluster
 
@@ -309,9 +324,9 @@ class MClassification():
             newMC = np.array(newMC)
             # newMC = newMC.reshape(-1,np.shape(currentClusterPoints[0])[1])
             # update centroid 
-            mcluster = self._updateCentroid(inCurrentClusters= currentClusterPoints, inNewClusters= newMC, x = data, y= preds)
+            mcluster = self.updateCentroid(inCurrentClusters= currentClusterPoints, inNewClusters= newMC, x = data, y= preds)
 
-    def _updateCentroid(self, inCurrentClusters, inNewClusters, x, y):
+    def updateCentroid(self, inCurrentClusters, inNewClusters, x, y):
         cluster_centroids = {}
         cluster_radii = {}
         length = max(inCurrentClusters.keys()) + 1 
@@ -319,6 +334,16 @@ class MClassification():
         #TODO: create centroid for new mc ???
         
 
+    def initial_labeled_data(self, ts, inData, inLabels):
+        self.cluster(X= inData, y= inLabels, ts=ts )
+        t_start = time.time()
+        # classify based on the clustered predictions (self.preds) done in the init step
+        self.preds[ts] = self.classify(trainData=self.T, trainLabel= self.clusters[ts], testData=self.X[ts])
+        t_end = time.time()
+        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts][:,-1], \
+                                        dataset= self.dataset , method= self.method , \
+                                        classifier= self.classifier, tstart=t_start, tend=t_end)
+        self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
 
     def run(self):
         """
@@ -334,25 +359,19 @@ class MClassification():
                 2.) if the added x_t to the MC exceeds radius -> new MC carrying yhat_t is created to carry x_t
         """
         timesteps = self.X.keys()
-
         for ts in range(0, len(timesteps) - 1):
             total_start = time.time()
+
+            # This takes the fist labeled data set T and creates the initial MCs
             if ts == 0:
-                self._cluster(X= self.X, y= self.T, ts=ts )
-                t_start = time.time()
-                # classify based on the clustered predictions (self.preds) done in the init step
-                self.preds[ts] = self._classify(trainData=self.T, trainLabel= self.clusters[ts], testData=self.X[ts])
-                t_end = time.time()
-                perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts][:,-1], \
-                                                dataset= self.dataset , method= self.method , \
-                                                classifier= self.classifier, tstart=t_start, tend=t_end)
-                self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+                # Classify first labeled dataset T
+                self.initial_labeled_data(inData= self.X, inLabels= self.T, ts=ts)
             # determine if added x_t to MC exceeds radii of MC
             else:
-                self._cluster(X= self.X, y= self.X[ts-1], ts=ts )
+                self.cluster(X= self.X, y= self.X[ts-1], ts=ts )
                 t_start = time.time()
                 # classify based on the clustered predictions (self.preds) done in the init step
-                self.preds[ts] = self._classify(trainData=self.X[ts], trainLabel=self.clusters[ts], testData=self.X[ts+1])
+                self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
                                                 dataset= self.dataset , method= self.method , \
@@ -366,7 +385,9 @@ class MClassification():
         avg_metrics = cp.PerformanceMetrics(tstart= total_start, tend= total_end)
         self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
         return self.avg_perf_metric
+
 # test mclass
-# run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D').run()
+run_mclass = MClassification(classifier='svm', method = 'kmeans', dataset='UG_2C_2D', datasource='Synthetic').run()
+# print(run_mclass)
 
 #%%

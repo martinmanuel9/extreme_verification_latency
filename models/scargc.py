@@ -44,7 +44,7 @@ from scipy import stats
 from sklearn.svm import SVC, SVR
 from tqdm import tqdm
 import math
-import benchmark_datagen as bdg
+import models.benchmark_datagen_old as bdg
 import ton_iot_datagen as ton_iot
 import bot_iot_datagen as bot_iot
 import unsw_nb15_datagen as unsw

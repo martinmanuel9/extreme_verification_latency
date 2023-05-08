@@ -73,12 +73,16 @@ class Grapher():
         for i, item in enumerate(data.keys()):
             # sns.set_theme(style='darkgrid')
             sns.set_style('whitegrid')
-            plt.plot(data[item]['Timesteps'][::8], data[item]['Accuracy'][::8], label=item, linestyle= plotline[i])
-                
-        plt.xlabel('Step')
-        plt.ylabel('Accuracy')
-        plt.title(title)
-        plt.legend()
+            plt.plot(data[item]['Timesteps'][::8], data[item]['Accuracy'][::8], label=item, linestyle= plotline[i], linewidth=3)
+
+        font = {'family': 'serif',
+                'weight' : 'normal',
+                'size': 18}
+
+        plt.xlabel('Step', fontdict= font)
+        plt.ylabel('Accuracy', fontdict= font)
+        plt.title(title, fontdict= font)
+        plt.legend(loc="lower right", fontsize=14)
         plt.gcf().set_size_inches(15,10)  
         plt.xticks(range(0, 100, 10))
         plt.xlim([11,96])

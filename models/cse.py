@@ -38,7 +38,7 @@ from tkinter import N, Y
 from numpy.lib.function_base import diff
 from numpy.lib.twodim_base import diag
 from pandas.core.frame import DataFrame
-import benchmark_datagen as bm_gen_data
+import models.benchmark_datagen_old as bm_gen_data
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
