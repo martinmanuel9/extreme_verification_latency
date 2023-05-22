@@ -110,10 +110,13 @@ class MClassification():
         
         minDistIndex = []
         for i, dp in enumerate(inData):
-            minDistIndex.append(pointMCDistance[tuple(dp)].index(min(pointMCDistance[tuple(dp)])))
+            minDistIndex.append(pointMCDistance[tuple(dp)].index(min(pointMCDistance[tuple(dp)]))) 
 
-        pointMCDistance['MinDistIndex'] = minDistIndex
-        return pointMCDistance
+        minDistMC = {}
+        minDistMC['Xt'] = inData
+        minDistMC['Distances'] = distances
+        minDistMC['MinDistIndex'] = minDistIndex
+        return minDistMC
     
     def find_silhoette_score(self, X, y, ts):
         """
@@ -143,13 +146,7 @@ class MClassification():
             gmm_model = GMM(n_components=self.NClusters)
             gmm_model.fit(y) 
             self.clusters[ts] = gmm_model.predict(self.Y[ts+1])
-            self.cluster_centers[ts] = self.clusters[ts]
-        elif self.method == 'birch':
-            birch_model = Birch(branching_factor=50, n_clusters= self.NClusters)
-            birch_model.fit(self.T)
-            self.clusters[ts] = birch_model.predict(self.Y[ts+1])
-            self.cluster_centers[ts] = self.clusters[ts]
-
+            self.cluster_centers[ts] = self.clusters[ts] 
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class.
@@ -338,6 +335,20 @@ class MClassification():
     #         # update centroid 
     #         mcluster = self.updateCentroid(inCurrentClusters= currentClusterPoints, inNewClusters= newMC, x = data, y= preds)
 
+    def determineMC(self, inDict, ts):
+        option_arrays = {}
+        # Iterate over each point and option in parallel using zip
+        for point, option in zip(inDict["Xt"], inDict["MinDistIndex"]):
+            # If the option doesn't exist as a key in the option_arrays dictionary,
+            # create a new key with an empty list as its value
+            if option not in option_arrays:
+                option_arrays[option] = []
+            # Append the current point to the list associated with the corresponding option key
+            option_arrays[option].append(point)
+
+        assert(len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0])
+        return option_arrays
+
     def updateCentroid(self, inCurrentClusters, inNewClusters, x, y):
         cluster_centroids = {}
         cluster_radii = {}
@@ -394,7 +405,8 @@ class MClassification():
                 # classify based on the clustered predictions (self.preds) done in the init step 
                 # self.clusters is the previous preds
                 closestMC = self.findClosestMC(x= self.X[ts], MC_Centers= self.cluster_centers[ts-1])
-                print(closestMC)
+                grouped_Xt = self.determineMC(inDict= closestMC, ts= ts)
+                print(grouped_Xt)
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
