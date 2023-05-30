@@ -37,7 +37,7 @@ import numpy as np
 import pandas as pd
 import datagen_synthetic as cbdg
 import unsw_nb15_datagen as unsw
-from sklearn.cluster import Birch, KMeans
+from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture as GMM
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
@@ -217,7 +217,7 @@ class MClassification():
             for cluster in range(self.NClusters):
                 cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
                 cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
-            fig, ax = plt.subplots(1,figsize=(7,5))
+            # fig, ax = plt.subplots(1,figsize=(7,5))
             # gets the indices of each cluster 
             cluster_indices = {}
             for i in range(self.NClusters):
@@ -228,14 +228,14 @@ class MClassification():
             for c in range(self.NClusters):
                 mcluster[c] = self.create_mclusters(inClusterpoints= x[cluster_indices[c]][:,: np.shape(x)[1]-1], threshold=cluster_radii[c]) 
             # plot clusters
-            for i in range(self.NClusters):
-                plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label ='Class '+ str(i))
-                art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
-                ax.add_patch(art)
-            #Plotting the centroids of the clusters
-            plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
-            plt.legend()
-            plt.tight_layout()
+            # for i in range(self.NClusters):
+            #     # plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label ='Class '+ str(i))
+            #     art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
+            #     # ax.add_patch(art)
+            # #Plotting the centroids of the clusters
+            # plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
+            # plt.legend()
+            # plt.tight_layout()
             # plt.show()
 
             # # package for return
@@ -290,8 +290,15 @@ class MClassification():
             tempNewMC[dataPoints] = True
         return tempAddMC, tempNewMC
     
-    def updateCentroid(self, inMCluster, addToMC):
-        pass
+    def updateMCluster(self, inMCluster, addToMC, ts):
+        assert(len(inMCluster) == len(addToMC))
+        mcluster = {}
+        for mc in range(0, len(inMCluster)):
+            pastClusterPoints = inMCluster[mc]['ClusterPoints']
+            toAddClusterPoints = np.squeeze(addToMC[mc])
+            newClusterPonts = np.concatenate((pastClusterPoints, toAddClusterPoints))
+            mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, threshold=inMCluster[mc]['Threshold'])
+        self.microCluster[ts] = mcluster 
 
     def createNewMC(self, inMCluster, newMC):
         pass
@@ -347,8 +354,8 @@ class MClassification():
                 closestMC = self.findClosestMC(x= self.X[ts], MC_Centers= self.cluster_centers[ts-1])
                 preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
                 addToMC, newMC = self.evaluateXt(inPreGroupedXt= preGroupedXt, inMCluster= self.microCluster[ts-1])
-
-                self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts], testData=self.X[ts+1])
+                self.updateMCluster(self.microCluster[ts-1], addToMC=addToMC, ts= ts)
+                self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
                                                 dataset= self.dataset , method= self.method , \
