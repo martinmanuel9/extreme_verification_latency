@@ -355,6 +355,7 @@ class MClassification():
                 preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
                 addToMC, newMC = self.evaluateXt(inPreGroupedXt= preGroupedXt, inMCluster= self.microCluster[ts-1])
                 self.updateMCluster(self.microCluster[ts-1], addToMC=addToMC, ts= ts)
+                print(self.microCluster[ts])
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
