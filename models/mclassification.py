@@ -102,6 +102,7 @@ class MClassification():
         MC = microcluster
         """
         inData = x[:,:-1]
+        # Find the MC that the point is closest to
         distances = np.linalg.norm(inData[:, np.newaxis, :] - MC_Centers[:,:-1], axis=2)
         points_with_distances = np.column_stack((inData, distances))
         pointMCDistance = {}
@@ -261,12 +262,13 @@ class MClassification():
     
     def pointInCluster(self, target_point, cluster_data, radius):
         for point in cluster_data:
+            # euclidean distance if the point in stream should belong to prevoius cluster
             distance = np.sqrt((target_point[0] - point[0]) ** 2 + (target_point[1] - point[1]) ** 2)
             if distance <= radius:
                 return True
         return False
     
-    def evaluateXt(self, inPreGroupedXt, inMCluster):
+    def evaluateXt(self, inPreGroupedXt, prevMCluster):
         """
         inPreGroupedXt = pre grouped xt 
         inCluster = cluster 
@@ -276,18 +278,24 @@ class MClassification():
         for i in inPreGroupedXt:
             dataPoints = inPreGroupedXt[i]
             inCluster = False
-            radius = inMCluster[i]['Radii']
-            clusterPoints = inMCluster[i]['ClusterPoints']
+            radius = prevMCluster[i]['Radii']
+            clusterPoints = prevMCluster[i]['ClusterPoints']
             for point in dataPoints:
+                inCluster = False
+                # Resets if in Cluster for each point
                 if self.pointInCluster(point, clusterPoints, radius):
                     inCluster = True
                     if i in tempAddMC:
-                        tempAddMC[i].append(dataPoints)
+                        tempAddMC[i].append(point)
                     else:
-                        tempAddMC[i] = [dataPoints]
-                    break
-        if not inCluster:
-            tempNewMC[dataPoints] = True
+                        tempAddMC[i] = [point]
+                else:
+                    inCluster = False
+                    if i in tempNewMC:
+                        tempNewMC[i].append(point)
+                    else:
+                        tempNewMC[i] = [point]
+        
         return tempAddMC, tempNewMC
     
     def updateMCluster(self, inMCluster, addToMC, ts):
@@ -353,7 +361,8 @@ class MClassification():
                 # self.clusters is the previous preds
                 closestMC = self.findClosestMC(x= self.X[ts], MC_Centers= self.cluster_centers[ts-1])
                 preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
-                addToMC, newMC = self.evaluateXt(inPreGroupedXt= preGroupedXt, inMCluster= self.microCluster[ts-1])
+                addToMC, newMC = self.evaluateXt(inPreGroupedXt= preGroupedXt, prevMCluster= self.microCluster[ts-1])
+                print('preupdate:\n', self.microCluster[ts-1])
                 self.updateMCluster(self.microCluster[ts-1], addToMC=addToMC, ts= ts)
                 print(self.microCluster[ts])
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
