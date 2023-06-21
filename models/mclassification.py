@@ -117,8 +117,7 @@ class MClassification():
         minDistMC['Xt'] = x
         minDistMC['Points'] = inData
         minDistMC['Distances'] = distances
-        minDistMC['MinDistIndex'] = minDistIndex
-        
+        minDistMC['MinDistIndex'] = minDistIndex   
         return minDistMC
     
     def find_silhoette_score(self, X, y, ts):
@@ -254,6 +253,7 @@ class MClassification():
             pass # need to determine how to calc radii for gmm 
 
     def preGroupMC(self, inDict, ts):
+        #TODO: here the options are based on the index it first appears if its first 1 then its 1 if its 0 then its zero
         option_arrays = {}
         # Iterate over each point and option in parallel using zip
         for point, option in zip(inDict["Points"], inDict["MinDistIndex"]):
@@ -265,6 +265,7 @@ class MClassification():
             option_arrays[option].append(point)
 
         assert(len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0])
+        print('\n\nassociated mcs to add', option_arrays.keys())
         return option_arrays
     
     def pointInCluster(self, target_point, cluster_data, radius):
