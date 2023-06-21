@@ -114,9 +114,11 @@ class MClassification():
             minDistIndex.append(pointMCDistance[tuple(dp)].index(min(pointMCDistance[tuple(dp)]))) 
 
         minDistMC = {}
-        minDistMC['Xt'] = inData
+        minDistMC['Xt'] = x
+        minDistMC['Points'] = inData
         minDistMC['Distances'] = distances
         minDistMC['MinDistIndex'] = minDistIndex
+        
         return minDistMC
     
     def find_silhoette_score(self, X, y, ts):
@@ -143,6 +145,7 @@ class MClassification():
             self.microCluster[ts] = self.create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(X[ts]), x= X[ts] , y= y)
             self.clusters[ts] = kmeans_model.predict(X[ts]) # gets the cluster labels for the data
             self.cluster_centers[ts] = kmeans_model.cluster_centers_
+
         elif self.method == 'gmm':
             gmm_model = GMM(n_components=self.NClusters)
             gmm_model.fit(y) 
@@ -213,43 +216,47 @@ class MClassification():
         """
         cluster_centroids = {}
         cluster_radii = {}
-        # calculates the cluster centroid and the radii of each cluster
+        ## calculates the cluster centroid and the radii of each cluster
         if self.method == 'kmeans':
             for cluster in range(self.NClusters):
                 cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
                 cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
-            # fig, ax = plt.subplots(1,figsize=(7,5))
-            # gets the indices of each cluster 
+            ## plot clusters
+            fig, ax = plt.subplots(1,figsize=(7,5))
+
+            ## gets the indices of each cluster 
             cluster_indices = {}
             for i in range(self.NClusters):
                 cluster_indices[i] = np.array([ j for j , x in enumerate(inCluster.labels_) if x == i])
-            # creates cluster data
+            
+            ## creates cluster data
             mcluster = {}
-            # calculates the microcluster for each cluster based on the number of classes 
+
+            ## calculates the microcluster for each cluster based on the number of classes 
             for c in range(self.NClusters):
                 mcluster[c] = self.create_mclusters(inClusterpoints= x[cluster_indices[c]][:,: np.shape(x)[1]-1], threshold=cluster_radii[c]) 
-            # plot clusters
-            # for i in range(self.NClusters):
-            #     # plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label ='Class '+ str(i))
-            #     art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
-            #     # ax.add_patch(art)
-            # #Plotting the centroids of the clusters
-            # plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
-            # plt.legend()
-            # plt.tight_layout()
-            # plt.show()
+            
+            ## plot clusters
+            for i in range(self.NClusters):
+                plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label ='Class '+ str(i))
+                art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
+                ax.add_patch(art)
 
-            # # package for return
-            # microCluster = {}
-            # microCluster['MC'] = mcluster
+            ## Plotting the centroids of the clusters
+            plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
+            plt.legend()
+            plt.tight_layout()
+            plt.show()
+
             return mcluster
+        
         elif self.method == 'gmm':
             pass # need to determine how to calc radii for gmm 
 
     def preGroupMC(self, inDict, ts):
         option_arrays = {}
         # Iterate over each point and option in parallel using zip
-        for point, option in zip(inDict["Xt"], inDict["MinDistIndex"]):
+        for point, option in zip(inDict["Points"], inDict["MinDistIndex"]):
             # If the option doesn't exist as a key in the option_arrays dictionary,
             # create a new key with an empty list as its value
             if option not in option_arrays:
@@ -306,11 +313,22 @@ class MClassification():
             toAddClusterPoints = np.squeeze(addToMC[mc])
             newClusterPonts = np.concatenate((pastClusterPoints, toAddClusterPoints))
             mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, threshold=inMCluster[mc]['Threshold'])
+        # the new MC at ts will be the incremented statistic where the new points are added to the existing MCs
         self.microCluster[ts] = mcluster 
 
-    def createNewMC(self, inMCluster, newMC):
-        pass
 
+    def createNewMC(self, inData,  ts):
+        ## This assuming that we have the previous model 
+        if self.method == 'kmeans':
+            updatedModel = KMeans(n_clusters=self.NClusters).fit(inData)
+            predictedLabels = updatedModel.fit_predict(inData)
+        elif self.method == 'gmm':
+            updatedModel = GMM(n_components=self.NClusters).fit(inData)
+            predictedLabels = updatedModel.fit_predict(inData)
+        
+        self.microCluster[ts] = self.create_centroid(inCluster= updatedModel, fitCluster= updatedModel.fit_predict(inData), x=inData, y = predictedLabels) 
+        self.clusters[ts] = updatedModel.predict(inData)
+        self.cluster_centers[ts] = updatedModel.cluster_centers_
 
     def initial_labeled_data(self, ts, inData, inLabels):
         self.cluster(X= inData, y= inLabels, ts=ts )
@@ -342,9 +360,8 @@ class MClassification():
         4. We determine if xt from the stream corresponds to the nearest MC using the incrementality property and then we would 
         need to update the statistic of that MC if it does NOT exceed the radius (that is predefined) 
         5. If the radius exceeds the threshold, a new MC carrying the predicted label is created to allocate the new example 
-        6. The algo must search the two  farthest MCs from the predicted class to merge them by using the additivity property. 
+        6. The algo must search the two farthest MCs from the predicted class to merge them by using the additivity property. 
         The two farthest MCs from xt are merged into one MC that will be placed closest to the emerging new concept. 
-
         """
         timesteps = self.X.keys()
         for ts in range(0, len(timesteps) - 1):
@@ -362,9 +379,49 @@ class MClassification():
                 closestMC = self.findClosestMC(x= self.X[ts], MC_Centers= self.cluster_centers[ts-1])
                 preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
                 addToMC, newMC = self.evaluateXt(inPreGroupedXt= preGroupedXt, prevMCluster= self.microCluster[ts-1])
-                print('preupdate:\n', self.microCluster[ts-1])
+            
+                ## TODO: Need to find the find the indexes of the addToMC 
+                # 1. find the indexes of the addToMC
+                # 2. need to create a set that gets 
+                # what if I check if there are any new mcs and then do that then we add to microcluster
+                
+                
+                
+                ## fake newMC data
+                newMC[0] = [[10.0, 10.0, 3],
+                            [10.0, -10.0, 3],
+                            [-10.0, 10.0, 3],
+                            [-10.0, -10.0, 3],
+                            [5.0, 0.0, 3],
+                            [-5.0, 0.0, 3],
+                            [0.0, 5.0, 3],
+                            [0.0, -5.0, 3],
+                            [10.0, 2.0, 3],
+                            [10.0, -2.0, 3],
+                            [-10.0, 2.0, 3],
+                            [-10.0, -2.0, 3],
+                            [2.0, 10.0, 3],
+                            [2.0, -10.0, 3],
+                            [8.0, 10.0, 3],
+                            [8.0, -10.0, 3],
+                            [5.0, 5.0, 3],
+                            [-5.0, 5.0, 3],
+                            [5.0, -5.0, 3],
+                            [-5.0, -5.0, 3]]
+                
+                # we first check if we first need to create a new cluster based on streaming data
+                if len(newMC) > 0:
+                    # need to add previous time step stream data and current stream data to update model
+                    self.NClusters = self.NClusters + len(newMC) 
+                    ## test data added to create a fake cluster for testing
+                    testData = np.concatenate((self.X[ts], newMC[0]))
+                    self.createNewMC(inData= testData , ts= ts)
+                
+                # update microclusters based on streaming data to add to new MCs
                 self.updateMCluster(self.microCluster[ts-1], addToMC=addToMC, ts= ts)
-                print(self.microCluster[ts])
+
+                ##TODO: Need to extract graphing capability as seperate function
+
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
@@ -383,5 +440,4 @@ class MClassification():
 # test mclass
 run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D', datasource='Synthetic').run()
 # print(run_mclass)
-
 #%%
