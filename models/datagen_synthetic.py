@@ -57,7 +57,7 @@ class Synthetic_Datagen:
     def change_directory(self):
         path = str(Path.home())
         print(path)
-        path = path + '/documents/Github/extreme_verification_latency/data/synthetic_data/'
+        path = path + '/extreme_verification_latency/data/synthetic_data/'
         os.chdir(path)
 
     def gen_dataset(self, datatype):
