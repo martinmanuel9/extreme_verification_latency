@@ -127,7 +127,7 @@ class MClassification():
         if self.method == 'kmeans':
             sil_score = {}
             for c in range(2, 11):
-                kmeans_model = KMeans(n_clusters=c).fit(X)
+                kmeans_model = KMeans(n_clusters=c,  n_init='auto').fit(X)
                 score = silhouette_score(X, kmeans_model.labels_, metric='euclidean')
                 sil_score[c] = score
             optimal_cluster = max(sil_score, key=sil_score.get)
@@ -137,9 +137,9 @@ class MClassification():
         if self.method == 'kmeans':
             if ts == 0:
                 self.find_silhoette_score(X=X[ts], y=y, ts=ts)
-                kmeans_model = KMeans(n_clusters=self.NClusters).fit(X[ts])
+                kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X[ts])
             else:
-                kmeans_model = KMeans(n_clusters=self.NClusters).fit(X[ts]) #may not need to do this as we need to create a new cluster for the new data
+                kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X[ts]) #may not need to do this as we need to create a new cluster for the new data
             # computes cluster centers and radii of cluster for initial ts
             self.microCluster[ts] = self.create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(X[ts]), x= X[ts] , y= y)
             self.clusters[ts] = kmeans_model.predict(X[ts]) # gets the cluster labels for the data
@@ -263,13 +263,13 @@ class MClassification():
             # Append the current point to the list associated with the corresponding option key
             option_arrays[option].append(point)
 
-        assert(len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0])
+        assert(len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0], 'Past cluster centers should be the same as grouped arrays')
         sortedArray = sorted(option_arrays.keys())
         groupedMC = {}
         for key in sortedArray:
             groupedMC[key] = option_arrays[key]
 
-        return option_arrays
+        return groupedMC
     
     def pointInCluster(self, target_point, cluster_data, radius):
         for point in cluster_data:
@@ -286,6 +286,7 @@ class MClassification():
         """
         tempAddMC = {}
         tempNewMC = {}
+        print(inPreGroupedXt.keys())
         for i in inPreGroupedXt:
             dataPoints = inPreGroupedXt[i]
             inCluster = False
@@ -324,7 +325,7 @@ class MClassification():
     def createNewMC(self, inData,  ts):
         ## This assuming that we have the previous model 
         if self.method == 'kmeans':
-            updatedModel = KMeans(n_clusters=self.NClusters).fit(inData)
+            updatedModel = KMeans(n_clusters=self.NClusters, n_init='auto').fit(inData)
             predictedLabels = updatedModel.fit_predict(inData)
         elif self.method == 'gmm':
             updatedModel = GMM(n_components=self.NClusters).fit(inData)
@@ -389,8 +390,7 @@ class MClassification():
                 # 2. need to create a set that gets 
                 # what if I check if there are any new mcs and then do that then we add to microcluster
                 
-                
-                
+             
                 ## fake newMC data
                 newMC[0] = [[10.0, 10.0, 3],
                             [10.0, -10.0, 3],
