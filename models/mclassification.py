@@ -55,7 +55,8 @@ class MClassification():
                 classifier,
                 dataset,
                 method,
-                datasource): 
+                datasource,
+                graph = True): 
         """
         """
         self.classifier = classifier
@@ -64,6 +65,7 @@ class MClassification():
         self.NClusters = 0
         self.method = method
         self.cluster_centers ={}
+        self.graph = graph
         self.preds = {}
         self.class_cluster = {}
         self.clusters = {}
@@ -153,10 +155,12 @@ class MClassification():
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class.
-        for i in range(self.NClusters):
-            xhat = self.X[i][self.clusters[ts]]
-            mode_val,_ = stats.mode(xhat)
-            self.class_cluster[i] = mode_val
+        
+        # TODO: Not sure what this stat is used for???
+        # for i in range(self.NClusters):
+        #     xhat = self.X[i][self.clusters[ts]]
+        #     mode_val,_ = stats.mode(xhat)
+        #     self.class_cluster[i] = mode_val
 
     def create_mclusters(self, inClusterpoints, threshold) :
         """
@@ -220,8 +224,6 @@ class MClassification():
             for cluster in range(self.NClusters):
                 cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
                 cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
-            ## plot clusters
-            # fig, ax = plt.subplots(1,figsize=(7,5))
 
             ## gets the indices of each cluster 
             cluster_indices = {}
@@ -230,27 +232,39 @@ class MClassification():
             
             ## creates cluster data
             mcluster = {}
-
             ## calculates the microcluster for each cluster based on the number of classes 
             for c in range(self.NClusters):
                 mcluster[c] = self.create_mclusters(inClusterpoints= x[cluster_indices[c]][:,: np.shape(x)[1]-1], threshold=cluster_radii[c]) 
-            
-            ## plot clusters
-            # for i in range(self.NClusters):
-            #     plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, c = np.random.rand(3,), label ='Class '+ str(i))
-            #     art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
-            #     ax.add_patch(art)
-
-            ## Plotting the centroids of the clusters
-            # plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, c = 'yellow', label = 'Centroids')
-            # plt.legend()
-            # plt.tight_layout()
-            # plt.show()
+            if self.graph: 
+                self.graphMClusters(inCluster= inCluster, fitCluster= fitCluster, x= x)
 
             return mcluster
         
         elif self.method == 'gmm':
             pass # need to determine how to calc radii for gmm 
+
+    def graphMClusters(self, inCluster, fitCluster, x):
+        cluster_centroids = {}
+        cluster_radii = {}
+        ## calculates the cluster centroid and the radii of each cluster
+        if self.method == 'kmeans':
+            for cluster in range(self.NClusters):
+                cluster_centroids[cluster] = list(zip(inCluster.cluster_centers_[:,0], inCluster.cluster_centers_[:,1]))[cluster]
+                cluster_radii[cluster] = max([np.linalg.norm(np.subtract(i, cluster_centroids[cluster])) for i in zip(x[fitCluster == cluster, 0], x[fitCluster == cluster, 1])])
+        ## plot clusters
+        fig, ax = plt.subplots(1,figsize=(7,5))
+        ## plot clusters
+        for i in range(self.NClusters):
+            plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, color = np.random.rand(3,), label ='Class '+ str(i))
+            art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
+            ax.add_patch(art)
+
+        # Plotting the centroids of the clusters
+        plt.scatter(inCluster.cluster_centers_[:, 0], inCluster.cluster_centers_[:,1], s = 100, color = 'yellow', label = 'Centroids')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
 
     def preGroupMC(self, inDict, ts):
         option_arrays = {}
@@ -263,7 +277,7 @@ class MClassification():
             # Append the current point to the list associated with the corresponding option key
             option_arrays[option].append(point)
 
-        assert(len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0], 'Past cluster centers should be the same as grouped arrays')
+        assert len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0], 'Past cluster centers should be the same as grouped arrays.'
         sortedArray = sorted(option_arrays.keys())
         groupedMC = {}
         for key in sortedArray:
@@ -286,7 +300,7 @@ class MClassification():
         """
         tempAddMC = {}
         tempNewMC = {}
-        print(inPreGroupedXt.keys())
+        
         for i in inPreGroupedXt:
             dataPoints = inPreGroupedXt[i]
             inCluster = False
@@ -310,19 +324,23 @@ class MClassification():
         
         return tempAddMC, tempNewMC
     
-    def updateMCluster(self, inMCluster, addToMC, ts):
-        assert(len(inMCluster) == len(addToMC))
+    def updateMCluster(self, inMCluster, addToMC, ts): 
         mcluster = {}
-        for mc in range(0, len(inMCluster)):
+        for mc in range(0, len(addToMC)):
             pastClusterPoints = inMCluster[mc]['ClusterPoints']
             toAddClusterPoints = np.squeeze(addToMC[mc])
             newClusterPonts = np.concatenate((pastClusterPoints, toAddClusterPoints))
             mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, threshold=inMCluster[mc]['Threshold'])
         # the new MC at ts will be the incremented statistic where the new points are added to the existing MCs
-        self.microCluster[ts] = mcluster 
+        for mc in self.microCluster[ts]:
+            if mc in mcluster:
+                self.microCluster[ts][mc] = mcluster[mc]
+            else:
+                self.microCluster[ts][mc] = self.microCluster[ts][mc]
+         
 
 
-    def createNewMC(self, inData,  ts):
+    def updateModelMC(self, inData,  ts):
         ## This assuming that we have the previous model 
         if self.method == 'kmeans':
             updatedModel = KMeans(n_clusters=self.NClusters, n_init='auto').fit(inData)
@@ -332,6 +350,8 @@ class MClassification():
             predictedLabels = updatedModel.fit_predict(inData)
         
         self.microCluster[ts] = self.create_centroid(inCluster= updatedModel, fitCluster= updatedModel.fit_predict(inData), x=inData, y = predictedLabels) 
+        if self.graph:
+            self.graphMClusters(inCluster= updatedModel, fitCluster= predictedLabels, x= inData)
         self.clusters[ts] = updatedModel.predict(inData)
         self.cluster_centers[ts] = updatedModel.cluster_centers_
 
@@ -419,12 +439,31 @@ class MClassification():
                     self.NClusters = self.NClusters + len(newMC) 
                     ## test data added to create a fake cluster for testing
                     testData = np.concatenate((self.X[ts], newMC[0]))
-                    self.createNewMC(inData= testData , ts= ts)
+                    self.updateModelMC(inData= testData , ts= ts)
                 
                 # update microclusters based on streaming data to add to new MCs
-                self.updateMCluster(self.microCluster[ts-1], addToMC=addToMC, ts= ts)
+                self.updateMCluster(self.microCluster[ts], addToMC=addToMC, ts= ts)
+                
+                # update the model based on the new data
+                #create new inData based on points of mcs 
+                inData = []
+                inData = self.microCluster[ts][0]['ClusterPoints']
+                for mc in range(1, len(self.microCluster[ts])):
+                    inData= np.append(inData, self.microCluster[ts][mc]['ClusterPoints'], axis=0)
+                inData = np.squeeze(inData)
+                self.updateModelMC(inData= inData, ts= ts)
 
-                ##TODO: Need to extract graphing capability as seperate function
+                ## The additivity property 
+                '''
+                The additivity considers that if we have two disjoint Micro-Clusters MCA and MCB,  
+                the  union  of  these  two  groups  isequal to the sum of its parts
+                '''
+                for cluster in self.microCluster[ts]:
+                    merged_cluster = np.concatenate(list(self.microCluster[ts][cluster]['ClusterPoints']), axis= 0)
+
+                print(merged_cluster)
+
+
 
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
@@ -442,6 +481,6 @@ class MClassification():
         return self.avg_perf_metric
 
 # test mclass
-run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D', datasource='Synthetic').run()
+run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D', datasource='Synthetic', graph=False).run()
 # print(run_mclass)
 #%%
