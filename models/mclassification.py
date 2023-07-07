@@ -35,6 +35,7 @@ College of Engineering
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 import datagen_synthetic as cbdg
 import unsw_nb15_datagen as unsw
 from sklearn.cluster import KMeans
@@ -349,37 +350,16 @@ class MClassification():
     
     def updateMCluster(self, inMCluster, addToMC, inXtAddMC, ts): 
         mcluster = {}
-        for mc in range(0, len(addToMC)):
+        for mc in addToMC:
             pastClusterPoints = inMCluster[mc]['ClusterPoints']
             toAddClusterPoints = np.squeeze(addToMC[mc])
-            newClusterPonts = np.concatenate((pastClusterPoints, toAddClusterPoints))
+            newClusterPonts = np.vstack((pastClusterPoints, toAddClusterPoints))
             newXt = np.concatenate((inMCluster[mc]['Xt'], inXtAddMC[mc]))
             mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, inData= newXt,  threshold=inMCluster[mc]['Threshold'])
-
-        print(self.microCluster[ts-1])
-        print(mcluster.keys())
-        #  for mc in range(0, len(inXtAddMC)):
-        #     mcluster[mc] = self.create_mclusters(inClusterpoints= inXtAddMC[:,:-1], inData= inXtAddMC,  threshold=inMCluster[mc]['Threshold'])
-        
-        # the new MC at ts will be the incremented statistic where the new points are added to the existing MCs
-        
-        self.microCluster[ts][mc] = mcluster
-        # try: 
-        #     for mc in self.microCluster[ts]:
-        #         if mc in mcluster:
-        #             self.microCluster[ts][mc] = mcluster[mc]
-        #         else:
-        #             self.microCluster[ts][mc] = self.microCluster[ts][mc]
-        # except:
-        #     for mc in self.microCluster[ts-1]:
-        #         if mc in mcluster:
-        #             self.microCluster[ts][mc] = mcluster[mc]
-        #         else:
-        #             self.microCluster[ts][mc] = self.microCluster[ts-1][mc]
-        
-        print(self.microCluster[ts].keys())
-         
-
+   
+        # the new MC at ts will be the incremented statistic where the new points are added to the existing MC 
+        self.microCluster[ts] = mcluster
+ 
     def updateModelMC(self, inData,  ts):
         ## This assuming that we have the previous model 
         if self.method == 'kmeans':
@@ -430,7 +410,7 @@ class MClassification():
         The two farthest MCs from xt are merged into one MC that will be placed closest to the emerging new concept. 
         """
         timesteps = self.X.keys()
-        for ts in range(0, len(timesteps) - 1):
+        for ts in tqdm(range(len(timesteps) - 1), position=0, leave=True):
             total_start = time.time()
             # This takes the fist labeled data set T and creates the initial MCs
             if ts == 0:
@@ -478,12 +458,14 @@ class MClassification():
                         testData = np.concatenate((self.X[ts], pointsNewMC[i]))
                     self.updateModelMC(inData= testData , ts= ts)
 
-                
                 # add to the MCs and update statistics the incrementallity property of the MClassification 
                 try:
+                    # if we created a new MC based after evaluating Xt @ ts 
                     self.updateMCluster(inMCluster=self.microCluster[ts], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
                 except:
+                    # if we did not create a new MC based after evaluating Xt @ ts
                     self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
+                
                 # Additivity property of the MClassification
                 inData = np.concatenate([value['Xt'] for value in self.microCluster[ts].values()])
                 # update model after incrementing MCs
@@ -507,9 +489,7 @@ class MClassification():
                     self.NClusters += 1
                     inData = np.concatenate((inData, unionArray))
                     # need to update the model to create new MCs 
-                    self.updateModelMC(inData= inData, ts= ts)
-
-                print(self.microCluster[ts].keys())
+                    self.updateModelMC(inData= inData, ts= ts) 
 
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
@@ -517,10 +497,7 @@ class MClassification():
                                                 dataset= self.dataset , method= self.method , \
                                                 classifier= self.classifier, tstart=t_start, tend=t_end)
                 self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
-                #TODO: what to do with this:
-                # self._append_mcluster(yhat = self.preds[ts], inData= self.X[ts], inMicroCluster= self.microCluster[ts], ts= ts)
-
-            total_end = time.time()
+        total_end = time.time()
         self.total_time = total_start - total_end
         avg_metrics = cp.PerformanceMetrics(tstart= total_start, tend= total_end)
         self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
@@ -528,5 +505,5 @@ class MClassification():
 
 # test mclass
 run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D', datasource='Synthetic', graph=False).run()
-# print(run_mclass)
+print(run_mclass)
 #%%
