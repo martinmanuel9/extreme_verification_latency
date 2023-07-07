@@ -103,21 +103,21 @@ class MClassification():
         x = datastream point 
         MC = microcluster
         """
-        inData = x[:,:-1]
+        inPoints = x[:,:-1] 
         # Find the MC that the point is closest to
-        distances = np.linalg.norm(inData[:, np.newaxis, :] - MC_Centers[:,:-1], axis=2)
-        points_with_distances = np.column_stack((inData, distances))
+        distances = np.linalg.norm(inPoints[:, np.newaxis, :] - MC_Centers[:,:-1], axis=2)
+        points_with_distances = np.column_stack((inPoints, distances))
         pointMCDistance = {}
-        for i, dp in enumerate(inData):
+        for i, dp in enumerate(inPoints):
             pointMCDistance[tuple(dp)] = distances[i].tolist()
         
         minDistIndex = []
-        for i, dp in enumerate(inData):
+        for i, dp in enumerate(inPoints):
             minDistIndex.append(pointMCDistance[tuple(dp)].index(min(pointMCDistance[tuple(dp)]))) 
 
         minDistMC = {}
         minDistMC['Xt'] = x
-        minDistMC['Points'] = inData
+        minDistMC['Points'] = inPoints
         minDistMC['Distances'] = distances
         minDistMC['MinDistIndex'] = minDistIndex   
         return minDistMC
@@ -162,7 +162,7 @@ class MClassification():
         #     mode_val,_ = stats.mode(xhat)
         #     self.class_cluster[i] = mode_val
 
-    def create_mclusters(self, inClusterpoints, threshold) :
+    def create_mclusters(self, inClusterpoints, inData,  threshold) :
         """
         Clustering options:
         1. k-means
@@ -172,7 +172,8 @@ class MClassification():
         SS = square sum of data points 
         y = label for a set of data points
         """
-        mcluster = {}
+        mcluster = {} 
+        Xt = inData
         N = len(inClusterpoints)
         LS = sum(inClusterpoints)
         SS = 0
@@ -187,6 +188,8 @@ class MClassification():
         # mcluster['Radii'] = np.sqrt((SS / N) - ((LS / N)**2 ))
         mcluster['Radii'] = threshold
         mcluster['Threshold'] = threshold
+        mcluster['Xt'] = Xt
+
         return mcluster
         
     def classify(self, trainData, trainLabel, testData):
@@ -234,7 +237,7 @@ class MClassification():
             mcluster = {}
             ## calculates the microcluster for each cluster based on the number of classes 
             for c in range(self.NClusters):
-                mcluster[c] = self.create_mclusters(inClusterpoints= x[cluster_indices[c]][:,: np.shape(x)[1]-1], threshold=cluster_radii[c]) 
+                mcluster[c] = self.create_mclusters(inClusterpoints= x[cluster_indices[c]][:,: np.shape(x)[1]-1], inData= x[cluster_indices[c]], threshold=cluster_radii[c]) 
             if self.graph: 
                 self.graphMClusters(inCluster= inCluster, fitCluster= fitCluster, x= x)
 
@@ -276,14 +279,26 @@ class MClassification():
                 option_arrays[option] = []
             # Append the current point to the list associated with the corresponding option key
             option_arrays[option].append(point)
-
-        assert len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0], 'Past cluster centers should be the same as grouped arrays.'
+        
+        # gets all the data points and groups them by the option in parallel using zip
+        group_data = {}
+        for data, option in zip(inDict["Xt"], inDict["MinDistIndex"]):
+            if option not in group_data:
+                group_data[option] = []
+            group_data[option].append(data)
+        
+        # assert len(option_arrays.keys()) == np.shape(self.cluster_centers[ts-1])[0], 'Past cluster centers should be the same as grouped arrays.'
         sortedArray = sorted(option_arrays.keys())
-        groupedMC = {}
+        groupedPointsMC = {}
         for key in sortedArray:
-            groupedMC[key] = option_arrays[key]
+            groupedPointsMC[key] = option_arrays[key]
 
-        return groupedMC
+        sortedData = sorted(group_data.keys())
+        groupedDataMC = {}
+        for key in sortedData:
+            groupedDataMC[key] = group_data[key]
+
+        return groupedPointsMC, groupedDataMC
     
     def pointInCluster(self, target_point, cluster_data, radius):
         for point in cluster_data:
@@ -293,52 +308,77 @@ class MClassification():
                 return True
         return False
     
-    def evaluateXt(self, inPreGroupedXt, prevMCluster):
+    def evaluateXt(self, inPreGroupedPoints, prevMC, inPreGroupedXt):
         """
         inPreGroupedXt = pre grouped xt 
         inCluster = cluster 
         """
-        tempAddMC = {}
-        tempNewMC = {}
+        tempPointsAddMC = {}
+        tempPointsNewMC = {}
+        tempXtAddMC = {}
+        tempXtNewMC = {}
         
-        for i in inPreGroupedXt:
-            dataPoints = inPreGroupedXt[i]
+        for i in inPreGroupedPoints:
+            dataPoints = inPreGroupedPoints[i]
+            xtPoints = inPreGroupedXt[i]
+            assert len(dataPoints) == len(xtPoints), 'Length of points and xt needs to be the same'
             inCluster = False
-            radius = prevMCluster[i]['Radii']
-            clusterPoints = prevMCluster[i]['ClusterPoints']
-            for point in dataPoints:
+            radius = prevMC[i]['Radii']
+            clusterPoints = prevMC[i]['ClusterPoints']
+            for point in range(0, len(dataPoints)):
                 inCluster = False
                 # Resets if in Cluster for each point
-                if self.pointInCluster(point, clusterPoints, radius):
+                if self.pointInCluster(dataPoints[point], clusterPoints, radius):
                     inCluster = True
-                    if i in tempAddMC:
-                        tempAddMC[i].append(point)
+                    if i in tempPointsAddMC:
+                        tempPointsAddMC[i].append(dataPoints[point])
+                        tempXtAddMC[i].append(xtPoints[point])
                     else:
-                        tempAddMC[i] = [point]
+                        tempPointsAddMC[i] = [dataPoints[point]]
+                        tempXtAddMC[i] = [xtPoints[point]]
                 else:
                     inCluster = False
-                    if i in tempNewMC:
-                        tempNewMC[i].append(point)
+                    if i in tempPointsNewMC:
+                        tempPointsNewMC[i].append(dataPoints[point])
+                        tempXtNewMC[i].append(xtPoints[point])
                     else:
-                        tempNewMC[i] = [point]
+                        tempPointsNewMC[i] = [dataPoints[point]]
+                        tempXtNewMC[i] = [xtPoints[point]]
         
-        return tempAddMC, tempNewMC
+        return tempPointsAddMC, tempPointsNewMC, tempXtAddMC, tempXtNewMC
     
-    def updateMCluster(self, inMCluster, addToMC, ts): 
+    def updateMCluster(self, inMCluster, addToMC, inXtAddMC, ts): 
         mcluster = {}
         for mc in range(0, len(addToMC)):
             pastClusterPoints = inMCluster[mc]['ClusterPoints']
             toAddClusterPoints = np.squeeze(addToMC[mc])
             newClusterPonts = np.concatenate((pastClusterPoints, toAddClusterPoints))
-            mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, threshold=inMCluster[mc]['Threshold'])
-        # the new MC at ts will be the incremented statistic where the new points are added to the existing MCs
-        for mc in self.microCluster[ts]:
-            if mc in mcluster:
-                self.microCluster[ts][mc] = mcluster[mc]
-            else:
-                self.microCluster[ts][mc] = self.microCluster[ts][mc]
-         
+            newXt = np.concatenate((inMCluster[mc]['Xt'], inXtAddMC[mc]))
+            mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, inData= newXt,  threshold=inMCluster[mc]['Threshold'])
 
+        print(self.microCluster[ts-1])
+        print(mcluster.keys())
+        #  for mc in range(0, len(inXtAddMC)):
+        #     mcluster[mc] = self.create_mclusters(inClusterpoints= inXtAddMC[:,:-1], inData= inXtAddMC,  threshold=inMCluster[mc]['Threshold'])
+        
+        # the new MC at ts will be the incremented statistic where the new points are added to the existing MCs
+        
+        self.microCluster[ts][mc] = mcluster
+        # try: 
+        #     for mc in self.microCluster[ts]:
+        #         if mc in mcluster:
+        #             self.microCluster[ts][mc] = mcluster[mc]
+        #         else:
+        #             self.microCluster[ts][mc] = self.microCluster[ts][mc]
+        # except:
+        #     for mc in self.microCluster[ts-1]:
+        #         if mc in mcluster:
+        #             self.microCluster[ts][mc] = mcluster[mc]
+        #         else:
+        #             self.microCluster[ts][mc] = self.microCluster[ts-1][mc]
+        
+        print(self.microCluster[ts].keys())
+         
 
     def updateModelMC(self, inData,  ts):
         ## This assuming that we have the previous model 
@@ -348,6 +388,7 @@ class MClassification():
         elif self.method == 'gmm':
             updatedModel = GMM(n_components=self.NClusters).fit(inData)
             predictedLabels = updatedModel.fit_predict(inData)
+        
         
         self.microCluster[ts] = self.create_centroid(inCluster= updatedModel, fitCluster= updatedModel.fit_predict(inData), x=inData, y = predictedLabels) 
         if self.graph:
@@ -402,55 +443,50 @@ class MClassification():
                 # classify based on the clustered predictions (self.preds) done in the init step 
                 # self.clusters is the previous preds
                 closestMC = self.findClosestMC(x= self.X[ts], MC_Centers= self.cluster_centers[ts-1])
-                preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
-                addToMC, newMC = self.evaluateXt(inPreGroupedXt= preGroupedXt, prevMCluster= self.microCluster[ts-1])
-            
-                ## TODO: Need to find the find the indexes of the addToMC 
-                # 1. find the indexes of the addToMC
-                # 2. need to create a set that gets 
-                # what if I check if there are any new mcs and then do that then we add to microcluster
+                preGroupedPoints, preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
+                pointsAddToMC, pointsNewMC, xtAddToMC, xtNewMC = self.evaluateXt(inPreGroupedPoints= preGroupedPoints, prevMC= self.microCluster[ts-1], inPreGroupedXt= preGroupedXt)
                 
-             
                 ## fake newMC data
-                newMC[0] = [[10.0, 10.0, 3],
-                            [10.0, -10.0, 3],
-                            [-10.0, 10.0, 3],
-                            [-10.0, -10.0, 3],
-                            [5.0, 0.0, 3],
-                            [-5.0, 0.0, 3],
-                            [0.0, 5.0, 3],
-                            [0.0, -5.0, 3],
-                            [10.0, 2.0, 3],
-                            [10.0, -2.0, 3],
-                            [-10.0, 2.0, 3],
-                            [-10.0, -2.0, 3],
-                            [2.0, 10.0, 3],
-                            [2.0, -10.0, 3],
-                            [8.0, 10.0, 3],
-                            [8.0, -10.0, 3],
-                            [5.0, 5.0, 3],
-                            [-5.0, 5.0, 3],
-                            [5.0, -5.0, 3],
-                            [-5.0, -5.0, 3]]
+                if ts == 1:
+                    pointsNewMC[0] = [[10.0, 10.0, 3],
+                                [10.0, -10.0, 3],
+                                [-10.0, 10.0, 3],
+                                [-10.0, -10.0, 3],
+                                [5.0, 0.0, 3],
+                                [-5.0, 0.0, 3],
+                                [0.0, 5.0, 3],
+                                [0.0, -5.0, 3],
+                                [10.0, 2.0, 3],
+                                [10.0, -2.0, 3],
+                                [-10.0, 2.0, 3],
+                                [-10.0, -2.0, 3],
+                                [2.0, 10.0, 3],
+                                [2.0, -10.0, 3],
+                                [8.0, 10.0, 3],
+                                [8.0, -10.0, 3],
+                                [5.0, 5.0, 3],
+                                [-5.0, 5.0, 3],
+                                [5.0, -5.0, 3],
+                                [-5.0, -5.0, 3]]
                 
                 # we first check if we first need to create a new cluster based on streaming data
-                if len(newMC) > 0:
+                if len(pointsNewMC) > 0:
                     # need to add previous time step stream data and current stream data to update model
-                    self.NClusters = self.NClusters + len(newMC) 
+                    self.NClusters = self.NClusters + len(pointsNewMC) 
                     ## test data added to create a fake cluster for testing
-                    testData = np.concatenate((self.X[ts], newMC[0]))
+                    for i in range(0, len(pointsNewMC)):
+                        testData = np.concatenate((self.X[ts], pointsNewMC[i]))
                     self.updateModelMC(inData= testData , ts= ts)
+
                 
-                # update microclusters based on streaming data to add to new MCs
-                self.updateMCluster(self.microCluster[ts], addToMC=addToMC, ts= ts)
-                
-                # update the model based on the new data
-                #create new inData based on points of mcs 
-                inData = []
-                inData = self.microCluster[ts][0]['ClusterPoints']
-                for mc in range(1, len(self.microCluster[ts])):
-                    inData= np.append(inData, self.microCluster[ts][mc]['ClusterPoints'], axis=0)
-                inData = np.squeeze(inData)
+                # add to the MCs and update statistics the incrementallity property of the MClassification 
+                try:
+                    self.updateMCluster(inMCluster=self.microCluster[ts], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
+                except:
+                    self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
+                # Additivity property of the MClassification
+                inData = np.concatenate([value['Xt'] for value in self.microCluster[ts].values()])
+                # update model after incrementing MCs
                 self.updateModelMC(inData= inData, ts= ts)
 
                 ## The additivity property 
@@ -458,12 +494,22 @@ class MClassification():
                 The additivity considers that if we have two disjoint Micro-Clusters MCA and MCB,  
                 the  union  of  these  two  groups  isequal to the sum of its parts
                 '''
+                # create a sets array to have all the cluster information
+                union_set = set()
+
                 for cluster in self.microCluster[ts]:
-                    merged_cluster = np.concatenate(list(self.microCluster[ts][cluster]['ClusterPoints']), axis= 0)
+                    union_set |= set(map(tuple, self.microCluster[ts][cluster]['Xt']))
+                
+                # unionSetArray = [np.array(item) for item in union_set]
+                unionArray = np.vstack(list(union_set)) 
 
-                print(merged_cluster)
+                if unionArray.any():
+                    self.NClusters += 1
+                    inData = np.concatenate((inData, unionArray))
+                    # need to update the model to create new MCs 
+                    self.updateModelMC(inData= inData, ts= ts)
 
-
+                print(self.microCluster[ts].keys())
 
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
