@@ -186,10 +186,13 @@ class MClassification():
         mcluster['LS'] = LS
         mcluster['SS'] = SS
         mcluster['Centroid'] = LS / N
-        # mcluster['Radii'] = np.sqrt((SS / N) - ((LS / N)**2 ))
-        mcluster['Radii'] = threshold
-        mcluster['Threshold'] = threshold
+        radii = np.sqrt((SS / N) - ((LS / N)**2 ))
+        # mcluster['Radii'] = threshold
+        distance = np.sqrt((radii[0] - mcluster['Centroid'][0])**2 + (radii[1] - mcluster['Centroid'][1])**2)
+        mcluster['Radii'] = distance  
+        mcluster['Threshold'] = distance # threshold was previous
         mcluster['Xt'] = Xt
+        mcluster['Disjoint'] = False
 
         return mcluster
         
@@ -259,7 +262,7 @@ class MClassification():
         fig, ax = plt.subplots(1,figsize=(7,5))
         ## plot clusters
         for i in range(self.NClusters):
-            plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, color = np.random.rand(3,), label ='Class '+ str(i))
+            plt.scatter(x[fitCluster == i, 0], x[fitCluster == i, 1], s = 100, color = np.random.rand(3,), label ='Cluster '+ str(i))
             art = mpatches.Circle(cluster_centroids[i],cluster_radii[i], edgecolor='b', fill=False)
             ax.add_patch(art)
 
@@ -370,13 +373,16 @@ class MClassification():
             predictedLabels = updatedModel.fit_predict(inData)
         
         
-        self.microCluster[ts] = self.create_centroid(inCluster= updatedModel, fitCluster= updatedModel.fit_predict(inData), x=inData, y = predictedLabels) 
+        updatedMicroCluster = self.create_centroid(inCluster= updatedModel, fitCluster= updatedModel.fit_predict(inData), x=inData, y = predictedLabels) 
         if self.graph:
             self.graphMClusters(inCluster= updatedModel, fitCluster= predictedLabels, x= inData)
-        self.clusters[ts] = updatedModel.predict(inData)
-        self.cluster_centers[ts] = updatedModel.cluster_centers_
 
-    def initial_labeled_data(self, ts, inData, inLabels):
+        updatedClusters = updatedModel.predict(inData)
+        updatedClusterCenters = updatedModel.cluster_centers_
+        return updatedMicroCluster, updatedClusters, updatedClusterCenters
+      
+
+    def initLabelData(self, ts, inData, inLabels):
         self.cluster(X= inData, y= inLabels, ts=ts )
         t_start = time.time()
         # classify based on the clustered predictions (self.preds) done in the init step
@@ -387,24 +393,54 @@ class MClassification():
                                         classifier= self.classifier, tstart=t_start, tend=t_end)
         self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
 
+    def findDisjointMCs(self, inMCluster):
+        disjoint_sets = []
+        keys = list(inMCluster.keys())
+        num_keys = len(keys)
+
+        for i in range(num_keys):
+            for j in range(i + 1, num_keys):
+                set_i = set(tuple(element) for element in inMCluster[keys[i]]['Xt'])
+                set_j = set(tuple(element) for element in inMCluster[keys[j]]['Xt'])
+                
+                # Check for common elements
+                if set_i.intersection(set_j):
+                    continue  # Not disjoint
+                else:
+                    disjoint_sets.append((keys[i], keys[j]))
+
+        return np.array(disjoint_sets)
+    
+    def additivityMC(self, disjointMC, inMCluster, ts): 
+        for key in disjointMC:
+            newPoints = np.vstack((inMCluster[key[0]]['ClusterPoints'], inMCluster[key[1]]['ClusterPoints']))
+            newXt = np.vstack((inMCluster[key[0]]['Xt'], inMCluster[key[1]]['Xt']))
+            newN = inMCluster[key[0]]['N'] + inMCluster[key[1]]['N']
+            newLS = inMCluster[key[0]]['LS'] + inMCluster[key[1]]['LS']
+            newSS = inMCluster[key[0]]['SS'] + inMCluster[key[1]]['SS']
+            newRaddiPoints = np.sqrt((newSS / newN) - ((newLS / newN)**2 ))
+            newCentroid = newLS / newN
+            distance = np.sqrt((newRaddiPoints[0] - newCentroid[0])**2 + (newRaddiPoints[1] - newCentroid[1])**2)
+
+            self.microCluster[ts][key[0]]['ClusterPoints'] = newPoints
+            self.microCluster[ts][key[0]]['N'] = newN
+            self.microCluster[ts][key[0]]['LS'] = newLS
+            self.microCluster[ts][key[0]]['SS'] = newSS
+            self.microCluster[ts][key[0]]['Centroid'] = newCentroid
+            self.microCluster[ts][key[0]]['Radii'] = distance 
+            self.microCluster[ts][key[0]]['Threshold'] = distance
+            self.microCluster[ts][key[0]]['Xt'] = newXt
+            self.microCluster[ts][key[0]]['Disjoint'] = True
+            self.microCluster[ts][key[0]]['DisjointPair'] = key
+
     def run(self):
         """
         Micro-Cluster Classification
-        """
-        """
-        1. Get first set of labeled data T  # done
-        2. Create MCs of the labeled data of first data T # done 
-        3. classify  # done 
-            a. predicted label yhat_t for the x_t from stream is given by the nearest MC by euclidean distance 
-            b. determine if the added x_t to the MC exceeds the maximum radius of the MC
-                1.) if the added x_t to the MC does not exceed the MC radius -> update the (N, LS, SS )
-                2.) if the added x_t to the MC exceeds radius -> new MC carrying yhat_t is created to carry x_t
-        ---------------
         1. The Algo takes an initial set of labeled data T and builds a set of labeled MCs (this is the first labeled data) -- complete 
         2. The classification phase we predict yhat for each example xt from the stream 
         3. The classification is based on the nearest MC according to the Euclidean Distance 
         4. We determine if xt from the stream corresponds to the nearest MC using the incrementality property and then we would 
-        need to update the statistic of that MC if it does NOT exceed the radius (that is predefined) 
+            need to update the statistic of that MC if it does NOT exceed the radius (that is predefined) 
         5. If the radius exceeds the threshold, a new MC carrying the predicted label is created to allocate the new example 
         6. The algo must search the two farthest MCs from the predicted class to merge them by using the additivity property. 
         The two farthest MCs from xt are merged into one MC that will be placed closest to the emerging new concept. 
@@ -415,7 +451,7 @@ class MClassification():
             # This takes the fist labeled data set T and creates the initial MCs
             if ts == 0:
                 # Classify first labeled dataset T
-                self.initial_labeled_data(inData= self.X, inLabels= self.T, ts=ts)
+                self.initLabelData(inData= self.X, inLabels= self.T, ts=ts)
             # determine if added x_t to MC exceeds radii of MC
             else:
                 # Step 2 begin classification of next stream to determine yhat 
@@ -424,73 +460,74 @@ class MClassification():
                 # self.clusters is the previous preds
                 closestMC = self.findClosestMC(x= self.X[ts], MC_Centers= self.cluster_centers[ts-1])
                 preGroupedPoints, preGroupedXt = self.preGroupMC(inDict= closestMC, ts= ts)
-                pointsAddToMC, pointsNewMC, xtAddToMC, xtNewMC = self.evaluateXt(inPreGroupedPoints= preGroupedPoints, prevMC= self.microCluster[ts-1], inPreGroupedXt= preGroupedXt)
+                pointsAddToMC, pointsNewMC, xtAddToMC, xtNewMC = self.evaluateXt(inPreGroupedPoints= preGroupedPoints, 
+                                                                                 prevMC= self.microCluster[ts-1], inPreGroupedXt= preGroupedXt)
                 
-                ## fake newMC data
-                if ts == 1:
-                    pointsNewMC[0] = [[10.0, 10.0, 3],
-                                [10.0, -10.0, 3],
-                                [-10.0, 10.0, 3],
-                                [-10.0, -10.0, 3],
-                                [5.0, 0.0, 3],
-                                [-5.0, 0.0, 3],
-                                [0.0, 5.0, 3],
-                                [0.0, -5.0, 3],
-                                [10.0, 2.0, 3],
-                                [10.0, -2.0, 3],
-                                [-10.0, 2.0, 3],
-                                [-10.0, -2.0, 3],
-                                [2.0, 10.0, 3],
-                                [2.0, -10.0, 3],
-                                [8.0, 10.0, 3],
-                                [8.0, -10.0, 3],
-                                [5.0, 5.0, 3],
-                                [-5.0, 5.0, 3],
-                                [5.0, -5.0, 3],
-                                [-5.0, -5.0, 3]]
-                
+            
                 # we first check if we first need to create a new cluster based on streaming data
-                if len(pointsNewMC) > 0:
+                if len(xtNewMC) > 0:
                     # need to add previous time step stream data and current stream data to update model
-                    self.NClusters = self.NClusters + len(pointsNewMC) 
+                    self.NClusters = self.NClusters + len(xtNewMC) 
                     ## test data added to create a fake cluster for testing
-                    for i in range(0, len(pointsNewMC)):
-                        testData = np.concatenate((self.X[ts], pointsNewMC[i]))
-                    self.updateModelMC(inData= testData , ts= ts)
-
+                    newMCData = self.X[ts]
+                    for new_mc in pointsNewMC:
+                        newMCData = np.vstack((newMCData, xtNewMC[new_mc]))
+                    self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= newMCData , ts= ts)
+                
                 # add to the MCs and update statistics the incrementallity property of the MClassification 
                 try:
                     # if we created a new MC based after evaluating Xt @ ts 
                     self.updateMCluster(inMCluster=self.microCluster[ts], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
                 except:
                     # if we did not create a new MC based after evaluating Xt @ ts
-                    self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
-                
+                    self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)         
+    
                 # Additivity property of the MClassification
                 inData = np.concatenate([value['Xt'] for value in self.microCluster[ts].values()])
                 # update model after incrementing MCs
-                self.updateModelMC(inData= inData, ts= ts)
-
+                self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= inData, ts= ts)
+                
                 ## The additivity property 
                 '''
                 The additivity considers that if we have two disjoint Micro-Clusters MCA and MCB,  
-                the  union  of  these  two  groups  isequal to the sum of its parts
+                the  union  of  these  two  groups  is equal to the sum of its parts
                 '''
+
+
+                # TODO: this is probably wrong since it adds new clusters 
                 # create a sets array to have all the cluster information
-                union_set = set()
+                # union_set = set()
+                # for cluster in self.microCluster[ts]:
+                #     union_set |= set(map(tuple, self.microCluster[ts][cluster]['Xt']))
+                # # unionSetArray = [np.array(item) for item in union_set]
+                # unionArray = np.vstack(list(union_set)) 
+                # if unionArray.any():
+                #     self.NClusters += 1
+                #     inData = np.concatenate((inData, unionArray))
+                #     # need to update the model to create new MCs 
+                #     self.updateModelMC(inData= inData, ts= ts) 
 
-                for cluster in self.microCluster[ts]:
-                    union_set |= set(map(tuple, self.microCluster[ts][cluster]['Xt']))
+                # find the disjoint sets of the microclusters 
+                disjointMC = self.findDisjointMCs(self.microCluster[ts])
+
+                for set_pair in disjointMC:
+                    print(set_pair)
+
+                print(self.microCluster[ts].keys())
+
+                self.additivityMC(disjointMC= disjointMC, inMCluster= self.microCluster[ts], ts= ts)
+
+
+                #TODO:
+                # 1. need to add the clusters for disjoints together 
+                # 2. update the statistic 
+                # 3. update the model 
+                # 4. make sure that the mcs are consolidated and are numerical asc 
+                print(self.microCluster[ts].keys())
+                self.microCluster[ts] = dict(sorted(self.microCluster[ts].items()))
+                print(self.microCluster[ts].keys())
                 
-                # unionSetArray = [np.array(item) for item in union_set]
-                unionArray = np.vstack(list(union_set)) 
-
-                if unionArray.any():
-                    self.NClusters += 1
-                    inData = np.concatenate((inData, unionArray))
-                    # need to update the model to create new MCs 
-                    self.updateModelMC(inData= inData, ts= ts) 
-
+                
                 self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
