@@ -510,25 +510,7 @@ class MClassification():
                 # find the disjoint sets of the microclusters 
                 disjointMC = self.findDisjointMCs(self.microCluster[ts])
 
-                for set_pair in disjointMC:
-                    print(set_pair)
-
-                print(self.microCluster[ts].keys())
-
-                self.additivityMC(disjointMC= disjointMC, inMCluster= self.microCluster[ts], ts= ts)
-
-
-                #TODO:
-                # 1. need to add the clusters for disjoints together 
-                # 2. update the statistic 
-                # 3. update the model 
-                # 4. make sure that the mcs are consolidated and are numerical asc 
-                print(self.microCluster[ts].keys())
-                self.microCluster[ts] = dict(sorted(self.microCluster[ts].items()))
-                print(self.microCluster[ts].keys())
-                
-                
-                self.preds[ts] = self.classify(trainData=self.X[ts], trainLabel=self.clusters[ts-1], testData=self.X[ts+1])
+                self.preds[ts] = self.classify(trainData=self.microCluster[ts]['ClusterPoints'], trainLabel=self.clusters[ts-1], testData=self.X[ts])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
                                                 dataset= self.dataset , method= self.method , \
