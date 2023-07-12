@@ -493,7 +493,6 @@ class MClassification():
                 the  union  of  these  two  groups  is equal to the sum of its parts
                 '''
 
-
                 # TODO: this is probably wrong since it adds new clusters 
                 # create a sets array to have all the cluster information
                 # union_set = set()
@@ -510,7 +509,11 @@ class MClassification():
                 # find the disjoint sets of the microclusters 
                 disjointMC = self.findDisjointMCs(self.microCluster[ts])
 
-                self.preds[ts] = self.classify(trainData=self.microCluster[ts]['ClusterPoints'], trainLabel=self.clusters[ts-1], testData=self.X[ts])
+                self.additivityMC(disjointMC= disjointMC, inMCluster= self.microCluster[ts], ts= ts)
+
+                trainData = np.vstack([self.microCluster[ts][i]['Xt'] for i in self.microCluster[ts]])
+
+                self.preds[ts] = self.classify(trainData= trainData, trainLabel=self.clusters[ts], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
                                                 dataset= self.dataset , method= self.method , \
