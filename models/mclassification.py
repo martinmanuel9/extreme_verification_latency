@@ -443,7 +443,38 @@ class MClassification():
         for mc in self.microCluster[ts]:
             self.microCluster[ts][mc]['Step'] = 'Additivity' 
             self.microCluster[ts][mc]['DisjointPairs'] = disjointPairs
+    
+    def drop_non_unique(self, *dictionaries):
+        unique_values = set()
+        duplicates = set()
 
+        # Iterate over each dictionary
+        for dictionary in dictionaries:
+            for value in dictionary.values():
+                if isinstance(value, np.ndarray):
+                    # Convert numpy array to tuple of tuples
+                    value = tuple(map(tuple, value))
+                if value in unique_values:
+                    duplicates.add(value)
+                else:
+                    unique_values.add(value)
+
+        # Create a new dictionary with unique values
+        unique_dict = {}
+        for dictionary in dictionaries:
+            for key, value in dictionary.items():
+                if isinstance(value, np.ndarray):
+                    value = tuple(map(tuple, value))
+                if value not in duplicates:
+                    unique_dict[key] = value
+
+        
+         # Convert tuples back into numpy arrays
+        for key, value in unique_dict.items():
+            if isinstance(value, tuple):
+                unique_dict[key] = np.array(value)
+
+        return unique_dict
 
     def run(self):
         """
@@ -475,16 +506,18 @@ class MClassification():
                 pointsAddToMC, pointsNewMC, xtAddToMC, xtNewMC = self.evaluateXt(inPreGroupedPoints= preGroupedPoints, 
                                                                                  prevMC= self.microCluster[ts-1], inPreGroupedXt= preGroupedXt)
                 
-            
+                
                 # we first check if we first need to create a new cluster based on streaming data
                 if len(xtNewMC) > 0:
                     # need to add previous time step stream data and current stream data to update model
                     self.NClusters = self.NClusters + len(xtNewMC) 
-                    ## test data added to create a fake cluster for testing
+                    
                     newMCData = self.X[ts]
                     for new_mc in pointsNewMC:
                         newMCData = np.vstack((newMCData, xtNewMC[new_mc]))
                     self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= newMCData , ts= ts)
+
+
                 
                 # add to the MCs and update statistics the incrementallity property of the MClassification 
                 try:
@@ -494,8 +527,16 @@ class MClassification():
                     # if we did not create a new MC based after evaluating Xt @ ts
                     self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
     
+                # remove non-unique values from the clusters
+                uniqueDict = {}
+                for mc in self.microCluster[ts]:
+                    uniqueDict[mc] = self.microCluster[ts][mc]['Xt']
+                
+                uniqueData = self.drop_non_unique(uniqueDict)
+
                 # Additivity property of the MClassification
-                inData = np.concatenate([value['Xt'] for value in self.microCluster[ts].values()])
+                inData = np.vstack([value for value in uniqueData.values()])
+                
                 # update model after incrementing MCs
                 self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= inData, ts= ts)
 
