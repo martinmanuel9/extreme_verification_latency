@@ -397,6 +397,7 @@ class MClassification():
         disjoint_sets = []
         keys = list(inMCluster.keys())
         num_keys = len(keys)
+        print(num_keys)
 
         for i in range(num_keys):
             for j in range(i + 1, num_keys):
@@ -432,6 +433,18 @@ class MClassification():
             self.microCluster[ts][key[0]]['Xt'] = newXt
             self.microCluster[ts][key[0]]['Disjoint'] = True
             self.microCluster[ts][key[0]]['DisjointPair'] = key
+        
+        # To get only the joined MCs 
+        filteredMC = [key for key, value in self.microCluster[ts].items() if value['Disjoint'] == True]
+        disjointPairs = [self.microCluster[ts][key]['DisjointPair'] for key in filteredMC ] 
+        filteredXt = np.vstack([self.microCluster[ts][key]['Xt'] for key in filteredMC])
+        # update based on joined clusters
+        self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= filteredXt, ts= ts)
+        
+        for mc in self.microCluster[ts]:
+            self.microCluster[ts][mc]['Step'] = 'Additivity' 
+            self.microCluster[ts][mc]['DisjointPairs'] = disjointPairs
+
 
     def run(self):
         """
@@ -480,12 +493,15 @@ class MClassification():
                     self.updateMCluster(inMCluster=self.microCluster[ts], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
                 except:
                     # if we did not create a new MC based after evaluating Xt @ ts
-                    self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)         
+                    self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
     
                 # Additivity property of the MClassification
                 inData = np.concatenate([value['Xt'] for value in self.microCluster[ts].values()])
                 # update model after incrementing MCs
                 self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= inData, ts= ts)
+
+                for mc in self.microCluster[ts]:
+                    self.microCluster[ts][mc]['Step'] = 'Incrementality' 
                 
                 ## The additivity property 
                 '''
@@ -511,9 +527,12 @@ class MClassification():
 
                 self.additivityMC(disjointMC= disjointMC, inMCluster= self.microCluster[ts], ts= ts)
 
-                trainData = np.vstack([self.microCluster[ts][i]['Xt'] for i in self.microCluster[ts]])
 
-                self.preds[ts] = self.classify(trainData= trainData, trainLabel=self.clusters[ts], testData=self.X[ts+1])
+                inData = np.vstack([self.microCluster[ts][mc]['Xt'] for mc in self.microCluster[ts].keys()])
+                print(np.shape(inData))
+                print(np.shape(self.clusters[ts]))
+        
+                self.preds[ts] = self.classify(trainData= inData, trainLabel=self.clusters[ts], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
                                                 dataset= self.dataset , method= self.method , \
