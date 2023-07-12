@@ -397,7 +397,6 @@ class MClassification():
         disjoint_sets = []
         keys = list(inMCluster.keys())
         num_keys = len(keys)
-        print(num_keys)
 
         for i in range(num_keys):
             for j in range(i + 1, num_keys):
