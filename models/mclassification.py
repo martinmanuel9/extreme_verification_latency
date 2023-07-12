@@ -356,9 +356,9 @@ class MClassification():
         for mc in addToMC:
             pastClusterPoints = inMCluster[mc]['ClusterPoints']
             toAddClusterPoints = np.squeeze(addToMC[mc])
-            newClusterPonts = np.vstack((pastClusterPoints, toAddClusterPoints))
-            newXt = np.concatenate((inMCluster[mc]['Xt'], inXtAddMC[mc]))
-            mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPonts, inData= newXt,  threshold=inMCluster[mc]['Threshold'])
+            newClusterPoints = np.vstack((pastClusterPoints, toAddClusterPoints))
+            newXt = np.vstack((inMCluster[mc]['Xt'], inXtAddMC[mc]))
+            mcluster[mc] = self.create_mclusters(inClusterpoints= newClusterPoints, inData= newXt,  threshold=inMCluster[mc]['Threshold'])
    
         # the new MC at ts will be the incremented statistic where the new points are added to the existing MC 
         self.microCluster[ts] = mcluster
@@ -432,17 +432,22 @@ class MClassification():
             self.microCluster[ts][key[0]]['Xt'] = newXt
             self.microCluster[ts][key[0]]['Disjoint'] = True
             self.microCluster[ts][key[0]]['DisjointPair'] = key
-        
+    
+        toDeleteMC = [key for key, value in self.microCluster[ts].items() if value['Disjoint'] == False] 
+
+        for mc in toDeleteMC:
+            del self.microCluster[ts][mc]
         # To get only the joined MCs 
-        filteredMC = [key for key, value in self.microCluster[ts].items() if value['Disjoint'] == True]
-        disjointPairs = [self.microCluster[ts][key]['DisjointPair'] for key in filteredMC ] 
-        filteredXt = np.vstack([self.microCluster[ts][key]['Xt'] for key in filteredMC])
+        joinedMC = [key for key, value in self.microCluster[ts].items() if value['Disjoint'] == True]
+
+        filteredXt = np.vstack([self.microCluster[ts][key]['Xt'] for key in joinedMC])
+
         # update based on joined clusters
         self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= filteredXt, ts= ts)
         
         for mc in self.microCluster[ts]:
             self.microCluster[ts][mc]['Step'] = 'Additivity' 
-            self.microCluster[ts][mc]['DisjointPairs'] = disjointPairs
+            self.microCluster[ts][mc]['DisjointPairs'] = disjointMC
     
     def drop_non_unique(self, *dictionaries):
         unique_values = set()
@@ -509,22 +514,13 @@ class MClassification():
                 
                 # we first check if we first need to create a new cluster based on streaming data
                 if len(xtNewMC) > 0:
-                    # need to add previous time step stream data and current stream data to update model
                     self.NClusters = self.NClusters + len(xtNewMC) 
-                    
-                    newMCData = self.X[ts]
-                    for new_mc in pointsNewMC:
-                        newMCData = np.vstack((newMCData, xtNewMC[new_mc]))
-                    self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= newMCData , ts= ts)
+                    newMCData = np.vstack([xtNewMC[mc] for mc in xtNewMC.keys()])
+                    inData = np.vstack((self.X[ts-1], newMCData))
+                    print(np.shape(inData))
+                    self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= inData , ts= ts)
 
-
-                
-                # add to the MCs and update statistics the incrementallity property of the MClassification 
-                try:
-                    # if we created a new MC based after evaluating Xt @ ts 
-                    self.updateMCluster(inMCluster=self.microCluster[ts], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
-                except:
-                    # if we did not create a new MC based after evaluating Xt @ ts
+                if not xtNewMC: 
                     self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
     
                 # remove non-unique values from the clusters
@@ -533,8 +529,6 @@ class MClassification():
                     uniqueDict[mc] = self.microCluster[ts][mc]['Xt']
                 
                 uniqueData = self.drop_non_unique(uniqueDict)
-
-                # Additivity property of the MClassification
                 inData = np.vstack([value for value in uniqueData.values()])
                 
                 # update model after incrementing MCs
@@ -548,29 +542,10 @@ class MClassification():
                 The additivity considers that if we have two disjoint Micro-Clusters MCA and MCB,  
                 the  union  of  these  two  groups  is equal to the sum of its parts
                 '''
-
-                # TODO: this is probably wrong since it adds new clusters 
-                # create a sets array to have all the cluster information
-                # union_set = set()
-                # for cluster in self.microCluster[ts]:
-                #     union_set |= set(map(tuple, self.microCluster[ts][cluster]['Xt']))
-                # # unionSetArray = [np.array(item) for item in union_set]
-                # unionArray = np.vstack(list(union_set)) 
-                # if unionArray.any():
-                #     self.NClusters += 1
-                #     inData = np.concatenate((inData, unionArray))
-                #     # need to update the model to create new MCs 
-                #     self.updateModelMC(inData= inData, ts= ts) 
-
                 # find the disjoint sets of the microclusters 
                 disjointMC = self.findDisjointMCs(self.microCluster[ts])
-
                 self.additivityMC(disjointMC= disjointMC, inMCluster= self.microCluster[ts], ts= ts)
-
-
                 inData = np.vstack([self.microCluster[ts][mc]['Xt'] for mc in self.microCluster[ts].keys()])
-                print(np.shape(inData))
-                print(np.shape(self.clusters[ts]))
         
                 self.preds[ts] = self.classify(trainData= inData, trainLabel=self.clusters[ts], testData=self.X[ts+1])
                 t_end = time.time()
