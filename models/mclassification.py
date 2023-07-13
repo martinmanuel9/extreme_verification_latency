@@ -386,7 +386,7 @@ class MClassification():
         self.cluster(X= inData, y= inLabels, ts=ts )
         t_start = time.time()
         # classify based on the clustered predictions (self.preds) done in the init step
-        self.preds[ts] = self.classify(trainData=inData[ts] , trainLabel= inLabels[:,-1], testData=self.X[ts+1])
+        self.preds[ts] = self.classify(trainData= inData[ts] , trainLabel= inLabels[:,-1], testData=self.X[ts+1])
         t_end = time.time()
         perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts][:,-1], \
                                         dataset= self.dataset , method= self.method , \
@@ -439,11 +439,13 @@ class MClassification():
             del self.microCluster[ts][mc]
         # To get only the joined MCs 
         joinedMC = [key for key, value in self.microCluster[ts].items() if value['Disjoint'] == True]
-
         filteredXt = np.vstack([self.microCluster[ts][key]['Xt'] for key in joinedMC])
-
+        
+        # # remove non-unique values from the clusters
+        uniqueFilteredXt =  np.unique(filteredXt, axis=0)
         # update based on joined clusters
-        self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= filteredXt, ts= ts)
+       
+        self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= uniqueFilteredXt, ts= ts)
         
         for mc in self.microCluster[ts]:
             self.microCluster[ts][mc]['Step'] = 'Additivity' 
@@ -493,9 +495,9 @@ class MClassification():
         6. The algo must search the two farthest MCs from the predicted class to merge them by using the additivity property. 
         The two farthest MCs from xt are merged into one MC that will be placed closest to the emerging new concept. 
         """
+        total_start = time.time()
         timesteps = self.X.keys()
         for ts in tqdm(range(len(timesteps) - 1), position=0, leave=True):
-            total_start = time.time()
             # This takes the fist labeled data set T and creates the initial MCs
             if ts == 0:
                 # Classify first labeled dataset T
@@ -516,9 +518,12 @@ class MClassification():
                 if len(xtNewMC) > 0:
                     self.NClusters = self.NClusters + len(xtNewMC) 
                     newMCData = np.vstack([xtNewMC[mc] for mc in xtNewMC.keys()])
-                    inData = np.vstack((self.X[ts-1], newMCData))
-                    print(np.shape(inData))
-                    self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= inData , ts= ts)
+                    # inData = np.vstack((self.X[ts-1], newMCData))
+                    
+                    if len(newMCData) >= self.NClusters:
+                        self.microCluster[ts], self.clusters[ts], self.cluster_centers[ts] = self.updateModelMC(inData= newMCData , ts= ts)
+                    else:
+                        self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
 
                 if not xtNewMC: 
                     self.updateMCluster(inMCluster=self.microCluster[ts-1], inXtAddMC= xtAddToMC, addToMC=pointsAddToMC, ts= ts)
@@ -545,16 +550,25 @@ class MClassification():
                 # find the disjoint sets of the microclusters 
                 disjointMC = self.findDisjointMCs(self.microCluster[ts])
                 self.additivityMC(disjointMC= disjointMC, inMCluster= self.microCluster[ts], ts= ts)
-                inData = np.vstack([self.microCluster[ts][mc]['Xt'] for mc in self.microCluster[ts].keys()])
-        
-                self.preds[ts] = self.classify(trainData= inData, trainLabel=self.clusters[ts], testData=self.X[ts+1])
+                # inData = np.vstack([self.microCluster[ts][mc]['Xt'] for mc in self.microCluster[ts].keys()])
+
+                ## remove non-unique values from the clusters
+                uniqueDict = {}
+                for mc in self.microCluster[ts]:
+                    uniqueDict[mc] = self.microCluster[ts][mc]['Xt']
+                
+                uniqueData = self.drop_non_unique(uniqueDict)
+                inData = np.vstack([value for value in uniqueData.values()])
+
+                self.preds[ts] = self.classify(trainData= inData, trainLabel=inData[:,-1], testData=self.X[ts+1])
                 t_end = time.time()
                 perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
                                                 dataset= self.dataset , method= self.method , \
                                                 classifier= self.classifier, tstart=t_start, tend=t_end)
                 self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+              
         total_end = time.time()
-        self.total_time = total_start - total_end
+        self.total_time = total_end - total_start
         avg_metrics = cp.PerformanceMetrics(tstart= total_start, tend= total_end)
         self.avg_perf_metric = avg_metrics.findAvePerfMetrics(total_time=self.total_time, perf_metrics= self.performance_metric)
         return self.avg_perf_metric
