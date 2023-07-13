@@ -37,6 +37,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import datagen_synthetic as cbdg
+import ton_iot_datagen as ton_iot
+import bot_iot_datagen as bot_iot
 import unsw_nb15_datagen as unsw
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture as GMM
@@ -77,27 +79,341 @@ class MClassification():
         self.X = {}
         self.Y = {}
         self.T = {}
+        # for UNSW IoT dataset
+        self.data= {}
+        self.labeled= {}
+        self.Xinit = {}
+        self.Yinit = {}
+        self.all_data = {}
         self.setData()
         
     def setData(self):
-        data_gen = cbdg.Synthetic_Datagen()
-        # get data, labels, and first labels synthetically for timestep 0
-        # data is composed of just the features 
-        # labels are the labels 
-        # core supports are the first batch with added labels 
-        data, labels, first_labels, dataset = data_gen.gen_dataset(self.dataset)
-        ts = 0 
-        # set dataset (all the data features and labels)
-        for i in range(0, len(data[0])):
-            self.X[ts] = data[0][i]
-            ts += 1
-        # set all the labels 
-        ts = 0
-        for k in range(0, len(labels[0])):
-            self.Y[ts] = labels[0][k]
-            ts += 1
-        # gets first core supports from synthetic
-        self.T = np.squeeze(first_labels)
+        if self.datasource == 'Synthetic':
+            self.setSyntheticData()
+            data_gen = cbdg.Synthetic_Datagen()
+            # get data, labels, and first labels synthetically for timestep 0
+            # data is composed of just the features 
+            # labels are the labels 
+            # core supports are the first batch with added labels 
+            data, labels, first_labels, dataset = data_gen.gen_dataset(self.dataset)
+            ts = 0 
+            # set dataset (all the data features and labels)
+            for i in range(0, len(data[0])):
+                self.X[ts] = data[0][i]
+                ts += 1
+            # set all the labels 
+            ts = 0
+            for k in range(0, len(labels[0])):
+                self.Y[ts] = labels[0][k]
+                ts += 1
+            # gets first core supports from synthetic
+            self.T = np.squeeze(first_labels)
+        elif self.datasource == 'UNSW':
+            if self.dataset == 'ton_iot_fridge':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.fridgeTrainStepsize, test_stepsize=datagen.fridgeTestStepsize, 
+                                                        train=datagen.fridgeTrainSet, test= datagen.fridgeTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+                
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+             
+
+            elif self.dataset == 'ton_iot_garage':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.garageTrainStepsize, test_stepsize=datagen.garageTestStepsize, 
+                                                        train=datagen.garageTrainSet, test= datagen.garageTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+
+            elif self.dataset == 'ton_iot_gps':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.gpsTrainStepsize, test_stepsize=datagen.gpsTestStepsize, 
+                                                        train=datagen.gpsTrainSet, test= datagen.gpsTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+
+
+            elif self.dataset == 'ton_iot_modbus':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.modbusTrainStepsize, test_stepsize=datagen.modbusTestStepsize, 
+                                                        train=datagen.modbusTrainSet, test= datagen.modbusTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+
+            elif self.dataset == 'ton_iot_light':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.lightTrainStepsize, test_stepsize=datagen.lightTestStepsize, 
+                                                        train=datagen.lightTrainSet, test= datagen.lightTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+
+            elif self.dataset == 'ton_iot_thermo':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.thermoTrainStepsize, test_stepsize=datagen.thermoTestStepsize, 
+                                                        train=datagen.thermoTrainSet, test= datagen.thermoTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+
+            elif self.dataset == 'ton_iot_weather':
+                datagen = ton_iot.TON_IoT_Datagen()
+                # need to select what IoT data you want fridge, garage, GPS, modbus, light, thermostat, weather 
+                train, test =  datagen.create_dataset(train_stepsize=datagen.weatherTrainStepsize, test_stepsize=datagen.weatherTestStepsize, 
+                                                        train=datagen.weatherTrainSet, test= datagen.weatherTestSet)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels[0])):
+                    self.labeled[ts] = labels[0][k]
+                    ts += 1
+
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
+
+            elif self.dataset == 'bot_iot':
+                datagen = bot_iot.BOT_IoT_Datagen()
+                trainSetFeat = datagen.botTrainSet
+                testSetFeat = datagen.botTestSet
+                train, test = datagen.create_dataset(train=trainSetFeat, test=testSetFeat)
+                data = train['Data']
+                labels = train['Labels']
+                core_supports = train['Use']
+                dataset = train['Dataset']
+                testData = test['Data']
+                testLabels = test['Labels']
+                testCoreSupports = test['Use']
+                ts = 0
+                # set data (all the features)
+                for i in range(0, len(data[0])):
+                    self.data[ts] = data[0][i]
+                    ts += 1
+                # set all the labels 
+                ts = 0
+                for k in range(0, len(labels)):
+                    self.labeled[ts] = labels[k]
+                    ts += 1
+                
+                dict_train = {}
+                for i in range(0, len(train['Data'][0])):
+                    dict_train[i] = train['Data'][0][i]
+                
+                dict_test = {}
+                for j in range(0, len(test['Data'][0])):
+                    dict_test[j] = test['Data'][0][j]
+
+                self.Xinit = dict_train
+                self.Yinit = dict_test
+
+                self.X = dict_train
+                self.Y = dict_test
+                self.all_data = train['Dataset']
 
     def findClosestMC(self, x, MC_Centers):
         """
@@ -574,6 +890,6 @@ class MClassification():
         return self.avg_perf_metric
 
 # test mclass
-run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='UG_2C_2D', datasource='Synthetic', graph=False).run()
+run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
 print(run_mclass)
 #%%
