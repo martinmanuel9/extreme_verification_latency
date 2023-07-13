@@ -44,7 +44,7 @@ from scipy import stats
 from sklearn.svm import SVC, SVR
 from tqdm import tqdm
 import math
-import models.benchmark_datagen_old as bdg
+import benchmark_datagen_old as bdg
 import ton_iot_datagen as ton_iot
 import bot_iot_datagen as bot_iot
 import unsw_nb15_datagen as unsw
@@ -54,7 +54,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.linear_model import LogisticRegression 
 from sklearn.neural_network import MLPClassifier
 from sklearn import tree
-from skmultiflow.bayes import NaiveBayes
+# from skmultiflow.bayes import NaiveBayes
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 import time
@@ -514,7 +514,7 @@ class SCARGC:
                     yhat = Yinit[i][labels]
                     mode_val,_ = stats.mode(yhat)
                     self.class_cluster[i] = mode_val
-            elif self.datasource == 'unsw':
+            elif self.datasource == 'UNSW':
                 self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0]) 
                 labels = self.cluster.predict(Yinit[0])
                 
@@ -547,7 +547,7 @@ class SCARGC:
                 if self.datasource == 'synthetic':
                     knn = KNeighborsRegressor(n_neighbors=1).fit(Yts[0], Xts[0])           # KNN.fit(train_data, train label)
                     predicted_label = knn.predict(Yts[1])
-                elif self.datasource == 'unsw':
+                elif self.datasource == 'UNSW':
                     knn = KNeighborsClassifier(n_neighbors=1).fit(self.all_data[:,:-1], self.all_data[:,-1])           # KNN.fit(train_data, train label)
                     self.train_model = knn
                     predicted_label = knn.predict(Yts[0][:,:-1]) 
@@ -558,14 +558,14 @@ class SCARGC:
                     svn_clf = SVC(gamma='auto').fit(Xts[0][:,:-1], Yts[0][:,-1])
                     predicted_label = svn_clf.predict(Yts[1][:,:-1])
                     self.preds[0] = predicted_label
-                elif self.datasource == 'unsw':
+                elif self.datasource == 'UNSW':
                     svn_clf = SVC(kernel='rbf').fit(self.all_data[:,:-1], self.all_data[:,-1]) # use the entire training data
                     self.train_model = svn_clf
                     predicted_label = svn_clf.predict(Yts[0][:,:-1])
                     self.preds[0] = predicted_label
 
             elif self.classifier == 'logistic_regression':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     lg_rg = LogisticRegression()
                     lg_rg.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = lg_rg
@@ -576,7 +576,7 @@ class SCARGC:
                     exit()
             
             elif self.classifier == 'random_forest':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     rf = RandomForestClassifier()
                     rf.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = rf
@@ -586,7 +586,7 @@ class SCARGC:
                     exit()
             
             elif self.classifier == 'adaboost':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     ada = AdaBoostClassifier()
                     ada.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = ada
@@ -596,7 +596,7 @@ class SCARGC:
                     exit()
             
             elif self.classifier == 'decision_tree':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     dt = tree.DecisionTreeClassifier()
                     dt.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = dt
@@ -606,7 +606,7 @@ class SCARGC:
                     exit()
 
             elif self.classifier == 'knn':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     knn = KNeighborsClassifier(n_neighbors=50)
                     knn.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = knn
@@ -616,7 +616,7 @@ class SCARGC:
                     exit()
             
             elif self.classifier == 'mlp':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     mlp = MLPClassifier(random_state=1, max_iter=300)
                     mlp.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = mlp
@@ -626,7 +626,7 @@ class SCARGC:
                     exit()
             
             elif self.classifier == 'naive_bayes':
-                if self.datasource == 'unsw':
+                if self.datasource == 'UNSW':
                     nb = BernoulliNB()
                     nb.fit(self.all_data[:,:-1], self.all_data[:,-1])
                     self.train_model = nb
@@ -697,7 +697,7 @@ class SCARGC:
                         elif self.classifier == 'svm':
                             svm_mdl = SVC(kernel='rbf').fit(Yt[:,:-1], Yt[:,-1])        # fit(Xtrain, X_label_train)
                             predicted_label = svm_mdl.predict(Ye[:,:-1])
-                    elif self.datasource == 'unsw':
+                    elif self.datasource == 'UNSW':
                         predicted_label = self.train_model.predict(Ye[:,:-1])
                     
                     pool_data = np.vstack((pool_data, Ye))

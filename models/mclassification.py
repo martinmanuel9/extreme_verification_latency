@@ -85,11 +85,11 @@ class MClassification():
         self.Xinit = {}
         self.Yinit = {}
         self.all_data = {}
+        self.all_data_test = {}
         self.setData()
         
     def setData(self):
-        if self.datasource == 'Synthetic':
-            self.setSyntheticData()
+        if self.datasource == 'synthetic':
             data_gen = cbdg.Synthetic_Datagen()
             # get data, labels, and first labels synthetically for timestep 0
             # data is composed of just the features 
@@ -108,6 +108,7 @@ class MClassification():
                 ts += 1
             # gets first core supports from synthetic
             self.T = np.squeeze(first_labels)
+
         elif self.datasource == 'UNSW':
             if self.dataset == 'ton_iot_fridge':
                 datagen = ton_iot.TON_IoT_Datagen()
@@ -146,6 +147,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
              
 
             elif self.dataset == 'ton_iot_garage':
@@ -185,6 +187,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
             elif self.dataset == 'ton_iot_gps':
                 datagen = ton_iot.TON_IoT_Datagen()
@@ -223,6 +226,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
 
             elif self.dataset == 'ton_iot_modbus':
@@ -262,6 +266,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
             elif self.dataset == 'ton_iot_light':
                 datagen = ton_iot.TON_IoT_Datagen()
@@ -300,6 +305,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
             elif self.dataset == 'ton_iot_thermo':
                 datagen = ton_iot.TON_IoT_Datagen()
@@ -338,6 +344,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
             elif self.dataset == 'ton_iot_weather':
                 datagen = ton_iot.TON_IoT_Datagen()
@@ -376,6 +383,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
             elif self.dataset == 'bot_iot':
                 datagen = bot_iot.BOT_IoT_Datagen()
@@ -414,6 +422,7 @@ class MClassification():
                 self.X = dict_train
                 self.Y = dict_test
                 self.all_data = train['Dataset']
+                self.all_data_test = test['Dataset']
 
     def findClosestMC(self, x, MC_Centers):
         """
@@ -453,22 +462,40 @@ class MClassification():
             self.NClusters = optimal_cluster
 
     def cluster(self, X, y, ts):
-        if self.method == 'kmeans':
-            if ts == 0:
-                self.find_silhoette_score(X=X[ts], y=y, ts=ts)
-                kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X[ts])
-            else:
-                kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X[ts]) #may not need to do this as we need to create a new cluster for the new data
-            # computes cluster centers and radii of cluster for initial ts
-            self.microCluster[ts] = self.create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(X[ts]), x= X[ts] , y= y)
-            self.clusters[ts] = kmeans_model.predict(X[ts]) # gets the cluster labels for the data
-            self.cluster_centers[ts] = kmeans_model.cluster_centers_
+        if self.datasource == 'synthetic':
+            if self.method == 'kmeans':
+                if ts == 0:
+                    self.find_silhoette_score(X=X[ts], y=y, ts=ts)
+                    kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X[ts])  
+                else:
+                    kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X[ts]) #may not need to do this as we need to create a new cluster for the new data
+                # computes cluster centers and radii of cluster for initial ts
+                self.microCluster[ts] = self.create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(X[ts]), x= X[ts] , y= y)
+                self.clusters[ts] = kmeans_model.predict(X[ts]) # gets the cluster labels for the data
+                self.cluster_centers[ts] = kmeans_model.cluster_centers_
+            elif self.method == 'gmm':
+                gmm_model = GMM(n_components=self.NClusters)
+                gmm_model.fit(y) 
+                self.clusters[ts] = gmm_model.predict(self.Y[ts+1])
+                self.cluster_centers[ts] = self.clusters[ts]  
+        elif self.datasource == 'UNSW':
+            if self.method == 'kmeans':
+                if ts == 0:
+                    self.find_silhoette_score(X=self.all_data, y=self.all_data[:,-1], ts=ts)
+                    kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X)  
+                else:
+                    kmeans_model = KMeans(n_clusters=self.NClusters, n_init='auto').fit(X) #may not need to do this as we need to create a new cluster for the new data
+                # computes cluster centers and radii of cluster for initial ts
+                self.microCluster[ts] = self.create_centroid(inCluster = kmeans_model, fitCluster = kmeans_model.fit_predict(X), x= X , y= y)
+                self.clusters[ts] = kmeans_model.predict(X) # gets the cluster labels for the data
+                self.cluster_centers[ts] = kmeans_model.cluster_centers_
 
-        elif self.method == 'gmm':
-            gmm_model = GMM(n_components=self.NClusters)
-            gmm_model.fit(y) 
-            self.clusters[ts] = gmm_model.predict(self.Y[ts+1])
-            self.cluster_centers[ts] = self.clusters[ts] 
+            elif self.method == 'gmm':
+                gmm_model = GMM(n_components=self.NClusters)
+                gmm_model.fit(y) 
+                self.clusters[ts] = gmm_model.predict(self.Y[ts+1])
+                self.cluster_centers[ts] = self.clusters[ts] 
+            
         # for each of the clusters, find the labels of the data samples in the clusters
         # then look at the labels from the initially labeled data that are in the same
         # cluster. assign the cluster the label of the most frequent class.
@@ -701,13 +728,24 @@ class MClassification():
     def initLabelData(self, ts, inData, inLabels):
         self.cluster(X= inData, y= inLabels, ts=ts )
         t_start = time.time()
-        # classify based on the clustered predictions (self.preds) done in the init step
-        self.preds[ts] = self.classify(trainData= inData[ts] , trainLabel= inLabels[:,-1], testData=self.X[ts+1])
-        t_end = time.time()
-        perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts][:,-1], \
-                                        dataset= self.dataset , method= self.method , \
-                                        classifier= self.classifier, tstart=t_start, tend=t_end)
-        self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+        if self.datasource == 'synthetic':
+            # classify based on the clustered predictions (self.preds) done in the init step
+            self.preds[ts] = self.classify(trainData= inData[ts] , trainLabel= inLabels[:,-1], testData=self.X[ts+1])
+            t_end = time.time()
+            perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts][:,-1], \
+                                            dataset= self.dataset , method= self.method , \
+                                            classifier= self.classifier, tstart=t_start, tend=t_end)
+            self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+        elif self.datasource == 'UNSW':
+             # classify based on the clustered predictions (self.preds) done in the init step
+            
+            self.preds[ts] = self.classify(trainData= inData , trainLabel= inLabels, testData= self.all_data_test[:np.shape(inData)[0]])
+            t_end = time.time()
+            perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.all_data_test[:np.shape(self.preds[ts])[0]], \
+                                            dataset= self.dataset , method= self.method , \
+                                            classifier= self.classifier, tstart=t_start, tend=t_end)
+            self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.all_data_test[:np.shape(self.preds[ts])[0]][:,-1])
+
 
     def findDisjointMCs(self, inMCluster):
         disjoint_sets = []
@@ -813,11 +851,15 @@ class MClassification():
         """
         total_start = time.time()
         timesteps = self.X.keys()
+        
         for ts in tqdm(range(len(timesteps) - 1), position=0, leave=True):
             # This takes the fist labeled data set T and creates the initial MCs
             if ts == 0:
-                # Classify first labeled dataset T
-                self.initLabelData(inData= self.X, inLabels= self.T, ts=ts)
+                if self.datasource == 'synthetic':
+                    # Classify first labeled dataset T
+                    self.initLabelData(inData= self.X, inLabels= self.T, ts=ts)
+                elif self.datasource == 'UNSW':
+                    self.initLabelData(inData= self.all_data, inLabels= self.all_data[:,-1], ts=ts)
             # determine if added x_t to MC exceeds radii of MC
             else:
                 # Step 2 begin classification of next stream to determine yhat 
@@ -876,13 +918,22 @@ class MClassification():
                 uniqueData = self.drop_non_unique(uniqueDict)
                 inData = np.vstack([value for value in uniqueData.values()])
 
-                self.preds[ts] = self.classify(trainData= inData, trainLabel=inData[:,-1], testData=self.X[ts+1])
-                t_end = time.time()
-                perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
-                                                dataset= self.dataset , method= self.method , \
-                                                classifier= self.classifier, tstart=t_start, tend=t_end)
-                self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
+                if self.datasource == 'synthetic':
+                    self.preds[ts] = self.classify(trainData= inData, trainLabel=inData[:,-1], testData=self.X[ts+1])
+                    t_end = time.time()
+                    perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.X[ts+1][:,-1], \
+                                                    dataset= self.dataset , method= self.method , \
+                                                    classifier= self.classifier, tstart=t_start, tend=t_end)
+                    self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.X[ts+1][:,-1])
               
+                elif self.datasource == 'UNSW':
+                    self.preds[ts] = self.classify(trainData= inData, trainLabel=inData[:,-1], testData=self.Y[ts])
+                    t_end = time.time()
+                    perf_metric = cp.PerformanceMetrics(timestep= ts, preds= self.preds[ts], test= self.Y[ts][:,-1], \
+                                                    dataset= self.dataset , method= self.method , \
+                                                    classifier= self.classifier, tstart=t_start, tend=t_end)
+                    self.performance_metric[ts] = perf_metric.findClassifierMetrics(preds= self.preds[ts], test= self.Y[ts][:,-1])
+                
         total_end = time.time()
         self.total_time = total_end - total_start
         avg_metrics = cp.PerformanceMetrics(tstart= total_start, tend= total_end)
@@ -890,6 +941,6 @@ class MClassification():
         return self.avg_perf_metric
 
 # test mclass
-run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
-print(run_mclass)
+# run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
+# print(run_mclass) # ton_iot_fridge UG_2C_2D
 #%%

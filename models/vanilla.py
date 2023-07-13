@@ -41,7 +41,7 @@ import datagen_synthetic as synthetic_data
 import ton_iot_datagen as ton_iot
 import bot_iot_datagen as bot_iot
 import classifier_performance as perf_metric
-from skmultiflow.bayes import NaiveBayes
+# from skmultiflow.bayes import NaiveBayes
 from sklearn.linear_model import LogisticRegression 
 from sklearn import tree
 from sklearn.neighbors import KNeighborsClassifier
