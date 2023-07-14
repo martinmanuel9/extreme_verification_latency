@@ -42,7 +42,11 @@ import bot_iot_datagen as bot_iot
 import unsw_nb15_datagen as unsw
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture as GMM
+from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 from sklearn.svm import SVC, SVR
 import classifier_performance as cp
 from scipy import stats
@@ -558,6 +562,63 @@ class MClassification():
         elif self.classifier == 'svm':
             svm_mdl = SVC(gamma='auto').fit(trainData, trainLabel)                  # fit(Xtrain, X_label_train)
             predicted_label = svm_mdl.predict(testData)
+        elif self.classifier == 'mlp':
+            mlp = MLPClassifier(random_state=1, max_iter=300)
+            mlp.fit(trainData, trainLabel)
+            predicted_label = mlp.predict(testData)
+
+        elif self.classifier == 'lstm':
+            num_classes = len(set(trainLabel))
+            trainLabel = tf.keras.utils.to_categorical(trainLabel, num_classes=num_classes)
+            # Define the input shapeinput_shape = (timesteps, input_dim)  
+            # adjust the values according to your data
+            
+            tsteps = 1
+            input_dim = trainData[:,:-1].shape[1]
+            
+            # Define the LSTM model
+
+            model = Sequential()
+            model.add(LSTM(128, input_shape=(tsteps, input_dim)))
+            model.add(Dense(num_classes, activation='softmax'))
+
+            # Compile the model
+            model.compile(loss='categorical_crossentropy',
+                        optimizer='adam',
+                        metrics=['accuracy'])
+
+            # Print the model summary
+            model.summary()
+            trainDataReshaped = np.expand_dims(trainData[:,:-1], axis=1)
+            # Train the model
+            model.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+            testDataReshaped = np.expand_dims(testData[:,:-1], axis=1)
+            predictions = model.predict(testDataReshaped)
+            predicted_label = tf.argmax(predictions, axis=1).numpy()
+        
+        elif self.classifier == 'gru':
+            num_classes = len(set(trainLabel))
+            trainLabel = tf.keras.utils.to_categorical(trainLabel, num_classes=num_classes)
+            input_dim = trainData[:,:-1].shape[1]
+            sequence_length = 1
+         
+            # Define the input shape and number of hidden units
+            input_shape = (sequence_length, input_dim)  # e.g., (10, 32)
+            hidden_units = 64
+            model = tf.keras.Sequential()
+            model.add(tf.keras.layers.GRU(hidden_units, input_shape=input_shape))
+            model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
+
+            # Compile the model
+            model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+            trainDataReshaped = np.expand_dims(trainData[:,:-1], axis=1)
+            # Train the model
+            model.fit(trainDataReshaped, trainLabel, epochs=10, batch_size=32)
+            testDataReshaped = np.expand_dims(testData[:,:-1], axis=1)
+            predictions = model.predict(testDataReshaped)
+            predicted_label = tf.argmax(predictions, axis=1).numpy()
+
         return predicted_label
 
     def create_centroid(self, inCluster, fitCluster, x, y):
@@ -941,6 +1002,6 @@ class MClassification():
         return self.avg_perf_metric
 
 # test mclass
-# run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
-# print(run_mclass) # ton_iot_fridge UG_2C_2D
+run_mclass = MClassification(classifier='gru', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
+print(run_mclass) # ton_iot_fridge UG_2C_2D
 #%%

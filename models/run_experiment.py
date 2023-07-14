@@ -45,6 +45,7 @@ import vanilla
 import os
 import time
 from pathlib import Path 
+import multiprocessing
 
 class RunExperiment:
     def __init__(self, experiements = [], classifiers = [], datasets=[], datasources = [], methods=[]):
@@ -89,7 +90,6 @@ class RunExperiment:
             pickle.dump(self.results, result_data)
 
     def createExperiment(self, experiment, classifier, datasource, dataset, method):
-
         if experiment == 'vanilla':
             experiment = experiment + '_' + dataset + '_' + classifier + '_' + datasource
             van_nb = vanilla.VanillaClassifier(classifier= classifier, dataset= dataset)
@@ -109,7 +109,7 @@ class RunExperiment:
             scargc_ab = scargc.SCARGC(classifier = classifier, dataset= dataset, datasource= datasource)
             self.results[experiment] = scargc_ab.run()
             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-            scargc_ab.avg_perf_metric['Experiment'] = experiment + '_' + classifier
+            scargc_ab.avg_perf_metric['Experiment'] = experiment 
             scargc_ab.avg_perf_metric['Time_Stamp'] = time_stamp
             results_df = pd.DataFrame.from_dict((scargc_ab.avg_perf_metric.keys(), scargc_ab.avg_perf_metric.values())).T
             # change the directory to your particular files location
@@ -120,11 +120,10 @@ class RunExperiment:
             print("Results:\n", results_df)
         elif experiment == 'mclass':
             experiment = experiment + '_' + dataset + '_' + classifier + '_' + datasource
-            mclass = mclassification.MClassification(classifier= classifier, method= method, dataset= dataset, datasource= datasource, graph= True) 
-            print(mclass)
-            self.results[experiment] = mclass
+            mclass = mclassification.MClassification(classifier= classifier, method= method, dataset= dataset, datasource= datasource, graph= False) 
+            self.results[experiment] = mclass.run()
             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
-            mclass.avg_perf_metric['Experiment'] = experiment + '_' + classifier
+            mclass.avg_perf_metric['Experiment'] = experiment 
             mclass.avg_perf_metric['Time_Stamp'] = time_stamp
             results_df = pd.DataFrame.from_dict((mclass.avg_perf_metric.keys(), mclass.avg_perf_metric.values())).T
             # change the directory to your particular files location
@@ -147,8 +146,25 @@ class RunExperiment:
 
 
 
-run = RunExperiment(experiements=['scargc'], classifiers=['mlp'], methods=['kmeans'],
+scargc_dnn = RunExperiment(experiements=['scargc'], classifiers=['lstm','gru'],
+                    datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', \
+                               'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather','bot_iot'],
+                    datasources= ['UNSW'])
+
+mclass_dnn = RunExperiment(experiements=['mclass'], classifiers=['lstm','gru'], methods=['kmeans'],
                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', \
                                'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather','bot_iot'], 
                     datasources= ['UNSW'])
-run.run()
+
+if __name__ == '__main__':
+    # Create Process objects for each script
+    process1 = multiprocessing.Process(target=scargc_dnn.run())
+    process2 = multiprocessing.Process(target=mclass_dnn.run())
+
+    # Start the processes
+    process1.start()
+    process2.start()
+
+    # Wait for the processes to finish
+    process1.join()
+    process2.join()

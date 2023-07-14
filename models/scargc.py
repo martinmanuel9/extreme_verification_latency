@@ -62,6 +62,9 @@ import pandas as pd
 from sklearn import metrics
 from sklearn import preprocessing
 from knn import knn as Bknn
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 
 class SCARGC: 
     def __init__(self, 
@@ -639,6 +642,67 @@ class SCARGC:
                 elif self.datasource == 'synthetic':
                     exit()
 
+            elif self.classifier == 'lstm':
+                if self.datasource == 'UNSW':
+                    num_classes = len(set(self.all_data[:,-1]))
+                    trainLabel = tf.keras.utils.to_categorical(self.all_data[:,-1], num_classes=num_classes)
+                    # Define the input shapeinput_shape = (timesteps, input_dim)  
+                    # adjust the values according to your data
+                    tsteps = 1 
+                    input_dim = np.shape(self.all_data[:,:-1])[1]
+                    input_shape = (tsteps, input_dim)
+
+                    # Define the LSTM model
+                    model = Sequential()
+                    model.add(LSTM(128, input_shape=input_shape))
+                    model.add(Dense(num_classes, activation='softmax'))
+
+                    # Compile the model
+                    model.compile(loss='categorical_crossentropy',
+                                optimizer='adam',
+                                metrics=['accuracy'])
+
+                    # Print the model summary
+                    model.summary()
+                    # Train the model
+                    trainDataReshaped = np.expand_dims(self.all_data[:,:-1], axis=1)
+                    model.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                    self.train_model = model
+                    testDataReshaped = np.expand_dims(Yts[0][:,:-1], axis=1)
+                    predicted_label = model.predict(testDataReshaped)
+                    self.preds[0] = tf.argmax(predicted_label, axis=1).numpy() 
+                    
+
+                elif self.datasource == 'synthetic':
+                    exit()
+
+            elif self.classifier == 'gru':
+                if self.datasource == 'UNSW':
+                    num_classes = len(set(self.all_data[:,-1]))
+                    trainLabel = tf.keras.utils.to_categorical(self.all_data[:,-1], num_classes=num_classes)
+                    sequence_length = 1
+                    input_dim = np.shape(self.all_data[:,:-1])[1] 
+                    # Define the input shape and number of hidden units
+                    input_shape = (sequence_length, input_dim)  # e.g., (10, 32)
+                    hidden_units = 64
+                    model = tf.keras.Sequential()
+                    model.add(tf.keras.layers.GRU(hidden_units, input_shape=input_shape))
+                    model.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
+
+                    # Compile the model
+                    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+                    # Train the model
+                    trainDataReshaped = np.expand_dims(self.all_data[:,:-1], axis=1)
+                    model.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                    self.train_model = model
+                    testDataReshaped = np.expand_dims(Yts[0][:,:-1], axis=1)
+                    predicted_label = model.predict(testDataReshaped)
+                    self.preds[0] = tf.argmax(predicted_label, axis=1).numpy()
+
+                elif self.datasource == 'synthetic':
+                    exit()
+
                 
             self.T = len(Yts)      
 
@@ -702,7 +766,16 @@ class SCARGC:
                             svm_mdl = SVC(kernel='rbf').fit(Yt[:,:-1], Yt[:,-1])        # fit(Xtrain, X_label_train)
                             predicted_label = svm_mdl.predict(Ye[:,:-1])
                     elif self.datasource == 'UNSW':
-                        predicted_label = self.train_model.predict(Ye[:,:-1])
+                        if self.classifier == 'lstm':
+                            YeReshaped = np.expand_dims(Ye[:,:-1], axis=1)
+                            preds = self.train_model.predict(YeReshaped)
+                            predicted_label = tf.argmax(preds, axis=1).numpy() 
+                        elif self.classifier == 'gru': 
+                            YeReshaped = np.expand_dims(Ye[:,:-1], axis=1)
+                            preds = self.train_model.predict(YeReshaped)
+                            predicted_label = tf.argmax(preds, axis=1).numpy() 
+                        else:
+                            predicted_label = self.train_model.predict(Ye[:,:-1])
                     
                     pool_data = np.vstack((pool_data, Ye))
 
@@ -798,6 +871,59 @@ class SCARGC:
                             nearestData = BernoulliNB().fit(past_centroid[:,:-1], t_cur_centroid)
                             centroid_label = nearestData.predict(temp_current_centroids[k:,:-1])
                             new_label_data = np.vstack(centroid_label)
+                        
+                        elif self.classifier == 'lstm':
+                            num_classes = len(set(temp_current_centroids[:,-1]))
+                            trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes)
+                            # Define the input shapeinput_shape = (timesteps, input_dim)  
+                            # adjust the values according to your data
+                            tsteps = 1
+                            input_dim = np.shape(past_centroid[:,:-1])[1]
+                            input_shape = (tsteps, input_dim)
+
+                            # Define the LSTM model
+                            nearestData = Sequential()
+                            nearestData.add(LSTM(128, input_shape=input_shape))
+                            nearestData.add(Dense(num_classes, activation='softmax'))
+
+                            # Compile the model
+                            nearestData.compile(loss='categorical_crossentropy',
+                                        optimizer='adam',
+                                        metrics=['accuracy'])
+
+                            # Print the model summary
+                            nearestData.summary()
+                            # Train the model
+                            trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
+                            nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                            testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
+                            centroid_label = nearestData.predict(testDataReshaped)
+                            new_label_data = tf.argmax(centroid_label, axis=1).numpy()
+                            
+                            # new_label_data = np.vstack(predicted_label)
+                        
+                        elif self.classifier == 'gru':
+                            num_classes = len(set(temp_current_centroids[:,-1]))
+                            trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes)
+                            sequence_length = 1 
+                            input_dim = np.shape(past_centroid[:,:-1])[1] 
+                            # Define the input shape and number of hidden units
+                            input_shape = (sequence_length, input_dim)  # e.g., (10, 32)
+                            hidden_units = 64
+                            nearestData = tf.keras.Sequential()
+                            nearestData.add(tf.keras.layers.GRU(hidden_units, input_shape=input_shape))
+                            nearestData.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
+
+                            # Compile the model
+                            nearestData.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+                            # Train the model
+                            trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
+                            nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                            testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
+                            centroid_label = nearestData.predict(testDataReshaped)
+                            new_label_data = tf.argmax(centroid_label, axis=1).numpy()
+                            # new_label_data = np.vstack(predicted_label)
                     
                     new_label_data = list(new_label_data)
                     new_label_data.pop(0)
@@ -824,7 +950,7 @@ class SCARGC:
                 t_end = time.time() 
                 # needed to have same shape as preds and test
                 indx = np.arange(np.shape(self.preds[t])[0])
-                indx = np.squeeze(indx)
+                indx = np.squeeze(indx) 
                 perf_metric = cp.PerformanceMetrics(timestep= t, preds= self.preds[t], test= Ye[indx], \
                                                     dataset= self.dataset , method= '' , \
                                                     classifier= self.classifier, tstart=t_start, tend=t_end)
@@ -839,7 +965,5 @@ class SCARGC:
 
 
 
-run_scargc_svm = SCARGC(classifier = 'naive_bayes', dataset= 'ton_iot_fridge', datasource='UNSW').run()
-
-# results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
-print(run_scargc_svm)
+# run_scargc_svm = SCARGC(classifier = 'gru', dataset= 'ton_iot_fridge', datasource='UNSW').run()
+# print(run_scargc_svm)
