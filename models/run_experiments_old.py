@@ -542,10 +542,10 @@ class RunExperiment:
 #                     datasources= ['unsw'])
 # run_scargc.run()
 
-# run_scargc = RunExperiment(experiements=['scargc'], classifier=['mlp'], modes=[''],
-#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
-#                     datasources= ['unsw'])
-# run_scargc.run()
+run_scargc = RunExperiment(experiements=['scargc'], classifier=['mlp'], modes=[''],
+                    datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
+                    datasources= ['unsw'])
+run_scargc.run()
 
 # run_scargc = RunExperiment(experiements=['scargc'], classifier=['naive_bayes'], modes=[''],
 #                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather'], 
@@ -563,12 +563,11 @@ class RunExperiment:
 #                     datasources= ['unsw'])
 # run_scargc.run()
 
-run_scargc = RunExperiment(experiements=['vanilla',], classifier=['knn'], modes=[''],
-                    datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather','bot_iot'], 
-                    datasources= ['unsw'])
-run_scargc.run()
+# run_scargc = RunExperiment(experiements=['scargc',], classifier=['knn'], modes=[''],
+#                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather','bot_iot'], 
+#                     datasources= ['unsw'])
+# run_scargc.run()
 
 
-run_mclass = MClassification(classifier='knn', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
-print(run_mclass)
+
 #%%

@@ -41,7 +41,7 @@ from pandas.core.tools.datetimes import DatetimeScalarOrArrayConvertible
 from pandas.io.formats.format import return_docstring
 from scipy.spatial import distance
 from scipy.spatial.distance import mahalanobis
-import models.benchmark_datagen_old as bm_gen_dat
+import benchmark_datagen_old as bm_gen_dat
 import pandas as pd 
 import numpy as np
 import scipy as sp

@@ -107,7 +107,7 @@ class RunExperiment:
         elif experiment == 'scargc':
             experiment = experiment + '_' + dataset + '_' + classifier + '_' + datasource
             scargc_ab = scargc.SCARGC(classifier = classifier, dataset= dataset, datasource= datasource)
-            self.results[experiment] = scargc_ab.run(Xts = scargc_ab.X, Yts = scargc_ab.Y)     # .X[0] only get initial training set
+            self.results[experiment] = scargc_ab.run()
             time_stamp = time.strftime("%Y%m%d-%H:%M:%S")
             scargc_ab.avg_perf_metric['Experiment'] = experiment + '_' + classifier
             scargc_ab.avg_perf_metric['Time_Stamp'] = time_stamp
@@ -143,11 +143,11 @@ class RunExperiment:
                         for method in self.methods:
                             self.createExperiment(experiment= experiment, classifier= classifier, datasource= datasource, dataset= dataset, method= method)
         
-        # self.plot_results()
+        self.plot_results()
 
 
 
-run = RunExperiment(experiements=['scargc'], classifiers=['knn'], methods=['kmeans'],
+run = RunExperiment(experiements=['scargc'], classifiers=['mlp'], methods=['kmeans'],
                     datasets= ['ton_iot_fridge','ton_iot_garage' ,'ton_iot_gps','ton_iot_modbus', \
                                'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather','bot_iot'], 
                     datasources= ['UNSW'])

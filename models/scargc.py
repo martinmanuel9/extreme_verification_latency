@@ -98,16 +98,16 @@ class SCARGC:
         # set max pool size 
         self.maxpool = maxpool
         # establish dataset 
-        self._set_data()
+        self.set_data()
         # initialize the cluster model
-        self._initialize(Xinit= self.Xinit, Yinit = self.Yinit)
+        self.initialize(Xinit= self.Xinit, Yinit = self.Yinit)
         self.T = 0
         self.performance_metric = {}
         self.avg_perf_metric = {}
         self.preds = {}
         self.n_cores = []
-    
-    def _set_data(self):
+ 
+    def set_data(self):
         if self.datasource == 'synthetic':
             set_data = bdg.Datagen()
             data_gen = set_data.gen_dataset(self.dataset)
@@ -496,7 +496,7 @@ class SCARGC:
         # get the number of classes in the dataset 
         self.nclasses = len(np.unique(self.Y))
 
-    def _initialize(self, Xinit, Yinit): 
+    def initialize(self, Xinit, Yinit): 
         """
         """
         # run the clustering algorithm on the training data then find the cluster 
@@ -515,7 +515,7 @@ class SCARGC:
                     mode_val,_ = stats.mode(yhat)
                     self.class_cluster[i] = mode_val
             elif self.datasource == 'UNSW':
-                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0]) 
+                self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])    
                 labels = self.cluster.predict(Yinit[0])
                 
                 # for each of the clusters, find the labels of the data samples in the clusters
@@ -534,11 +534,15 @@ class SCARGC:
         percent_cores = math.ceil( num_cores)
         self.n_cores = int(percent_cores)                   # original number of cores to 1
         
-    def run(self, Xts, Yts): 
+    def run(self): 
         '''
         Xts = Initial Training data
         Yts = Data stream
         '''
+        Xts = self.X
+        Yts = self.Y
+        
+
         self.set_cores()
         with ProcessPoolExecutor(max_workers=self.n_cores):
             total_time_start = time.time()
@@ -667,7 +671,7 @@ class SCARGC:
                         else:
                             Xt, Yt = np.array(labeled_data_labels), np.array(labeled_data)             # Xt = train labels ; Yt = train data
                             Xe, Ye = np.array(labeled_data_labels), np.array(Yts[t+1])                 # Xe = test labels ; Ye = test data
-                elif self.datasource == 'unsw':
+                elif self.datasource == 'UNSW':
                     if t == 0: 
                         Xt, Yt = np.array(labeled_data_labels[t]), np.array(Yts[t])       # Xt = train labels ; Yt = train data
                         Xe, Ye = np.array(Xts), np.array(Yts[t])            # Xe = test labels ; Ye = test data
@@ -720,7 +724,7 @@ class SCARGC:
                 # if |pool| == maxpoolsize
                 if len(pool_label) > self.maxpool:
                     # C <- Clustering(pool, k)
-                    temp_current_centroids = KMeans(n_clusters=self.Kclusters, init=past_centroid, n_init=1).fit(pool_data).cluster_centers_
+                    temp_current_centroids = KMeans(n_clusters=self.Kclusters, init=past_centroid, n_init='auto').fit(pool_data).cluster_centers_
                     # find the label for the current centroids               
                     # new labeled data
                     new_label_data = np.zeros(np.shape(temp_current_centroids)[1])
@@ -835,6 +839,7 @@ class SCARGC:
 
 
 
-# run_scargc_svm = SCARGC(classifier = 'naive_bayes', dataset= 'ton_iot_fridge', datasource='unsw')
+run_scargc_svm = SCARGC(classifier = 'naive_bayes', dataset= 'ton_iot_fridge', datasource='UNSW').run()
+
 # results = run_scargc_svm.run(Xts = run_scargc_svm.X, Yts = run_scargc_svm.Y)
-# print(results)
+print(run_scargc_svm)
