@@ -142,7 +142,7 @@ class RunExperiment:
                         for method in self.methods:
                             self.createExperiment(experiment= experiment, classifier= classifier, datasource= datasource, dataset= dataset, method= method)
         
-        self.plot_results()
+        # self.plot_results()
 
 
 # lstm 
