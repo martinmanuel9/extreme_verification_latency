@@ -144,7 +144,9 @@ class RunExperiment:
         
         # self.plot_results()
 
-
+mclass_mlp = scargc_dnn_lstm_fridge = RunExperiment(experiements=['mclass'], classifiers=['mlp'],
+                    datasets= ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot'],
+                    datasources= ['UNSW'])
 # lstm 
 scargc_dnn_lstm_fridge = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
                     datasets= ['ton_iot_fridge'],
@@ -312,6 +314,7 @@ if __name__ == '__main__':
     process30 = multiprocessing.Process(target=mclass_dnn_gru_thermo.run())
     process31 = multiprocessing.Process(target=mclass_dnn_gru_weather.run())
     process32 = multiprocessing.Process(target=mclass_dnn_gru_bot.run())
+    process33 = multiprocessing.Process(target= mclass_mlp.run())
 
 
 
@@ -348,6 +351,7 @@ if __name__ == '__main__':
     process30.start()
     process31.start()
     process32.start()
+    process33.start()
 
 
     # Wait for the processes to finish
@@ -383,4 +387,4 @@ if __name__ == '__main__':
     process30.join()
     process31.join()
     process32.join()
-    
+    process33.join()

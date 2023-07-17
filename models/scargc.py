@@ -33,12 +33,12 @@ College of Engineering
 
 from cProfile import label
 import warnings
-warnings.filterwarnings('always')  # "error", "ignore", "always", "default", "module" or "once"
+# warnings.filterwarnings('always')  # "error", "ignore", "always", "default", "module" or "once"
 
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import statistics
-from turtle import position
+# from turtle import position
 import numpy as np 
 from scipy import stats
 from sklearn.svm import SVC, SVR
