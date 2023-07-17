@@ -38,7 +38,6 @@ warnings.filterwarnings('always')  # "error", "ignore", "always", "default", "mo
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import statistics
-from turtle import position
 import numpy as np 
 from scipy import stats
 from sklearn.svm import SVC, SVR
