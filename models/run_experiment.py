@@ -45,27 +45,28 @@ import vanilla
 import os
 import time
 from pathlib import Path 
-import multiprocessing
+import concurrent.futures
+
 
 class RunExperiment:
-    def __init__(self, experiements = [], classifiers = [], datasets=[], datasources = [], methods=[]):
-            self.experiments = experiements
-            self.classifier = classifiers
-            self.datasets = datasets
-            self.results = {}
-            self.datasources = datasources 
-            self.methods = methods
+    def __init__(self, experiments=[], classifiers=[], datasets=[], datasources=[], methods=[]):
+        self.experiments = experiments
+        self.classifiers = classifiers
+        self.datasets = datasets
+        self.results = {}
+        self.datasources = datasources
+        self.methods = methods
             
     def change_dir(self):
         path = str(Path.home())
-        path = path + "/extreme_verification_latency/results"
+        path = "/results"
         os.chdir(path)
 
     def plot_results(self):
         # change the directory to your particular files location
         self.change_dir()
         path = str(Path.home())
-        path = path + "/extreme_verification_latency/plots"
+        path = "/plots"
         os.chdir(path)
         experiments = self.results.keys()
         fig_handle = plt.figure()
@@ -105,6 +106,7 @@ class RunExperiment:
             results_pkl = pd.read_pickle(results_van_nb)
             print("Results:\n" , results_pkl )
         elif experiment == 'scargc':
+            print('scargc')
             experiment = experiment + '_' + dataset + '_' + classifier + '_' + datasource
             scargc_ab = scargc.SCARGC(classifier = classifier, dataset= dataset, datasource= datasource)
             self.results[experiment] = scargc_ab.run()
@@ -132,259 +134,32 @@ class RunExperiment:
             results_df.to_pickle(results_mclass)
             results_pkl = pd.read_pickle(results_mclass)
             print("Results:\n", results_df)
-
-    def run(self):
-        
-        for experiment in self.experiments:
-            for classifier in self.classifier:
-                for datasource in self.datasources:
-                    for dataset in self.datasets:
-                        for method in self.methods:
-                            self.createExperiment(experiment= experiment, classifier= classifier, datasource= datasource, dataset= dataset, method= method)
-        
-        # self.plot_results()
-
-mclass_mlp = scargc_dnn_lstm_fridge = RunExperiment(experiements=['mclass'], classifiers=['mlp'],
-                    datasets= ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot'],
-                    datasources= ['UNSW']).run()
-
-
-# # lstm 
-# scargc_dnn_lstm_fridge = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_fridge'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_lstm_garage = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_garage'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_lstm_gps = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_gps'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_lstm_modbus = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_modbus'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_lstm_light = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_light'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_lstm_thermo = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_thermo'],
-#                     datasources= ['UNSW'])
-
-
-# scargc_dnn_lstm_weather = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_weather'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_lstm_bot = RunExperiment(experiements=['scargc'], classifiers=['lstm'],
-#                     datasets= ['bot_iot'],
-#                     datasources= ['UNSW'])
-
-# # gru 
-# scargc_dnn_gru_fridge = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_fridge'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_gru_garage = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_garage'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_gru_gps = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_gps'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_gru_modbus = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_modbus'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_gru_light = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_light'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_gru_thermo = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_thermo'],
-#                     datasources= ['UNSW'])      
-
-# scargc_dnn_gru_weather = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['ton_iot_weather'],
-#                     datasources= ['UNSW'])
-
-# scargc_dnn_gru_bot = RunExperiment(experiements=['scargc'], classifiers=['gru'],
-#                     datasets= ['bot_iot'],
-#                     datasources= ['UNSW'])
-
-# # lstm
-# mclass_dnn_lstm_fridge = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_fridge'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_garage = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_garage'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_gps = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_gps'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_modbus = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_modbus'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_light = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_light'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_thermo = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_thermo'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_weather = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['ton_iot_weather'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_lstm_bot = RunExperiment(experiements=['mclass'], classifiers=['lstm'],
-#                     datasets= ['bot_iot'],
-#                     datasources= ['UNSW'])
-
-# # gru
-# mclass_dnn_gru_fridge = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_fridge'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_garage = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_garage'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_gps = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_gps'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_modbus = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_modbus'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_light = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_light'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_thermo = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_thermo'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_weather = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['ton_iot_weather'],
-#                     datasources= ['UNSW'])
-
-# mclass_dnn_gru_bot = RunExperiment(experiements=['mclass'], classifiers=['gru'],
-#                     datasets= ['bot_iot'],
-#                     datasources= ['UNSW'])
-
-# # if __name__ == '__main__':
-# #     # Create Process objects for each script
-# #     process1 = multiprocessing.Process(target=scargc_dnn_lstm_fridge.run())
-# #     process2 = multiprocessing.Process(target=scargc_dnn_lstm_garage.run())
-# #     process3 = multiprocessing.Process(target=scargc_dnn_lstm_gps.run())
-# #     process4 = multiprocessing.Process(target=scargc_dnn_lstm_modbus.run())
-# #     process5 = multiprocessing.Process(target=scargc_dnn_lstm_light.run())
-# #     process6 = multiprocessing.Process(target=scargc_dnn_lstm_thermo.run())
-# #     process7 = multiprocessing.Process(target=scargc_dnn_lstm_weather.run())
-# #     process8 = multiprocessing.Process(target=scargc_dnn_lstm_bot.run())
-# #     process9 = multiprocessing.Process(target=scargc_dnn_gru_fridge.run())
-# #     process10 = multiprocessing.Process(target=scargc_dnn_gru_garage.run())
-# #     process11 = multiprocessing.Process(target=scargc_dnn_gru_gps.run())
-# #     process12 = multiprocessing.Process(target=scargc_dnn_gru_modbus.run())
-# #     process13 = multiprocessing.Process(target=scargc_dnn_gru_light.run())
-# #     process14 = multiprocessing.Process(target=scargc_dnn_gru_thermo.run())
-# #     process15 = multiprocessing.Process(target=scargc_dnn_gru_weather.run())
-# #     process16 = multiprocessing.Process(target=scargc_dnn_gru_bot.run())
-# #     process17 = multiprocessing.Process(target=mclass_dnn_lstm_fridge.run())
-# #     process18 = multiprocessing.Process(target=mclass_dnn_lstm_garage.run())
-# #     process19 = multiprocessing.Process(target=mclass_dnn_lstm_gps.run())
-# #     process20 = multiprocessing.Process(target=mclass_dnn_lstm_modbus.run())
-# #     process21 = multiprocessing.Process(target=mclass_dnn_lstm_light.run())
-# #     process22 = multiprocessing.Process(target=mclass_dnn_lstm_thermo.run())
-# #     process23 = multiprocessing.Process(target=mclass_dnn_lstm_weather.run())
-# #     process24 = multiprocessing.Process(target=mclass_dnn_lstm_bot.run())
-# #     process25 = multiprocessing.Process(target=mclass_dnn_gru_fridge.run())
-# #     process26 = multiprocessing.Process(target=mclass_dnn_gru_garage.run())
-# #     process27 = multiprocessing.Process(target=mclass_dnn_gru_gps.run())
-# #     process28 = multiprocessing.Process(target=mclass_dnn_gru_modbus.run())
-# #     process29 = multiprocessing.Process(target=mclass_dnn_gru_light.run())
-# #     process30 = multiprocessing.Process(target=mclass_dnn_gru_thermo.run())
-# #     process31 = multiprocessing.Process(target=mclass_dnn_gru_weather.run())
-# #     process32 = multiprocessing.Process(target=mclass_dnn_gru_bot.run())
-
-
-
-# #     # Start the processes
-# #     process1.start()
-# #     process2.start()
-# #     process3.start()
-# #     process4.start()
-# #     process5.start()
-# #     process6.start()
-# #     process7.start()
-# #     process8.start()
-# #     process9.start()
-# #     process10.start()
-# #     process11.start()
-# #     process12.start()
-# #     process13.start()
-# #     process14.start()
-# #     process15.start()
-# #     process16.start()
-# #     process17.start()
-# #     process18.start()
-# #     process19.start()
-# #     process20.start()
-# #     process21.start()
-# #     process22.start()
-# #     process23.start()
-# #     process24.start()
-# #     process25.start()
-# #     process26.start()
-# #     process27.start()
-# #     process28.start()
-# #     process29.start()
-# #     process30.start()
-# #     process31.start()
-# #     process32.start()
-
-
-# #     # Wait for the processes to finish
-# #     process1.join()
-# #     process2.join()
-# #     process3.join()
-# #     process4.join()
-# #     process5.join()
-# #     process6.join()
-# #     process7.join()
-# #     process8.join()
-# #     process9.join()
-# #     process10.join()
-# #     process11.join()
-# #     process12.join()
-# #     process13.join()
-# #     process14.join()
-# #     process15.join()
-# #     process16.join()
-# #     process17.join()
-# #     process18.join()
-# #     process19.join()
-# #     process20.join()
-# #     process21.join()
-# #     process22.join()
-# #     process23.join()
-# #     process24.join()
-# #     process25.join()
-# #     process26.join()
-# #     process27.join()
-# #     process28.join()
-# #     process29.join()
-# #     process30.join()
-# #     process31.join()
-# #     process32.join()
     
+    def run_experiment(self, experiment, classifier, dataset, datasource, method):
+        self.createExperiment(experiment=experiment, classifier=classifier, datasource=datasource, dataset=dataset, method=method)
+        
+    def run(self):
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = []
+            for experiment in self.experiments:
+                for classifier in self.classifiers:
+                    for datasource in self.datasources:
+                        for dataset in self.datasets:
+                            for method in self.methods:
+                                future = executor.submit(self.run_experiment, experiment, classifier, dataset, datasource, method)
+                                futures.append(future)
+            
+            # Wait for all tasks to complete
+            concurrent.futures.wait(futures)
+        
+ 
+        # self.plot_results()
+if __name__ == '__main__':
+    experiments = ['mclass', 'scargc']
+    classifiers = ['mlp', 'lstm', 'gru']
+    datasets = ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot']
+    datasources = ['UNSW']
+    methods = []
+
+    run_experiment = RunExperiment(experiments=experiments, classifiers=classifiers, datasets=datasets, datasources=datasources, methods=methods)
+    run_experiment.run()
