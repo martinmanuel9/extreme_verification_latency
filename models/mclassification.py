@@ -1002,6 +1002,6 @@ class MClassification():
         return self.avg_perf_metric
 
 # test mclass
-# run_mclass = MClassification(classifier='lstm', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
-# print(run_mclass) # ton_iot_fridge UG_2C_2D
+run_mclass = MClassification(classifier='mlp', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
+print(run_mclass) # ton_iot_fridge UG_2C_2D
 #%%

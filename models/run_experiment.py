@@ -1,5 +1,5 @@
 #%%
-#!/usr/bin/env python 
+#!/usr/bin/env python
 
 """
 Application:        Online Learning in Extreme Verification Latency
@@ -56,17 +56,17 @@ class RunExperiment:
         self.results = {}
         self.datasources = datasources
         self.methods = methods
-            
+        
     def change_dir(self):
         path = str(Path.home())
-        path = "/results"
+        path += "/results"
         os.chdir(path)
 
     def plot_results(self):
         # change the directory to your particular files location
         self.change_dir()
         path = str(Path.home())
-        path = "/plots"
+        path += "/plots"
         os.chdir(path)
         experiments = self.results.keys()
         fig_handle = plt.figure()
@@ -139,27 +139,10 @@ class RunExperiment:
         self.createExperiment(experiment=experiment, classifier=classifier, datasource=datasource, dataset=dataset, method=method)
         
     def run(self):
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            futures = []
-            for experiment in self.experiments:
-                for classifier in self.classifiers:
-                    for datasource in self.datasources:
-                        for dataset in self.datasets:
-                            for method in self.methods:
-                                future = executor.submit(self.run_experiment, experiment, classifier, dataset, datasource, method)
-                                futures.append(future)
-            
-            # Wait for all tasks to complete
-            concurrent.futures.wait(futures)
-        
- 
-        # self.plot_results()
-if __name__ == '__main__':
-    experiments = ['mclass', 'scargc']
-    classifiers = ['mlp', 'lstm', 'gru']
-    datasets = ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot']
-    datasources = ['UNSW']
-    methods = []
-
-    run_experiment = RunExperiment(experiments=experiments, classifiers=classifiers, datasets=datasets, datasources=datasources, methods=methods)
-    run_experiment.run()
+        for experiment in self.experiments:
+            for classifier in self.classifiers:
+                for datasource in self.datasources:
+                    for dataset in self.datasets:
+                        for method in self.methods:
+                            print('Running experiment: ', experiment, classifier, datasource, dataset, method)
+                            self.run_experiment
