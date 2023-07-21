@@ -48,7 +48,7 @@ class TON_IoT_Datagen():
 
     def change_directory(self):
         path = str(Path.home())
-        path =  '../data/TON_IoT_Data/'
+        path =  '/data/TON_IoT_Data/'
         os.chdir(path)
 
     def import_data(self):
