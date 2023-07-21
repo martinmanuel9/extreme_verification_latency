@@ -964,5 +964,5 @@ class SCARGC:
 
 
 
-# run_scargc_svm = SCARGC(classifier = 'gru', dataset= 'ton_iot_fridge', datasource='UNSW').run()
-# print(run_scargc_svm)
+run_scargc_svm = SCARGC(classifier = 'gru', dataset= 'ton_iot_fridge', datasource='UNSW').run()
+print(run_scargc_svm)
