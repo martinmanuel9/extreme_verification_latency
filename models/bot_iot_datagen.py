@@ -45,6 +45,7 @@ class BOT_IoT_Datagen():
 
     def change_directory(self):
         path = str(Path.home())
+        print(path)
         path =  '/data/BoT_IoT_Data/'
         os.chdir(path)
 
