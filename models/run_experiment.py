@@ -45,8 +45,7 @@ import vanilla
 import os
 import time
 from pathlib import Path 
-import concurrent.futures
-
+import multiprocessing
 
 class RunExperiment:
     def __init__(self, experiments=[], classifiers=[], datasets=[], datasources=[], methods=[]):
@@ -59,14 +58,14 @@ class RunExperiment:
         
     def change_dir(self):
         path = str(Path.home())
-        path += "/results"
+        path = "/home/results"
         os.chdir(path)
 
     def plot_results(self):
         # change the directory to your particular files location
         self.change_dir()
         path = str(Path.home())
-        path += "/plots"
+        path = "/home/plots"
         os.chdir(path)
         experiments = self.results.keys()
         fig_handle = plt.figure()
@@ -106,7 +105,7 @@ class RunExperiment:
             results_pkl = pd.read_pickle(results_van_nb)
             print("Results:\n" , results_pkl )
         elif experiment == 'scargc':
-            print('scargc')
+
             experiment = experiment + '_' + dataset + '_' + classifier + '_' + datasource
             scargc_ab = scargc.SCARGC(classifier = classifier, dataset= dataset, datasource= datasource)
             self.results[experiment] = scargc_ab.run()
@@ -134,15 +133,39 @@ class RunExperiment:
             results_df.to_pickle(results_mclass)
             results_pkl = pd.read_pickle(results_mclass)
             print("Results:\n", results_df)
-    
     def run_experiment(self, experiment, classifier, dataset, datasource, method):
         self.createExperiment(experiment=experiment, classifier=classifier, datasource=datasource, dataset=dataset, method=method)
         
     def run(self):
+        processes = []
         for experiment in self.experiments:
             for classifier in self.classifiers:
                 for datasource in self.datasources:
                     for dataset in self.datasets:
                         for method in self.methods:
-                            print('Running experiment: ', experiment, classifier, datasource, dataset, method)
-                            self.run_experiment
+                            process = multiprocessing.Process(target=self.run_experiment, args=(experiment, classifier, dataset, datasource, method))
+                            processes.append(process)
+                            process.start()
+        
+        # Wait for all processes to complete
+        for process in processes:
+            process.join()
+        # self.plot_results()
+
+if __name__ == '__main__':
+    # experiments = ['mclass', 'scargc']
+    # classifiers = ['mlp', 'lstm', 'gru']
+    # datasets = ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot']
+    # datasources = ['UNSW']
+    # methods = ['kmeans']
+
+    experiments = ['mclass']
+    classifiers = ['lstm', 'gru']
+    datasets = ['bot_iot']
+    datasources = ['UNSW']
+    methods = ['kmeans']
+
+    run_experiment = RunExperiment(experiments=experiments, classifiers=classifiers, datasets=datasets, datasources=datasources, methods=methods)
+    run_experiment.run()
+
+
