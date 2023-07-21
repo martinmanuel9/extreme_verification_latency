@@ -153,17 +153,17 @@ class RunExperiment:
         # self.plot_results()
 
 if __name__ == '__main__':
-    # experiments = ['mclass', 'scargc']
-    # classifiers = ['mlp', 'lstm', 'gru']
-    # datasets = ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot']
-    # datasources = ['UNSW']
-    # methods = ['kmeans']
-
-    experiments = ['mclass']
-    classifiers = ['lstm', 'gru']
-    datasets = ['bot_iot']
+    experiments = ['mclass', 'scargc']
+    classifiers = ['mlp', 'lstm', 'gru']
+    datasets = ['ton_iot_fridge', 'ton_iot_garage', 'ton_iot_gps', 'ton_iot_modbus', 'ton_iot_light', 'ton_iot_thermo', 'ton_iot_weather', 'bot_iot']
     datasources = ['UNSW']
     methods = ['kmeans']
+
+    # experiments = ['mclass']
+    # classifiers = ['lstm', 'gru']
+    # datasets = ['bot_iot']
+    # datasources = ['UNSW']
+    # methods = ['kmeans']
 
     run_experiment = RunExperiment(experiments=experiments, classifiers=classifiers, datasets=datasets, datasources=datasources, methods=methods)
     run_experiment.run()
