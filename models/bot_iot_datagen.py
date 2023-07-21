@@ -45,7 +45,7 @@ class BOT_IoT_Datagen():
 
     def change_directory(self):
         path = str(Path.home())
-        path =  'root/home/extreme_verification_latency/data/BoT_IoT_Data/'
+        path =  'extreme_verification_latency/data/BoT_IoT_Data/'
         os.chdir(path)
 
     def import_data(self):
