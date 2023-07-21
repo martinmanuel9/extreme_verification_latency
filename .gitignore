@@ -1,5 +1,5 @@
 # Igonore all log files
-# results/**
+results/**
 
 # Ignore all plots 
 plots/**

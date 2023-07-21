@@ -647,7 +647,7 @@ class SCARGC:
                     trainLabel = tf.keras.utils.to_categorical(self.all_data[:,-1], num_classes=num_classes)
                     # Define the input shapeinput_shape = (timesteps, input_dim)  
                     # adjust the values according to your data
-                    tsteps = 1 
+                    tsteps = 1000 
                     input_dim = np.shape(self.all_data[:,:-1])[1]
                     input_shape = (tsteps, input_dim)
 
@@ -679,7 +679,7 @@ class SCARGC:
                 if self.datasource == 'UNSW':
                     num_classes = len(set(self.all_data[:,-1]))
                     trainLabel = tf.keras.utils.to_categorical(self.all_data[:,-1], num_classes=num_classes)
-                    sequence_length = 1
+                    sequence_length = 1000
                     input_dim = np.shape(self.all_data[:,:-1])[1] 
                     # Define the input shape and number of hidden units
                     input_shape = (sequence_length, input_dim)  # e.g., (10, 32)

@@ -573,7 +573,7 @@ class MClassification():
             # Define the input shapeinput_shape = (timesteps, input_dim)  
             # adjust the values according to your data
             
-            tsteps = 1
+            tsteps = 1000
             input_dim = trainData[:,:-1].shape[1]
             
             # Define the LSTM model
@@ -600,7 +600,7 @@ class MClassification():
             num_classes = len(set(trainLabel))
             trainLabel = tf.keras.utils.to_categorical(trainLabel, num_classes=num_classes)
             input_dim = trainData[:,:-1].shape[1]
-            sequence_length = 1
+            sequence_length = 1000
          
             # Define the input shape and number of hidden units
             input_shape = (sequence_length, input_dim)  # e.g., (10, 32)
