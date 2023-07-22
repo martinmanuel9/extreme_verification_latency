@@ -876,7 +876,7 @@ class SCARGC:
                             trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes)
                             # Define the input shapeinput_shape = (timesteps, input_dim)  
                             # adjust the values according to your data
-                            tsteps = 1
+                            tsteps = 1000
                             input_dim = np.shape(past_centroid[:,:-1])[1]
                             input_shape = (tsteps, input_dim)
 
@@ -894,6 +894,7 @@ class SCARGC:
                             nearestData.summary()
                             # Train the model
                             trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
+                            print('train data -------', trainDataReshaped.shape)
                             nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                             testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
                             centroid_label = nearestData.predict(testDataReshaped)
@@ -904,7 +905,7 @@ class SCARGC:
                         elif self.classifier == 'gru':
                             num_classes = len(set(temp_current_centroids[:,-1]))
                             trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes)
-                            sequence_length = 1 
+                            sequence_length = 1000 
                             input_dim = np.shape(past_centroid[:,:-1])[1] 
                             # Define the input shape and number of hidden units
                             input_shape = (sequence_length, input_dim)  # e.g., (10, 32)
@@ -917,7 +918,7 @@ class SCARGC:
                             nearestData.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
                             # Train the model
-                            trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
+                            trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1) 
                             nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                             testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
                             centroid_label = nearestData.predict(testDataReshaped)
@@ -964,5 +965,5 @@ class SCARGC:
 
 
 
-run_scargc_svm = SCARGC(classifier = 'gru', dataset= 'ton_iot_fridge', datasource='UNSW').run()
+run_scargc_svm = SCARGC(classifier = 'lstm', dataset= 'ton_iot_fridge', datasource='UNSW').run()
 print(run_scargc_svm)
