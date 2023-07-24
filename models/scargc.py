@@ -936,7 +936,6 @@ class SCARGC:
                             nearestData.summary()
                             # Train the model
                             trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
-                            lstmData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
                             nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                             testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
                             testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
