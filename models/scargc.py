@@ -64,6 +64,7 @@ from knn import knn as Bknn
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
+from keras.preprocessing.sequence import pad_sequences
 
 class SCARGC: 
     def __init__(self, 
@@ -517,6 +518,7 @@ class SCARGC:
                     mode_val,_ = stats.mode(yhat)
                     self.class_cluster[i] = mode_val
             elif self.datasource == 'UNSW':
+                
                 self.cluster = KMeans(n_clusters=self.Kclusters).fit(Xinit[0])    
                 labels = self.cluster.predict(Yinit[0])
                 
@@ -665,9 +667,11 @@ class SCARGC:
                     model.summary()
                     # Train the model
                     trainDataReshaped = np.expand_dims(self.all_data[:,:-1], axis=1)
-                    model.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                    lstmData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32') 
+                    model.fit(lstmData, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                     self.train_model = model
                     testDataReshaped = np.expand_dims(Yts[0][:,:-1], axis=1)
+                    testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32') 
                     predicted_label = model.predict(testDataReshaped)
                     self.preds[0] = tf.argmax(predicted_label, axis=1).numpy() 
                     
@@ -693,9 +697,38 @@ class SCARGC:
 
                     # Train the model
                     trainDataReshaped = np.expand_dims(self.all_data[:,:-1], axis=1)
-                    model.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                    gruData = pad_sequences(trainDataReshaped, maxlen=sequence_length, padding='post', dtype='float32') 
+                    model.fit(gruData, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                     self.train_model = model
                     testDataReshaped = np.expand_dims(Yts[0][:,:-1], axis=1)
+                    testDataReshaped = pad_sequences(testDataReshaped, maxlen=sequence_length, padding='post', dtype='float32') 
+                    predicted_label = model.predict(testDataReshaped)
+                    self.preds[0] = tf.argmax(predicted_label, axis=1).numpy()
+
+            elif self.classifier == '1dcnn':
+                if self.datasource == 'UNSW':
+                    num_classes = len(set(self.all_data[:,-1]))
+                    trainLabel = tf.keras.utils.to_categorical(self.all_data[:,-1], num_classes=num_classes)
+                    tsteps = 1000 
+                    input_dim = np.shape(self.all_data[:,:-1])[1]
+                    input_shape = (tsteps, input_dim) 
+                    model = tf.keras.Sequential([
+                        tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=input_shape),
+                        tf.keras.layers.MaxPooling1D(pool_size=2),
+                        # Add more Conv1D and MaxPooling1D layers as needed
+                        tf.keras.layers.Flatten(),
+                        tf.keras.layers.Dense(64, activation='relu'),
+                        tf.keras.layers.Dense(num_classes, activation='softmax')  # Assuming you have multiple classes to predict
+                    ])
+
+                    # Step 3: Training
+                    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                    trainDataReshaped = np.expand_dims(self.all_data[:,:-1], axis=1)
+                    cnnData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
+                    model.fit(cnnData, trainLabel, batch_size=32, epochs=10) # validation_data=(Yts[0][:,:-1], Yts[0][:,-1])
+                    self.train_model = model
+                    testDataReshaped = np.expand_dims(Yts[0][:,:-1], axis=1)
+                    testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
                     predicted_label = model.predict(testDataReshaped)
                     self.preds[0] = tf.argmax(predicted_label, axis=1).numpy()
 
@@ -767,12 +800,21 @@ class SCARGC:
                     elif self.datasource == 'UNSW':
                         if self.classifier == 'lstm':
                             YeReshaped = np.expand_dims(Ye[:,:-1], axis=1)
-                            preds = self.train_model.predict(YeReshaped)
+                            testDataReshaped = pad_sequences(YeReshaped, maxlen=1000, padding='post', dtype='float32') 
+                            preds = self.train_model.predict(testDataReshaped)
                             predicted_label = tf.argmax(preds, axis=1).numpy() 
                         elif self.classifier == 'gru': 
                             YeReshaped = np.expand_dims(Ye[:,:-1], axis=1)
-                            preds = self.train_model.predict(YeReshaped)
-                            predicted_label = tf.argmax(preds, axis=1).numpy() 
+                            testDataReshaped = pad_sequences(YeReshaped, maxlen=1000, padding='post', dtype='float32')
+                            preds = self.train_model.predict(testDataReshaped)
+                            predicted_label = tf.argmax(preds, axis=1).numpy()
+
+                        elif self.classifier == '1dcnn':
+                            YeReshaped = np.expand_dims(Ye[:,:-1], axis=1)
+                            testDataReshaped = pad_sequences(YeReshaped, maxlen=1000, padding='post', dtype='float32')
+                            preds = self.train_model.predict(testDataReshaped)
+                            predicted_label = tf.argmax(preds, axis=1).numpy()
+
                         else:
                             predicted_label = self.train_model.predict(Ye[:,:-1])
                     
@@ -876,7 +918,7 @@ class SCARGC:
                             trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes)
                             # Define the input shapeinput_shape = (timesteps, input_dim)  
                             # adjust the values according to your data
-                            tsteps = 1
+                            tsteps = 1000
                             input_dim = np.shape(past_centroid[:,:-1])[1]
                             input_shape = (tsteps, input_dim)
 
@@ -894,8 +936,10 @@ class SCARGC:
                             nearestData.summary()
                             # Train the model
                             trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
+                            lstmData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
                             nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                             testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
+                            testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
                             centroid_label = nearestData.predict(testDataReshaped)
                             new_label_data = tf.argmax(centroid_label, axis=1).numpy()
                             
@@ -904,7 +948,7 @@ class SCARGC:
                         elif self.classifier == 'gru':
                             num_classes = len(set(temp_current_centroids[:,-1]))
                             trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes)
-                            sequence_length = 1 
+                            sequence_length = 1000 
                             input_dim = np.shape(past_centroid[:,:-1])[1] 
                             # Define the input shape and number of hidden units
                             input_shape = (sequence_length, input_dim)  # e.g., (10, 32)
@@ -918,12 +962,39 @@ class SCARGC:
 
                             # Train the model
                             trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
-                            nearestData.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+                            gruData = pad_sequences(trainDataReshaped, maxlen=sequence_length, padding='post', dtype='float32')
+                            nearestData.fit(gruData, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
                             testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
+                            testDataReshaped = pad_sequences(testDataReshaped, maxlen=sequence_length, padding='post', dtype='float32')
                             centroid_label = nearestData.predict(testDataReshaped)
                             new_label_data = tf.argmax(centroid_label, axis=1).numpy()
                             # new_label_data = np.vstack(predicted_label)
-                    
+
+                        elif self.classifier == '1dcnn':
+                            num_classes = len(set(temp_current_centroids[:,-1]))
+                            trainLabel = tf.keras.utils.to_categorical(temp_current_centroids[:,-1], num_classes=num_classes) 
+                            tsteps = 1000
+                            input_dim = np.shape(past_centroid[:,:-1])[1]
+                            input_shape = (tsteps, input_dim)
+                            model = tf.keras.Sequential([
+                                tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=input_shape),
+                                tf.keras.layers.MaxPooling1D(pool_size=2),
+                                # Add more Conv1D and MaxPooling1D layers as needed
+                                tf.keras.layers.Flatten(),
+                                tf.keras.layers.Dense(64, activation='relu'),
+                                tf.keras.layers.Dense(num_classes, activation='softmax')  # Assuming you have multiple classes to predict
+                            ])
+
+                            # Step 3: Training
+                            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                            trainDataReshaped = np.expand_dims(past_centroid[:,:-1], axis=1)
+                            cnnData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
+                            model.fit(cnnData, trainLabel, batch_size=32, epochs=10)
+                            testDataReshaped = np.expand_dims(temp_current_centroids[k:,:-1], axis=1)
+                            testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
+                            centroid_label = model.predict(testDataReshaped)
+                            new_label_data = tf.argmax(centroid_label, axis=1).numpy()
+                                                
                     new_label_data = list(new_label_data)
                     new_label_data.pop(0)
                     new_label_data = np.array(new_label_data)
@@ -964,5 +1035,5 @@ class SCARGC:
 
 
 
-# run_scargc_svm = SCARGC(classifier = 'gru', dataset= 'ton_iot_fridge', datasource='UNSW').run()
+# run_scargc_svm = SCARGC(classifier = '1dcnn', dataset= 'ton_iot_fridge', datasource='UNSW').run()
 # print(run_scargc_svm)

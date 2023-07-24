@@ -47,6 +47,7 @@ from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
+from keras.preprocessing.sequence import pad_sequences
 from sklearn.svm import SVC, SVR
 import classifier_performance as cp
 from scipy import stats
@@ -590,9 +591,11 @@ class MClassification():
             # Print the model summary
             model.summary()
             trainDataReshaped = np.expand_dims(trainData[:,:-1], axis=1)
+            lstmData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
             # Train the model
-            model.fit(trainDataReshaped, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
+            model.fit(lstmData, trainLabel, batch_size=32, epochs=10, validation_split=0.2)
             testDataReshaped = np.expand_dims(testData[:,:-1], axis=1)
+            testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
             predictions = model.predict(testDataReshaped)
             predicted_label = tf.argmax(predictions, axis=1).numpy()
         
@@ -613,11 +616,38 @@ class MClassification():
             model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
             trainDataReshaped = np.expand_dims(trainData[:,:-1], axis=1)
+            gruData = pad_sequences(trainDataReshaped, maxlen=sequence_length, padding='post', dtype='float32')
             # Train the model
-            model.fit(trainDataReshaped, trainLabel, epochs=10, batch_size=32)
+            model.fit(gruData, trainLabel, epochs=10, batch_size=32)
             testDataReshaped = np.expand_dims(testData[:,:-1], axis=1)
+            testDataReshaped = pad_sequences(testDataReshaped, maxlen=sequence_length, padding='post', dtype='float32') 
             predictions = model.predict(testDataReshaped)
             predicted_label = tf.argmax(predictions, axis=1).numpy()
+
+        elif self.classifier == '1dcnn':
+            num_classes = len(set(trainLabel))
+            trainLabel = tf.keras.utils.to_categorical(trainLabel, num_classes=num_classes)
+            tsteps = 1000
+            input_dim = trainData[:,:-1].shape[1]
+            input_shape = (tsteps, input_dim)
+            model = tf.keras.Sequential([
+                tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=input_shape),
+                tf.keras.layers.MaxPooling1D(pool_size=2),
+                # Add more Conv1D and MaxPooling1D layers as needed
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(64, activation='relu'),
+                tf.keras.layers.Dense(num_classes, activation='softmax')  # Assuming you have multiple classes to predict
+            ])
+
+            # Step 3: Training
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            trainDataReshaped = np.expand_dims(trainData[:,:-1], axis=1)
+            cnnData = pad_sequences(trainDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
+            model.fit(cnnData, trainLabel, batch_size=32, epochs=10)
+            testDataReshaped = np.expand_dims(testData[:,:-1], axis=1)
+            testDataReshaped = pad_sequences(testDataReshaped, maxlen=tsteps, padding='post', dtype='float32')
+            predictions = model.predict(testDataReshaped)
+            predicted_label = tf.argmax(predictions, axis=1).numpy() 
 
         return predicted_label
 
@@ -1002,6 +1032,6 @@ class MClassification():
         return self.avg_perf_metric
 
 # test mclass
-# run_mclass = MClassification(classifier='mlp', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
+# run_mclass = MClassification(classifier='1dcnn', method = 'kmeans', dataset='ton_iot_fridge', datasource='UNSW', graph=False).run()
 # print(run_mclass) # ton_iot_fridge UG_2C_2D
 #%%
